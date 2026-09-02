@@ -293,53 +293,67 @@
                 </div>
 
 
-                <!-- Statistics -->
+                <!-- Database Toolbar: Stats + Export dalam satu baris -->
+                <div class="database-toolbar">
 
-                <div class="stats-grid">
+                    <!-- Statistics -->
+                    <div class="stats-grid">
+
+                        <div class="stat-card">
+
+                            <span>
+                                Siswa terdaftar
+                            </span>
+
+                            <strong
+                                id="totalStudents"
+                            >
+                                0
+                            </strong>
+
+                        </div>
 
 
-                    <div class="stat-card">
+                        <div class="stat-card">
 
-                        <span>
-                            Siswa terdaftar
-                        </span>
+                            <span>
+                                Hadir hari ini
+                            </span>
 
-                        <strong
-                            id="totalStudents"
-                        >
-                            0
-                        </strong>
+                            <strong
+                                id="totalPresent"
+                            >
+                                0
+                            </strong>
+
+                        </div>
+
+
+                        <div class="stat-card">
+
+                            <span>
+                                Kehadiran
+                            </span>
+
+                            <strong
+                                id="attendancePercentage"
+                            >
+                                0%
+                            </strong>
+
+                        </div>
 
                     </div>
 
-
-                    <div class="stat-card">
-
-                        <span>
-                            Hadir hari ini
-                        </span>
-
-                        <strong
-                            id="totalPresent"
+                    <!-- Export Button -->
+                    <div class="export-wrapper">
+                        <button 
+                            id="exportButton" 
+                            class="primary-button"
+                            style="width: auto; padding: 0 24px; margin-top: 0; background: #1e293b; min-height: 46px; white-space: nowrap;"
                         >
-                            0
-                        </strong>
-
-                    </div>
-
-
-                    <div class="stat-card">
-
-                        <span>
-                            Kehadiran
-                        </span>
-
-                        <strong
-                            id="attendancePercentage"
-                        >
-                            0%
-                        </strong>
-
+                            📊 Export Data
+                        </button>
                     </div>
 
                 </div>

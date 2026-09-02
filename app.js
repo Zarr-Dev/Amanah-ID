@@ -40,10 +40,10 @@ const FACE_MATCH_THRESHOLD =
  */
 
 const ATTENDANCE_INTERVAL =
-    300; // Lebih cepat untuk respons lebih baik
+    300;
 
 const ENROLLMENT_INTERVAL =
-    150; // JAUH lebih cepat untuk analisis real-time
+    150; // PERCEPAT: dari 200 ke 150 untuk respons lebih cepat
 
 
 /*
@@ -61,11 +61,11 @@ const REQUIRED_MATCH_FRAMES =
  * Enrollment harus mencapai
  * 100% selama beberapa frame.
  * 
- * OPTIMASI: Kurangi frame requirement untuk kecepatan
+ * OPTIMASI: 2 frame untuk stabilitas
  */
 
 const REQUIRED_CAPTURE_FRAMES =
-    1; // Dari 2 menjadi 1 frame
+    2;
 
 
 /*
@@ -73,7 +73,7 @@ const REQUIRED_CAPTURE_FRAMES =
  */
 
 const STABILITY_HISTORY =
-    4; // Dari 6 menjadi 4
+    4; // PERCEPAT: dari 5 ke 4
 
 
 /* =========================================================
@@ -827,21 +827,21 @@ async function requestCamera() {
             width: {
 
                 ideal:
-                    480 // OPTIMASI: Resolusi lebih rendah untuk kecepatan
+                    640
 
             },
 
             height: {
 
                 ideal:
-                    360
+                    480
 
             },
 
             frameRate: {
 
                 ideal:
-                    30, // OPTIMASI: Frame rate lebih tinggi
+                    30, // PERCEPAT: dari 24 ke 30
 
                 max:
                     30
@@ -1065,10 +1065,10 @@ async function processAttendanceFrame() {
                     new faceapi.TinyFaceDetectorOptions({
 
                         inputSize:
-                            224, // OPTIMASI: Lebih kecil untuk kecepatan
+                            224, // PERCEPAT: dari 320 ke 224
 
                         scoreThreshold:
-                            0.55 // OPTIMASI: Threshold lebih rendah
+                            0.55
 
                     })
                 )
@@ -1763,17 +1763,7 @@ async function startEnrollmentCamera() {
          * Remove current image.
          */
 
-        enrollmentImage.src =
-            "";
-
-
-        enrollmentImage.classList.remove(
-            "active"
-        );
-
-
-        previewPlaceholder.style.display =
-            "flex";
+        clearEnrollmentImage();
 
 
         /*
@@ -1908,6 +1898,31 @@ function stopEnrollmentCamera() {
 
 
 /* =========================================================
+   CLEAR ENROLLMENT IMAGE
+========================================================= */
+
+function clearEnrollmentImage() {
+    currentEnrollmentDescriptor = null;
+    currentEnrollmentImage = null;
+    
+    enrollmentImage.src = "";
+    enrollmentImage.classList.remove("active");
+    enrollmentImage.classList.remove("has-image");
+    
+    // Hapus tombol ganti jika ada
+    const replaceBtn = document.getElementById('replaceImageBtn');
+    if (replaceBtn) {
+        replaceBtn.remove();
+    }
+    
+    previewPlaceholder.style.display = "flex";
+    
+    resetEnrollmentState();
+    updateSaveButton();
+}
+
+
+/* =========================================================
    WAIT FOR VIDEO
 ========================================================= */
 
@@ -1981,7 +1996,7 @@ function startEnrollmentLoop() {
 
 
 /* =========================================================
-   ENROLLMENT AI - OPTIMIZED FOR SPEED
+   ENROLLMENT AI - SUPER FAST DETECTION
 ========================================================= */
 
 async function processEnrollmentFrame() {
@@ -1989,8 +2004,7 @@ async function processEnrollmentFrame() {
     if (
         enrollmentProcessing ||
         !enrollmentStream ||
-        enrollmentVideo.readyState < 2
-    ) {
+        enrollmentVideo.readyState < 2    ) {
 
         return;
 
@@ -2005,6 +2019,7 @@ async function processEnrollmentFrame() {
 
     try {
 
+        // PERCEPAT: Gunakan inputSize lebih kecil untuk kecepatan
         const detections =
             await faceapi
                 .detectAllFaces(
@@ -2012,10 +2027,10 @@ async function processEnrollmentFrame() {
                     new faceapi.TinyFaceDetectorOptions({
 
                         inputSize:
-                            160, // OPTIMASI: Ukuran lebih kecil untuk kecepatan ekstrim
+                            160, // PERCEPAT: Lebih kecil untuk kecepatan ekstrim
 
                         scoreThreshold:
-                            0.50 // OPTIMASI: Threshold lebih rendah
+                            0.45 // PERCEPAT: Threshold lebih rendah
 
                     })
                 )
@@ -2107,7 +2122,7 @@ async function processEnrollmentFrame() {
 
         /*
          * ==============================================
-         * 1. FACE SIZE - OPTIMASI: Lebih cepat
+         * 1. FACE SIZE - PERCEPAT
          * ==============================================
          */
 
@@ -2122,23 +2137,23 @@ async function processEnrollmentFrame() {
             );
 
 
-        // OPTIMASI: Perhitungan lebih langsung
+        // PERCEPAT: Range lebih luas
         let sizeScore = 0;
-        if (faceArea >= 0.08 && faceArea <= 0.50) {
-            sizeScore = 95 + (1 - Math.abs(faceArea - 0.22) * 150);
+        if (faceArea >= 0.05 && faceArea <= 0.50) {
+            sizeScore = 90 + (1 - Math.abs(faceArea - 0.20) * 100);
         } else if (faceArea > 0.50 && faceArea <= 0.70) {
-            sizeScore = 70 - (faceArea - 0.50) * 100;
-        } else if (faceArea >= 0.04 && faceArea < 0.08) {
-            sizeScore = 60 + (faceArea - 0.04) * 500;
+            sizeScore = 65 - (faceArea - 0.50) * 120;
+        } else if (faceArea >= 0.025 && faceArea < 0.05) {
+            sizeScore = 45 + (faceArea - 0.025) * 600;
         } else {
-            sizeScore = Math.max(0, 100 - Math.abs(faceArea - 0.22) * 300);
+            sizeScore = Math.max(0, 100 - Math.abs(faceArea - 0.20) * 200);
         }
         sizeScore = clamp(sizeScore, 0, 100);
 
 
         /*
          * ==============================================
-         * 2. CENTER - OPTIMASI: Lebih cepat
+         * 2. CENTER - PERCEPAT
          * ==============================================
          */
 
@@ -2156,17 +2171,17 @@ async function processEnrollmentFrame() {
             (faceCenterY - frameCenterY) / height
         );
 
-        const centerScore = clamp(100 - (distance * 350), 0, 100);
+        const centerScore = clamp(100 - (distance * 250), 0, 100);
 
 
         /*
          * ==============================================
-         * 3. BRIGHTNESS - OPTIMASI: Skip jika tidak perlu
+         * 3. BRIGHTNESS - SKIP LEBIH BANYAK
          * ==============================================
          */
 
-        let lightScore = 85; // Default nilai baik
-        if (detectionCounter % 3 === 0) { // Hitung brightness setiap 3 frame
+        let lightScore = 80;
+        if (detectionCounter % 5 === 0) { // Kurangi frekuensi
             const brightness = calculateBrightness(enrollmentVideo);
             lightScore = calculateLightScore(brightness);
         }
@@ -2174,13 +2189,13 @@ async function processEnrollmentFrame() {
 
         /*
          * ==============================================
-         * 4. STABILITY - OPTIMASI: Lebih cepat
+         * 4. STABILITY - PERCEPAT
          * ==============================================
          */
 
         stabilityHistory.push({
-            x: centerX,
-            y: centerY,
+            x: faceCenterX,
+            y: faceCenterY,
             width: box.width,
             height: box.height
         });
@@ -2197,13 +2212,13 @@ async function processEnrollmentFrame() {
             const movement = Math.hypot(last.x - first.x, last.y - first.y);
             const sizeMovement = Math.abs(last.width - first.width);
             
-            stabilityScore = clamp(100 - (movement * 1.5) - (sizeMovement * 1.2), 0, 100);
+            stabilityScore = clamp(100 - (movement * 0.5) - (sizeMovement * 0.4), 0, 100);
         }
 
 
         /*
          * ==============================================
-         * FINAL SCORE - OPTIMASI: Bobot dioptimasi
+         * FINAL SCORE
          * ==============================================
          */
 
@@ -2216,17 +2231,17 @@ async function processEnrollmentFrame() {
 
 
         /*
-         * OPTIMASI: Progress lebih agresif
+         * Progress lebih agresif
          */
         if (finalScore > enrollmentProgress) {
-            enrollmentProgress = enrollmentProgress * 0.50 + finalScore * 0.50;
+            enrollmentProgress = enrollmentProgress * 0.30 + finalScore * 0.70;
         } else {
-            enrollmentProgress = enrollmentProgress * 0.70 + finalScore * 0.30;
+            enrollmentProgress = enrollmentProgress * 0.50 + finalScore * 0.50;
         }
 
-        // Boost progress jika kondisi sangat baik
-        if (finalScore >= 90 && sizeScore >= 80 && centerScore >= 85) {
-            enrollmentProgress = Math.min(100, enrollmentProgress + 15);
+        // Boost besar jika kondisi baik
+        if (finalScore >= 80 && sizeScore >= 70 && centerScore >= 75) {
+            enrollmentProgress = Math.min(100, enrollmentProgress + 20);
         }
 
         enrollmentProgress = clamp(enrollmentProgress, 0, 100);
@@ -2238,20 +2253,20 @@ async function processEnrollmentFrame() {
 
 
         /*
-         * Ready threshold - OPTIMASI: Lebih permisif
+         * Ready threshold - Lebih permisif
          */
 
         const ready =
-            finalScore >= 85 &&
-            faceArea >= 0.06 &&
+            finalScore >= 75 &&
+            faceArea >= 0.04 &&
             faceArea <= 0.65 &&
-            centerScore >= 80 &&
-            stabilityScore >= 70;
+            centerScore >= 70 &&
+            stabilityScore >= 60;
 
 
         if (
             ready &&
-            enrollmentProgress >= 90
+            enrollmentProgress >= 80
         ) {
 
             enrollmentReadyFrames +=
@@ -2266,14 +2281,14 @@ async function processEnrollmentFrame() {
 
 
         /*
-         * Status message - OPTIMASI: Lebih ringkas
+         * Status message
          */
 
-        if (enrollmentProgress < 40) {
+        if (enrollmentProgress < 25) {
             setValidation("Mendeteksi wajah...", true);
-        } else if (enrollmentProgress < 70) {
-            setValidation("Analisis kualitas wajah...", true);
-        } else if (enrollmentProgress < 90) {
+        } else if (enrollmentProgress < 50) {
+            setValidation("Analisis kualitas...", true);
+        } else if (enrollmentProgress < 75) {
             setValidation("Pertahankan posisi...", true);
         } else if (enrollmentProgress < 100) {
             setValidation("Hampir selesai...", true);
@@ -2283,7 +2298,7 @@ async function processEnrollmentFrame() {
 
 
         /*
-         * 100% - OPTIMASI: Capture lebih cepat
+         * 100% - Capture
          */
 
         if (
@@ -2318,22 +2333,22 @@ async function processEnrollmentFrame() {
 
 
 /* =========================================================
-   ENROLLMENT SCORING - OPTIMASI: Fungsi lebih efisien
+   ENROLLMENT SCORING - OPTIMASI CEPAT
 ========================================================= */
 
 function calculateSizeScore(
     ratio
 ) {
 
-    // OPTIMASI: Perhitungan lebih langsung
-    if (ratio >= 0.10 && ratio <= 0.35) {
-        return 95 + (1 - Math.abs(ratio - 0.22) * 200);
-    } else if (ratio > 0.35 && ratio <= 0.55) {
-        return 70 - (ratio - 0.35) * 150;
-    } else if (ratio >= 0.05 && ratio < 0.10) {
-        return 50 + (ratio - 0.05) * 800;
+    // PERCEPAT: Perhitungan lebih sederhana
+    if (ratio >= 0.06 && ratio <= 0.40) {
+        return 90 + (1 - Math.abs(ratio - 0.18) * 120);
+    } else if (ratio > 0.40 && ratio <= 0.60) {
+        return 65 - (ratio - 0.40) * 120;
+    } else if (ratio >= 0.03 && ratio < 0.06) {
+        return 45 + (ratio - 0.03) * 600;
     } else {
-        return Math.max(0, 100 - Math.abs(ratio - 0.22) * 250);
+        return Math.max(0, 100 - Math.abs(ratio - 0.18) * 180);
     }
 
 }
@@ -2359,7 +2374,7 @@ function calculateCenterScore(
         (faceCenterY - frameCenterY) / height
     );
 
-    return clamp(100 - (distance * 350), 0, 100);
+    return clamp(100 - (distance * 250), 0, 100);
 
 }
 
@@ -2373,8 +2388,8 @@ function calculateBrightness(
             "canvas"
         );
 
-    canvas.width = 16; // OPTIMASI: Resolusi lebih rendah
-    canvas.height = 12;
+    canvas.width = 8; // PERCEPAT: Resolusi lebih rendah
+    canvas.height = 6;
 
     const context =
         canvas.getContext(
@@ -2386,9 +2401,9 @@ function calculateBrightness(
         return 128;
     }
 
-    context.drawImage(video, 0, 0, 16, 12);
+    context.drawImage(video, 0, 0, 8, 6);
 
-    const image = context.getImageData(0, 0, 16, 12);
+    const image = context.getImageData(0, 0, 8, 6);
     let sum = 0;
 
     for (let i = 0; i < image.data.length; i += 4) {
@@ -2407,12 +2422,12 @@ function calculateLightScore(
     brightness
 ) {
 
-    if (brightness >= 70 && brightness <= 200) {
-        return 100 - Math.abs(brightness - 135) * 0.5;
-    } else if (brightness < 70) {
-        return clamp(brightness / 70 * 100, 0, 100);
+    if (brightness >= 50 && brightness <= 220) {
+        return 100 - Math.abs(brightness - 130) * 0.3;
+    } else if (brightness < 50) {
+        return clamp(brightness / 50 * 100, 0, 100);
     } else {
-        return clamp(100 - (brightness - 200) / 60 * 100, 0, 100);
+        return clamp(100 - (brightness - 220) / 40 * 100, 0, 100);
     }
 
 }
@@ -2446,7 +2461,7 @@ function calculateStabilityScore(
     const movement = Math.hypot(last.x - first.x, last.y - first.y);
     const sizeMovement = Math.abs(last.width - first.width);
 
-    return clamp(100 - (movement * 1.5) - (sizeMovement * 1.2), 0, 100);
+    return clamp(100 - (movement * 0.5) - (sizeMovement * 0.4), 0, 100);
 
 }
 
@@ -2593,6 +2608,10 @@ async function captureEnrollment(
     enrollmentImage.classList.add(
         "active"
     );
+    
+    enrollmentImage.classList.add(
+        "has-image"
+    );
 
 
     enrollmentVideo.classList.remove(
@@ -2602,6 +2621,12 @@ async function captureEnrollment(
 
     previewPlaceholder.style.display =
         "none";
+
+
+    /*
+     * Tambahkan tombol ganti
+     */
+    addReplaceButton();
 
 
     /*
@@ -2630,7 +2655,41 @@ async function captureEnrollment(
 
 
 /* =========================================================
-   UPLOAD IMAGE
+   ADD REPLACE BUTTON
+========================================================= */
+
+function addReplaceButton() {
+    // Hapus tombol lama jika ada
+    const oldBtn = document.getElementById('replaceImageBtn');
+    if (oldBtn) {
+        oldBtn.remove();
+    }
+    
+    // Buat tombol baru
+    const replaceBtn = document.createElement('button');
+    replaceBtn.id = 'replaceImageBtn';
+    replaceBtn.className = 'replace-image-btn';
+    replaceBtn.innerHTML = '🔄 Ganti Foto';
+    replaceBtn.title = 'Ganti foto wajah';
+    replaceBtn.type = 'button';
+    
+    replaceBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        clearEnrollmentImage();
+        showToast('Foto dihapus. Silakan ambil foto baru.');
+    });
+    
+    // Tambahkan ke preview
+    const preview = document.getElementById('enrollmentPreview');
+    if (preview) {
+        preview.style.position = 'relative';
+        preview.appendChild(replaceBtn);
+    }
+}
+
+
+/* =========================================================
+   UPLOAD IMAGE - FIXED
 ========================================================= */
 
 uploadButton.addEventListener(
@@ -2695,12 +2754,17 @@ photoInput.addEventListener(
             enrollmentImage.classList.add(
                 "active"
             );
+            
+            enrollmentImage.classList.add(
+                "has-image"
+            );
 
 
             previewPlaceholder.style.display =
                 "none";
 
 
+            // PERCEPAT: InputSize lebih kecil
             const detections =
                 await faceapi
                     .detectAllFaces(
@@ -2708,10 +2772,10 @@ photoInput.addEventListener(
                         new faceapi.TinyFaceDetectorOptions({
 
                             inputSize:
-                                224, // OPTIMASI
+                                224, // PERCEPAT
 
                             scoreThreshold:
-                                0.55
+                                0.48
 
                         })
                     )
@@ -2731,6 +2795,13 @@ photoInput.addEventListener(
                     "Foto ditolak: wajah tidak ditemukan.",
                     false
                 );
+                
+                // Hapus gambar yang gagal
+                clearEnrollmentImage();
+                
+                showToast(
+                    "Wajah tidak terdeteksi di foto."
+                );
 
                 return;
 
@@ -2744,6 +2815,13 @@ photoInput.addEventListener(
                 setValidation(
                     "Foto ditolak: lebih dari satu wajah terdeteksi.",
                     false
+                );
+                
+                // Hapus gambar yang gagal
+                clearEnrollmentImage();
+                
+                showToast(
+                    "Deteksi lebih dari satu wajah."
                 );
 
                 return;
@@ -2776,13 +2854,15 @@ photoInput.addEventListener(
 
             if (
                 areaRatio <
-                0.04
+                0.025
             ) {
 
                 setValidation(
                     "Wajah terlalu kecil dalam foto.",
                     false
                 );
+                
+                clearEnrollmentImage();
 
                 return;
 
@@ -2808,6 +2888,9 @@ photoInput.addEventListener(
                 "Foto diterima. Wajah berhasil dianalisis.",
                 true
             );
+            
+            // Tambahkan tombol ganti
+            addReplaceButton();
 
 
             updateSaveButton();
@@ -2827,6 +2910,8 @@ photoInput.addEventListener(
                 "Foto gagal dianalisis.",
                 false
             );
+            
+            clearEnrollmentImage();
 
         } finally {
 
@@ -3058,6 +3143,17 @@ saveStudentButton.addEventListener(
         enrollmentImage.classList.remove(
             "active"
         );
+        
+        enrollmentImage.classList.remove(
+            "has-image"
+        );
+
+
+        // Hapus tombol ganti
+        const replaceBtn = document.getElementById('replaceImageBtn');
+        if (replaceBtn) {
+            replaceBtn.remove();
+        }
 
 
         previewPlaceholder.style.display =
@@ -3692,7 +3788,7 @@ function exportToImage(data) {
             const values = Object.values(row);
             values.forEach((val, i) => {
                 let displayVal = String(val);
-                if (i === 8) { // Confidence
+                if (i === 8) {
                     displayVal = String(val);
                 }
                 ctx.fillText(displayVal, x + colWidths[i] / 2, y + rowHeight / 2);

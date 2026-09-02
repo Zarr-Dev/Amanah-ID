@@ -656,7 +656,7 @@ main {
 
 
 /* =========================================================
-   WELCOME
+   WELCOME - DIPERKECIL
 ========================================================= */
 
 .welcome-message {
@@ -690,13 +690,13 @@ main {
         sans-serif;
 
     font-size:
-        clamp(24px, 5vw, 58px);
+        clamp(18px, 3vw, 32px); /* DIPERKECIL: dari 24px-58px menjadi 18px-32px */
 
     font-weight:
-        800;
+        700; /* DIPERKECIL: dari 800 menjadi 700 */
 
     letter-spacing:
-        -1.5px;
+        -0.5px; /* DIPERKECIL: dari -1.5px menjadi -0.5px */
 
     text-shadow:
         0 4px 30px rgba(0,0,0,.55);
@@ -1075,6 +1075,67 @@ tbody tr:hover {
 
     font-size:
         11px;
+}
+
+
+/* =========================================================
+   DATABASE TOOLBAR - POSISI BARU UNTUK EXPORT
+========================================================= */
+
+.database-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+}
+
+.database-toolbar .stats-grid {
+    flex: 1;
+    margin-bottom: 0;
+    min-width: 200px;
+}
+
+.database-toolbar .export-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+#exportButton {
+    width: auto;
+    padding: 0 24px;
+    margin-top: 0;
+    background: #1e293b;
+    min-height: 46px;
+    white-space: nowrap;
+}
+
+#exportButton:hover {
+    background: #0f172a;
+}
+
+/* Responsive untuk toolbar */
+@media (max-width: 720px) {
+    .database-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .database-toolbar .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    #exportButton {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .database-toolbar .stats-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 
@@ -1874,7 +1935,7 @@ tbody tr:hover {
             58px;
 
         font-size:
-            25px;
+            20px; /* DIPERKECIL untuk mobile */
     }
 
 }
@@ -1893,6 +1954,10 @@ tbody tr:hover {
 
         font-size:
             16px;
+    }
+    
+    .welcome-message {
+        font-size: 16px; /* DIPERKECIL untuk mobile kecil */
     }
 
 }
@@ -2120,5 +2185,55 @@ tbody tr:hover {
     .export-confirm-btn {
         width: 100%;
         justify-content: center;
+    }
+}
+
+/* =========================================================
+   REPLACE IMAGE BUTTON
+========================================================= */
+
+.replace-image-btn {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    z-index: 10;
+    padding: 8px 16px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: "Poppins", sans-serif;
+    cursor: pointer;
+    transition: all .2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.replace-image-btn:hover {
+    background: rgba(220, 38, 38, 0.8);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.replace-image-btn:active {
+    transform: scale(0.95);
+}
+
+.enrollment-preview img.has-image {
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .replace-image-btn {
+        bottom: 12px;
+        right: 12px;
+        padding: 6px 12px;
+        font-size: 10px;
     }
 }
