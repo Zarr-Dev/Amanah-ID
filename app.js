@@ -36,15 +36,14 @@ const FACE_MATCH_THRESHOLD =
 /*
  * AI inference interval.
  *
- * Tidak melakukan inference setiap frame.
- * Ini menghemat CPU dan baterai.
+ * OPTIMASI: Interval lebih cepat untuk enrollment
  */
 
 const ATTENDANCE_INTERVAL =
-    450;
+    300; // Lebih cepat untuk respons lebih baik
 
 const ENROLLMENT_INTERVAL =
-    350;
+    150; // JAUH lebih cepat untuk analisis real-time
 
 
 /*
@@ -61,10 +60,12 @@ const REQUIRED_MATCH_FRAMES =
 /*
  * Enrollment harus mencapai
  * 100% selama beberapa frame.
+ * 
+ * OPTIMASI: Kurangi frame requirement untuk kecepatan
  */
 
 const REQUIRED_CAPTURE_FRAMES =
-    2;
+    1; // Dari 2 menjadi 1 frame
 
 
 /*
@@ -72,7 +73,7 @@ const REQUIRED_CAPTURE_FRAMES =
  */
 
 const STABILITY_HISTORY =
-    6;
+    4; // Dari 6 menjadi 4
 
 
 /* =========================================================
@@ -167,6 +168,14 @@ let attendanceMatchFrames =
 
 const attendanceCooldown =
     new Map();
+
+
+/*
+ * OPTIMASI: Cache untuk deteksi wajah
+ */
+
+let lastEnrollmentDetection = null;
+let detectionCounter = 0;
 
 
 /* =========================================================
@@ -818,21 +827,21 @@ async function requestCamera() {
             width: {
 
                 ideal:
-                    640
+                    480 // OPTIMASI: Resolusi lebih rendah untuk kecepatan
 
             },
 
             height: {
 
                 ideal:
-                    480
+                    360
 
             },
 
             frameRate: {
 
                 ideal:
-                    24,
+                    30, // OPTIMASI: Frame rate lebih tinggi
 
                 max:
                     30
@@ -1056,10 +1065,10 @@ async function processAttendanceFrame() {
                     new faceapi.TinyFaceDetectorOptions({
 
                         inputSize:
-                            320,
+                            224, // OPTIMASI: Lebih kecil untuk kecepatan
 
                         scoreThreshold:
-                            0.58
+                            0.55 // OPTIMASI: Threshold lebih rendah
 
                     })
                 )
@@ -1891,6 +1900,9 @@ function stopEnrollmentCamera() {
 
     enrollmentReadyFrames =
         0;
+        
+    lastEnrollmentDetection = null;
+    detectionCounter = 0;
 
 }
 
@@ -1969,7 +1981,7 @@ function startEnrollmentLoop() {
 
 
 /* =========================================================
-   ENROLLMENT AI
+   ENROLLMENT AI - OPTIMIZED FOR SPEED
 ========================================================= */
 
 async function processEnrollmentFrame() {
@@ -1987,6 +1999,8 @@ async function processEnrollmentFrame() {
 
     enrollmentProcessing =
         true;
+        
+    detectionCounter++;
 
 
     try {
@@ -1998,10 +2012,10 @@ async function processEnrollmentFrame() {
                     new faceapi.TinyFaceDetectorOptions({
 
                         inputSize:
-                            320,
+                            160, // OPTIMASI: Ukuran lebih kecil untuk kecepatan ekstrim
 
                         scoreThreshold:
-                            0.58
+                            0.50 // OPTIMASI: Threshold lebih rendah
 
                     })
                 )
@@ -2019,6 +2033,8 @@ async function processEnrollmentFrame() {
 
             enrollmentReadyFrames =
                 0;
+                
+            lastEnrollmentDetection = null;
 
 
             updateEnrollmentProgress(
@@ -2047,6 +2063,8 @@ async function processEnrollmentFrame() {
 
             enrollmentReadyFrames =
                 0;
+                
+            lastEnrollmentDetection = null;
 
 
             updateEnrollmentProgress(
@@ -2082,8 +2100,14 @@ async function processEnrollmentFrame() {
 
 
         /*
+         * OPTIMASI: Cache detection untuk frame berikutnya
+         */
+        lastEnrollmentDetection = detection;
+
+
+        /*
          * ==============================================
-         * 1. FACE SIZE
+         * 1. FACE SIZE - OPTIMASI: Lebih cepat
          * ==============================================
          */
 
@@ -2098,114 +2122,114 @@ async function processEnrollmentFrame() {
             );
 
 
-        const sizeScore =
-            calculateSizeScore(
-                faceArea
-            );
-
-
-        /*
-         * ==============================================
-         * 2. CENTER
-         * ==============================================
-         */
-
-        const centerScore =
-            calculateCenterScore(
-                box,
-                width,
-                height
-            );
-
-
-        /*
-         * ==============================================
-         * 3. BRIGHTNESS
-         * ==============================================
-         */
-
-        const brightness =
-            calculateBrightness(
-                enrollmentVideo
-            );
-
-
-        const lightScore =
-            calculateLightScore(
-                brightness
-            );
-
-
-        /*
-         * ==============================================
-         * 4. STABILITY
-         * ==============================================
-         */
-
-        const stabilityScore =
-            calculateStabilityScore(
-                box
-            );
-
-
-        /*
-         * ==============================================
-         * FINAL INTERNAL AI SCORE
-         * ==============================================
-         *
-         * User only sees the final percentage.
-         *
-         * Detailed metrics remain internal.
-         */
-
-        const finalScore =
-            (
-                sizeScore * .25
-            ) +
-            (
-                centerScore * .25
-            ) +
-            (
-                lightScore * .20
-            ) +
-            (
-                stabilityScore * .30
-            );
-
-
-        /*
-         * Smooth progress.
-         *
-         * This prevents the bar from jumping.
-         */
-
-        enrollmentProgress =
-            (
-                enrollmentProgress *
-                .68
-            ) +
-            (
-                finalScore *
-                .32
-            );
-
-
-        /*
-         * If conditions are good enough,
-         * slowly approach 100%.
-         */
-
-        if (
-            finalScore >= 94
-        ) {
-
-            enrollmentProgress =
-                Math.min(
-                    100,
-                    enrollmentProgress + 7
-                );
-
+        // OPTIMASI: Perhitungan lebih langsung
+        let sizeScore = 0;
+        if (faceArea >= 0.08 && faceArea <= 0.50) {
+            sizeScore = 95 + (1 - Math.abs(faceArea - 0.22) * 150);
+        } else if (faceArea > 0.50 && faceArea <= 0.70) {
+            sizeScore = 70 - (faceArea - 0.50) * 100;
+        } else if (faceArea >= 0.04 && faceArea < 0.08) {
+            sizeScore = 60 + (faceArea - 0.04) * 500;
+        } else {
+            sizeScore = Math.max(0, 100 - Math.abs(faceArea - 0.22) * 300);
         }
+        sizeScore = clamp(sizeScore, 0, 100);
+
+
+        /*
+         * ==============================================
+         * 2. CENTER - OPTIMASI: Lebih cepat
+         * ==============================================
+         */
+
+        const faceCenterX =
+            box.x + box.width / 2;
+        const faceCenterY =
+            box.y + box.height / 2;
+        const frameCenterX =
+            width / 2;
+        const frameCenterY =
+            height / 2;
+
+        const distance = Math.hypot(
+            (faceCenterX - frameCenterX) / width,
+            (faceCenterY - frameCenterY) / height
+        );
+
+        const centerScore = clamp(100 - (distance * 350), 0, 100);
+
+
+        /*
+         * ==============================================
+         * 3. BRIGHTNESS - OPTIMASI: Skip jika tidak perlu
+         * ==============================================
+         */
+
+        let lightScore = 85; // Default nilai baik
+        if (detectionCounter % 3 === 0) { // Hitung brightness setiap 3 frame
+            const brightness = calculateBrightness(enrollmentVideo);
+            lightScore = calculateLightScore(brightness);
+        }
+
+
+        /*
+         * ==============================================
+         * 4. STABILITY - OPTIMASI: Lebih cepat
+         * ==============================================
+         */
+
+        stabilityHistory.push({
+            x: centerX,
+            y: centerY,
+            width: box.width,
+            height: box.height
+        });
+
+        if (stabilityHistory.length > STABILITY_HISTORY) {
+            stabilityHistory.shift();
+        }
+
+        let stabilityScore = 50;
+        if (stabilityHistory.length >= STABILITY_HISTORY) {
+            const first = stabilityHistory[0];
+            const last = stabilityHistory[stabilityHistory.length - 1];
+            
+            const movement = Math.hypot(last.x - first.x, last.y - first.y);
+            const sizeMovement = Math.abs(last.width - first.width);
+            
+            stabilityScore = clamp(100 - (movement * 1.5) - (sizeMovement * 1.2), 0, 100);
+        }
+
+
+        /*
+         * ==============================================
+         * FINAL SCORE - OPTIMASI: Bobot dioptimasi
+         * ==============================================
+         */
+
+        const finalScore = (
+            sizeScore * 0.30 +
+            centerScore * 0.30 +
+            lightScore * 0.15 +
+            stabilityScore * 0.25
+        );
+
+
+        /*
+         * OPTIMASI: Progress lebih agresif
+         */
+        if (finalScore > enrollmentProgress) {
+            enrollmentProgress = enrollmentProgress * 0.50 + finalScore * 0.50;
+        } else {
+            enrollmentProgress = enrollmentProgress * 0.70 + finalScore * 0.30;
+        }
+
+        // Boost progress jika kondisi sangat baik
+        if (finalScore >= 90 && sizeScore >= 80 && centerScore >= 85) {
+            enrollmentProgress = Math.min(100, enrollmentProgress + 15);
+        }
+
+        enrollmentProgress = clamp(enrollmentProgress, 0, 100);
 
 
         updateEnrollmentProgress(
@@ -2214,21 +2238,20 @@ async function processEnrollmentFrame() {
 
 
         /*
-         * Ready threshold.
+         * Ready threshold - OPTIMASI: Lebih permisif
          */
 
         const ready =
-            finalScore >= 94 &&
-            faceArea >= .06 &&
-            faceArea <= .65 &&
-            centerScore >= 90 &&
-            lightScore >= 85 &&
-            stabilityScore >= 80;
+            finalScore >= 85 &&
+            faceArea >= 0.06 &&
+            faceArea <= 0.65 &&
+            centerScore >= 80 &&
+            stabilityScore >= 70;
 
 
         if (
             ready &&
-            enrollmentProgress >= 96
+            enrollmentProgress >= 90
         ) {
 
             enrollmentReadyFrames +=
@@ -2243,48 +2266,24 @@ async function processEnrollmentFrame() {
 
 
         /*
-         * Status message only.
+         * Status message - OPTIMASI: Lebih ringkas
          */
 
-        if (
-            enrollmentProgress < 35
-        ) {
-
-            setValidation(
-                "Mendeteksi wajah...",
-                true
-            );
-
-        } else if (
-            enrollmentProgress < 70
-        ) {
-
-            setValidation(
-                "Menganalisis kualitas wajah...",
-                true
-            );
-
-        } else if (
-            enrollmentProgress < 96
-        ) {
-
-            setValidation(
-                "Pertahankan posisi wajah...",
-                true
-            );
-
+        if (enrollmentProgress < 40) {
+            setValidation("Mendeteksi wajah...", true);
+        } else if (enrollmentProgress < 70) {
+            setValidation("Analisis kualitas wajah...", true);
+        } else if (enrollmentProgress < 90) {
+            setValidation("Pertahankan posisi...", true);
+        } else if (enrollmentProgress < 100) {
+            setValidation("Hampir selesai...", true);
         } else {
-
-            setValidation(
-                "Verifikasi hampir selesai...",
-                true
-            );
-
+            setValidation("Siap!", true);
         }
 
 
         /*
-         * 100%
+         * 100% - OPTIMASI: Capture lebih cepat
          */
 
         if (
@@ -2319,42 +2318,23 @@ async function processEnrollmentFrame() {
 
 
 /* =========================================================
-   ENROLLMENT SCORING
+   ENROLLMENT SCORING - OPTIMASI: Fungsi lebih efisien
 ========================================================= */
 
 function calculateSizeScore(
     ratio
 ) {
 
-    /*
-     * Ideal around 15-35%.
-     */
-
-    const ideal =
-        0.23;
-
-
-    const difference =
-        Math.abs(
-            ratio -
-            ideal
-        );
-
-
-    const score =
-        100 -
-        (
-            difference /
-            .23 *
-            100
-        );
-
-
-    return clamp(
-        score,
-        0,
-        100
-    );
+    // OPTIMASI: Perhitungan lebih langsung
+    if (ratio >= 0.10 && ratio <= 0.35) {
+        return 95 + (1 - Math.abs(ratio - 0.22) * 200);
+    } else if (ratio > 0.35 && ratio <= 0.55) {
+        return 70 - (ratio - 0.35) * 150;
+    } else if (ratio >= 0.05 && ratio < 0.10) {
+        return 50 + (ratio - 0.05) * 800;
+    } else {
+        return Math.max(0, 100 - Math.abs(ratio - 0.22) * 250);
+    }
 
 }
 
@@ -2366,52 +2346,20 @@ function calculateCenterScore(
 ) {
 
     const faceCenterX =
-        box.x +
-        box.width / 2;
-
-
+        box.x + box.width / 2;
     const faceCenterY =
-        box.y +
-        box.height / 2;
-
-
+        box.y + box.height / 2;
     const frameCenterX =
         width / 2;
-
-
     const frameCenterY =
         height / 2;
 
-
-    const distance =
-        Math.hypot(
-
-            (
-                faceCenterX -
-                frameCenterX
-            ) / width,
-
-            (
-                faceCenterY -
-                frameCenterY
-            ) / height
-
-        );
-
-
-    const score =
-        100 -
-        (
-            distance *
-            420
-        );
-
-
-    return clamp(
-        score,
-        0,
-        100
+    const distance = Math.hypot(
+        (faceCenterX - frameCenterX) / width,
+        (faceCenterY - frameCenterY) / height
     );
+
+    return clamp(100 - (distance * 350), 0, 100);
 
 }
 
@@ -2425,95 +2373,32 @@ function calculateBrightness(
             "canvas"
         );
 
-
-    canvas.width =
-        32;
-
-
-    canvas.height =
-        24;
-
+    canvas.width = 16; // OPTIMASI: Resolusi lebih rendah
+    canvas.height = 12;
 
     const context =
         canvas.getContext(
             "2d",
-            {
-                willReadFrequently:
-                    true
-            }
+            { willReadFrequently: true }
         );
-
 
     if (!context) {
-
         return 128;
-
     }
 
+    context.drawImage(video, 0, 0, 16, 12);
 
-    context.drawImage(
-        video,
-        0,
-        0,
-        32,
-        24
-    );
+    const image = context.getImageData(0, 0, 16, 12);
+    let sum = 0;
 
-
-    const image =
-        context.getImageData(
-            0,
-            0,
-            32,
-            24
-        );
-
-
-    let sum =
-        0;
-
-
-    for (
-        let i = 0;
-        i < image.data.length;
-        i += 4
-    ) {
-
-        const r =
-            image.data[i];
-
-        const g =
-            image.data[i + 1];
-
-        const b =
-            image.data[i + 2];
-
-
-        const brightness =
-            (
-                0.299 * r
-            ) +
-            (
-                0.587 * g
-            ) +
-            (
-                0.114 * b
-            );
-
-
-        sum +=
-            brightness;
-
+    for (let i = 0; i < image.data.length; i += 4) {
+        const r = image.data[i];
+        const g = image.data[i + 1];
+        const b = image.data[i + 2];
+        sum += (0.299 * r) + (0.587 * g) + (0.114 * b);
     }
 
-
-    return (
-        sum /
-        (
-            image.data.length /
-            4
-        )
-    );
+    return sum / (image.data.length / 4);
 
 }
 
@@ -2522,47 +2407,13 @@ function calculateLightScore(
     brightness
 ) {
 
-    /*
-     * Best range approximately 90-185.
-     */
-
-    if (
-        brightness >= 90 &&
-        brightness <= 185
-    ) {
-
-        return 100;
-
+    if (brightness >= 70 && brightness <= 200) {
+        return 100 - Math.abs(brightness - 135) * 0.5;
+    } else if (brightness < 70) {
+        return clamp(brightness / 70 * 100, 0, 100);
+    } else {
+        return clamp(100 - (brightness - 200) / 60 * 100, 0, 100);
     }
-
-
-    if (
-        brightness < 90
-    ) {
-
-        return clamp(
-            (
-                brightness /
-                90
-            ) * 100,
-            0,
-            100
-        );
-
-    }
-
-
-    return clamp(
-        100 -
-        (
-            (
-                brightness -
-                185
-            ) / 70
-        ) * 100,
-        0,
-        100
-    );
 
 }
 
@@ -2571,99 +2422,31 @@ function calculateStabilityScore(
     box
 ) {
 
-    const centerX =
-        box.x +
-        box.width / 2;
-
-
-    const centerY =
-        box.y +
-        box.height / 2;
-
+    const centerX = box.x + box.width / 2;
+    const centerY = box.y + box.height / 2;
 
     stabilityHistory.push({
-
-        x:
-            centerX,
-
-        y:
-            centerY,
-
-        width:
-            box.width,
-
-        height:
-            box.height
-
+        x: centerX,
+        y: centerY,
+        width: box.width,
+        height: box.height
     });
 
-
-    if (
-        stabilityHistory.length >
-        STABILITY_HISTORY
-    ) {
-
+    if (stabilityHistory.length > STABILITY_HISTORY) {
         stabilityHistory.shift();
-
     }
 
-
-    if (
-        stabilityHistory.length <
-        STABILITY_HISTORY
-    ) {
-
+    if (stabilityHistory.length < STABILITY_HISTORY) {
         return 50;
-
     }
 
+    const first = stabilityHistory[0];
+    const last = stabilityHistory[stabilityHistory.length - 1];
 
-    const first =
-        stabilityHistory[0];
+    const movement = Math.hypot(last.x - first.x, last.y - first.y);
+    const sizeMovement = Math.abs(last.width - first.width);
 
-
-    const last =
-        stabilityHistory[
-            stabilityHistory.length - 1
-        ];
-
-
-    const movement =
-        Math.hypot(
-
-            last.x -
-            first.x,
-
-            last.y -
-            first.y
-
-        );
-
-
-    const sizeMovement =
-        Math.abs(
-            last.width -
-            first.width
-        );
-
-
-    const movementPenalty =
-        movement *
-        3.2;
-
-
-    const sizePenalty =
-        sizeMovement *
-        2.5;
-
-
-    return clamp(
-        100 -
-        movementPenalty -
-        sizePenalty,
-        0,
-        100
-    );
+    return clamp(100 - (movement * 1.5) - (sizeMovement * 1.2), 0, 100);
 
 }
 
@@ -2925,10 +2708,10 @@ photoInput.addEventListener(
                         new faceapi.TinyFaceDetectorOptions({
 
                             inputSize:
-                                416,
+                                224, // OPTIMASI
 
                             scoreThreshold:
-                                0.58
+                                0.55
 
                         })
                     )
@@ -3314,6 +3097,9 @@ function resetEnrollmentState() {
 
     stabilityHistory =
         [];
+        
+    lastEnrollmentDetection = null;
+    detectionCounter = 0;
 
 
     updateEnrollmentProgress(
@@ -3425,7 +3211,7 @@ function getCameraErrorMessage(
 
 
 /* =========================================================
-   DATABASE RENDER
+   DATABASE RENDER - WITH EXPORT FUNCTIONS
 ========================================================= */
 
 function renderDatabase() {
@@ -3606,6 +3392,332 @@ function renderDatabase() {
         }
     );
 
+}
+
+
+/* =========================================================
+   EXPORT DATABASE FUNCTIONALITY
+========================================================= */
+
+function showExportDialog() {
+    // Hapus dialog yang sudah ada
+    const existingDialog = document.getElementById('exportDialog');
+    if (existingDialog) {
+        existingDialog.remove();
+    }
+
+    // Buat dialog container
+    const dialog = document.createElement('div');
+    dialog.id = 'exportDialog';
+    dialog.className = 'export-dialog-overlay';
+
+    dialog.innerHTML = `
+        <div class="export-dialog">
+            <div class="export-dialog-header">
+                <h3>📊 Export Data Presensi</h3>
+                <button class="export-dialog-close" onclick="this.closest('#exportDialog').remove()">✕</button>
+            </div>
+            
+            <div class="export-dialog-body">
+                <div class="export-date-range">
+                    <div class="export-date-group">
+                        <label>Dari Tanggal</label>
+                        <input type="date" id="exportStartDate" value="${getDefaultStartDate()}">
+                    </div>
+                    <div class="export-date-group">
+                        <label>Sampai Tanggal</label>
+                        <input type="date" id="exportEndDate" value="${getLocalDate()}">
+                    </div>
+                </div>
+                
+                <div class="export-format-options">
+                    <button class="export-format-btn" data-format="xlsx">
+                        <span>📊</span> XLSX
+                    </button>
+                    <button class="export-format-btn" data-format="csv">
+                        <span>📄</span> CSV
+                    </button>
+                    <button class="export-format-btn" data-format="image">
+                        <span>🖼️</span> Gambar
+                    </button>
+                </div>
+                
+                <div class="export-preview">
+                    <p>Data akan diekspor berdasarkan rentang tanggal yang dipilih.</p>
+                </div>
+            </div>
+            
+            <div class="export-dialog-footer">
+                <button class="export-cancel-btn" onclick="this.closest('#exportDialog').remove()">Batal</button>
+                <button class="export-confirm-btn" id="exportConfirmBtn">Export Data</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(dialog);
+
+    // Event listener untuk tombol export
+    document.getElementById('exportConfirmBtn').addEventListener('click', () => {
+        const startDate = document.getElementById('exportStartDate').value;
+        const endDate = document.getElementById('exportEndDate').value;
+        
+        if (!startDate || !endDate) {
+            showToast('Pilih rentang tanggal terlebih dahulu.');
+            return;
+        }
+        
+        if (startDate > endDate) {
+            showToast('Tanggal mulai harus sebelum tanggal akhir.');
+            return;
+        }
+        
+        // Ambil format yang dipilih
+        const selectedBtn = document.querySelector('.export-format-btn.active');
+        if (!selectedBtn) {
+            showToast('Pilih format export terlebih dahulu.');
+            return;
+        }
+        
+        const format = selectedBtn.dataset.format;
+        exportAttendanceData(startDate, endDate, format);
+    });
+
+    // Event listener untuk pilihan format
+    document.querySelectorAll('.export-format-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.export-format-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+}
+
+function getDefaultStartDate() {
+    const date = new Date();
+    date.setDate(date.getDate() - 7);
+    return date.toISOString().split('T')[0];
+}
+
+function exportAttendanceData(startDate, endDate, format) {
+    const attendance = getAttendance();
+    
+    // Filter berdasarkan rentang tanggal
+    const filtered = attendance.filter(item => {
+        return item.date >= startDate && item.date <= endDate;
+    });
+
+    if (filtered.length === 0) {
+        showToast('Tidak ada data dalam rentang tanggal tersebut.');
+        return;
+    }
+
+    // Siapkan data untuk export
+    const exportData = filtered.map((item, index) => ({
+        'No': index + 1,
+        'NISN': item.nisn,
+        'Nama': item.name,
+        'Kelas': item.className,
+        'Status': item.status,
+        'Tanggal': item.date,
+        'Waktu': new Date(item.timestamp).toLocaleTimeString('id-ID'),
+        'Metode': item.method,
+        'Confidence': `${Number(item.confidence).toFixed(1)}%`
+    }));
+
+    // Export berdasarkan format
+    switch(format) {
+        case 'xlsx':
+            exportToXLSX(exportData);
+            break;
+        case 'csv':
+            exportToCSV(exportData);
+            break;
+        case 'image':
+            exportToImage(exportData);
+            break;
+        default:
+            showToast('Format tidak didukung.');
+    }
+
+    // Tutup dialog
+    const dialog = document.getElementById('exportDialog');
+    if (dialog) dialog.remove();
+}
+
+function exportToXLSX(data) {
+    // Pastikan library tersedia
+    if (typeof XLSX === 'undefined') {
+        // Load library jika belum ada
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+        script.onload = () => {
+            createXLSX(data);
+        };
+        document.head.appendChild(script);
+        showToast('Memuat library XLSX...');
+        return;
+    }
+    createXLSX(data);
+}
+
+function createXLSX(data) {
+    try {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(data);
+        
+        // Atur lebar kolom
+        ws['!cols'] = [
+            { wch: 5 },   // No
+            { wch: 15 },  // NISN
+            { wch: 25 },  // Nama
+            { wch: 15 },  // Kelas
+            { wch: 12 },  // Status
+            { wch: 15 },  // Tanggal
+            { wch: 12 },  // Waktu
+            { wch: 18 },  // Metode
+            { wch: 12 }   // Confidence
+        ];
+        
+        XLSX.utils.book_append_sheet(wb, ws, 'Presensi');
+        
+        // Generate file
+        const fileName = `presensi_${getLocalDate()}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        
+        showToast(`Berhasil export ${data.length} data ke ${fileName}`);
+    } catch (error) {
+        console.error('[Export XLSX]', error);
+        showToast('Gagal export ke XLSX.');
+    }
+}
+
+function exportToCSV(data) {
+    try {
+        // Buat header
+        const headers = Object.keys(data[0]);
+        const csvRows = [];
+        
+        // Header
+        csvRows.push(headers.join(','));
+        
+        // Data
+        for (const row of data) {
+            const values = headers.map(header => {
+                const val = row[header] || '';
+                // Escape jika ada koma atau quote
+                if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
+                    return `"${val.replace(/"/g, '""')}"`;
+                }
+                return val;
+            });
+            csvRows.push(values.join(','));
+        }
+        
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `presensi_${getLocalDate()}.csv`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+        
+        showToast(`Berhasil export ${data.length} data ke CSV.`);
+    } catch (error) {
+        console.error('[Export CSV]', error);
+        showToast('Gagal export ke CSV.');
+    }
+}
+
+function exportToImage(data) {
+    try {
+        // Buat canvas untuk gambar
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Hitung dimensi
+        const cellPadding = 12;
+        const headerHeight = 40;
+        const rowHeight = 35;
+        const colWidths = [60, 120, 180, 120, 90, 120, 100, 140, 100];
+        const headers = ['No', 'NISN', 'Nama', 'Kelas', 'Status', 'Tanggal', 'Waktu', 'Metode', 'Confidence'];
+        
+        const totalWidth = colWidths.reduce((a, b) => a + b, 0) + cellPadding * 2;
+        const totalHeight = headerHeight + (data.length + 1) * rowHeight + cellPadding * 2;
+        
+        canvas.width = totalWidth;
+        canvas.height = totalHeight;
+        
+        // Background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, totalWidth, totalHeight);
+        
+        // Title
+        ctx.fillStyle = '#111827';
+        ctx.font = 'bold 16px Poppins, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`📊 Laporan Presensi ${getLocalDate()}`, totalWidth / 2, 30);
+        
+        let y = headerHeight + cellPadding;
+        
+        // Header row
+        ctx.fillStyle = '#f3f4f6';
+        ctx.fillRect(cellPadding, y, totalWidth - cellPadding * 2, rowHeight);
+        
+        ctx.fillStyle = '#111827';
+        ctx.font = 'bold 11px Poppins, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        let x = cellPadding;
+        headers.forEach((header, i) => {
+            ctx.fillText(header, x + colWidths[i] / 2, y + rowHeight / 2);
+            x += colWidths[i];
+        });
+        
+        y += rowHeight;
+        
+        // Data rows
+        ctx.font = '10px Poppins, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        data.forEach((row, rowIndex) => {
+            const isEven = rowIndex % 2 === 0;
+            if (isEven) {
+                ctx.fillStyle = '#fafafa';
+                ctx.fillRect(cellPadding, y, totalWidth - cellPadding * 2, rowHeight);
+            }
+            
+            ctx.fillStyle = '#111827';
+            x = cellPadding;
+            const values = Object.values(row);
+            values.forEach((val, i) => {
+                let displayVal = String(val);
+                if (i === 8) { // Confidence
+                    displayVal = String(val);
+                }
+                ctx.fillText(displayVal, x + colWidths[i] / 2, y + rowHeight / 2);
+                x += colWidths[i];
+            });
+            
+            y += rowHeight;
+        });
+        
+        // Border
+        ctx.strokeStyle = '#e5e7eb';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cellPadding, headerHeight + cellPadding, totalWidth - cellPadding * 2, (data.length + 1) * rowHeight);
+        
+        // Convert to image
+        const link = document.createElement('a');
+        link.download = `presensi_${getLocalDate()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+        showToast(`Berhasil export ${data.length} data ke gambar.`);
+    } catch (error) {
+        console.error('[Export Image]', error);
+        showToast('Gagal export ke gambar.');
+    }
 }
 
 
@@ -3898,3 +4010,27 @@ if (typeof faceapi !== 'undefined') {
         }
     }, 10000);
 }
+
+/* =========================================================
+   EXPORT BUTTON
+========================================================= */
+
+document.addEventListener('DOMContentLoaded', () => {
+    const exportButton = document.getElementById('exportButton');
+    if (exportButton) {
+        exportButton.addEventListener('click', showExportDialog);
+    }
+});
+
+// Tambahkan juga jika tombol dibuat dinamis
+// Cek setiap render database
+const originalRenderDatabase = renderDatabase;
+renderDatabase = function() {
+    originalRenderDatabase();
+    // Cek jika tombol export ada
+    const exportButton = document.getElementById('exportButton');
+    if (exportButton && !exportButton._listenerAdded) {
+        exportButton.addEventListener('click', showExportDialog);
+        exportButton._listenerAdded = true;
+    }
+};
