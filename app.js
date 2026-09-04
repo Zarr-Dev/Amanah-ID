@@ -1,15 +1,15 @@
 "use strict";
 
 /* =========================================================
-   AMANAH ID v3.0 - FULL APPLICATION (ULTRA FAST)
+   AMANAH ID v3.0 - ULTRA FAST
 ========================================================= */
 
 // =========================================================
 // CONFIGURATION
 // =========================================================
 
-const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
-const MODEL_URL_BACKUP = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models";
+const MODEL_URL = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models";
+const MODEL_URL_BACKUP = "https://justadudewhohacks.github.io/face-api.js/models";
 
 const FACE_MATCH_THRESHOLD = 0.42;
 const ATTENDANCE_INTERVAL = 350;
@@ -26,6 +26,7 @@ let modelsReady = false;
 let isAuthenticated = false;
 let currentUser = null;
 let modelLoadingStarted = false;
+let modelLoadingComplete = false;
 
 let attendanceStream = null;
 let enrollmentStream = null;
@@ -91,12 +92,12 @@ function handleAuth() {
             isAuthenticated = true;
             authPage.style.display = 'none';
             mainApp.style.display = 'flex';
-            // Mulai load models DI BELAKANG LAYAR setelah login
+            // Load models di background - TIDAK MENUNGGU
             setTimeout(() => {
                 if (!modelsReady && !modelLoadingStarted) {
-                    loadModels();
+                    loadModelsInBackground();
                 }
-            }, 300);
+            }, 500);
             initApp();
         } catch {
             authPage.style.display = 'flex';
@@ -143,14 +144,13 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     localStorage.setItem('amanah_session', JSON.stringify(user));
     document.getElementById('authPage').style.display = 'none';
     document.getElementById('mainApp').style.display = 'flex';
-    showToast(`Selamat datang, ${user.name}!`);
+    showToast('Selamat datang, ' + user.name + '!');
     
-    // Load models di background setelah login
     setTimeout(() => {
         if (!modelsReady && !modelLoadingStarted) {
-            loadModels();
+            loadModelsInBackground();
         }
-    }, 200);
+    }, 300);
     
     initApp();
 });
@@ -318,7 +318,7 @@ function createId() {
 
 function getLocalDate() {
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, "0") + '-' + String(now.getDate()).padStart(2, "0");
 }
 
 // =========================================================
@@ -341,62 +341,88 @@ navItems.forEach(button => {
 });
 
 // =========================================================
-// LOAD MODELS - SUPER CEPAT DI BACKGROUND
+// LOAD MODELS - BACKGROUND (TIDAK MENGHALANGI)
 // =========================================================
 
-async function loadModels() {
-    if (modelLoadingStarted) return;
+function loadModelsInBackground() {
+    if (modelLoadingStarted || modelLoadingComplete) return;
     modelLoadingStarted = true;
     
-    // Tampilkan loading screen dengan progress
+    // Tampilkan loading screen singkat
     const loadingScreen = document.getElementById('modelLoading');
     loadingScreen.classList.remove('hidden');
     
     // Update status
-    updateLoadingStatus('⏳ Memulai...', 0);
+    updateLoadingStatus('Memuat model AI...', 0);
     
     if (typeof faceapi === 'undefined') {
         console.error("[Amanah ID] face-api.js not loaded");
-        showModelError("Library face-api.js tidak ditemukan", "Pastikan koneksi internet aktif.");
+        setTimeout(() => {
+            loadingScreen.classList.add('hidden');
+            showToast('Library face-api.js tidak ditemukan.');
+        }, 2000);
         return;
     }
 
+    // Load dengan timeout agresif
+    const loadTimeout = setTimeout(() => {
+        loadingScreen.classList.add('hidden');
+        showToast('Model AI gagal dimuat, coba lagi nanti.');
+        modelLoadingStarted = false;
+    }, 15000);
+
+    // Jalankan loading di background
+    loadModelsAsync(loadTimeout);
+}
+
+async function loadModelsAsync(loadTimeout) {
     try {
         console.log("[Amanah ID] Loading models in background...");
-        updateLoadingStatus('📥 Mengunduh model AI...', 15);
+        updateLoadingStatus('Mengunduh model AI...', 20);
         
-        // Load dengan timeout lebih cepat
         await loadModelsFromUrl(MODEL_URL);
         
         modelsReady = true;
-        updateLoadingStatus('✅ Siap digunakan!', 100);
+        modelLoadingComplete = true;
+        
+        updateLoadingStatus('Siap!', 100);
         
         setTimeout(() => {
+            const loadingScreen = document.getElementById('modelLoading');
             loadingScreen.classList.add('hidden');
-        }, 400);
+            clearTimeout(loadTimeout);
+        }, 300);
         
         updateSaveButton();
         console.log("[Amanah ID] AI models ready.");
-        showToast("✅ Sistem AI siap digunakan.");
+        showToast("Sistem AI siap digunakan.");
     } catch (error) {
         console.error("[Amanah ID] Primary error:", error);
         try {
-            updateLoadingStatus('🔄 Mencoba server cadangan...', 40);
+            updateLoadingStatus('Mencoba server cadangan...', 40);
             await loadModelsFromUrl(MODEL_URL_BACKUP);
+            
             modelsReady = true;
-            updateLoadingStatus('✅ Siap digunakan (cadangan)!', 100);
+            modelLoadingComplete = true;
+            
+            updateLoadingStatus('Siap!', 100);
             
             setTimeout(() => {
+                const loadingScreen = document.getElementById('modelLoading');
                 loadingScreen.classList.add('hidden');
-            }, 400);
+                clearTimeout(loadTimeout);
+            }, 300);
             
             updateSaveButton();
             console.log("[Amanah ID] AI models loaded from backup.");
-            showToast("✅ Sistem AI siap (server cadangan).");
+            showToast("Sistem AI siap (server cadangan).");
         } catch (backupError) {
             console.error("[Amanah ID] Backup error:", backupError);
-            updateLoadingStatus('❌ Gagal memuat model', 0);
-            showModelError("Model AI gagal dimuat", "Periksa koneksi internet dan refresh halaman.");
+            clearTimeout(loadTimeout);
+            const loadingScreen = document.getElementById('modelLoading');
+            loadingScreen.classList.add('hidden');
+            showToast('Gagal memuat model AI. Refresh halaman.');
+            modelLoadingStarted = false;
         }
     }
 }
@@ -404,47 +430,30 @@ async function loadModels() {
 function updateLoadingStatus(message, progress) {
     const loadingScreen = document.getElementById('modelLoading');
     const statusSpan = loadingScreen.querySelector('span');
-    const strongEl = loadingScreen.querySelector('strong');
-    
     if (statusSpan) {
         statusSpan.textContent = message;
     }
     
-    // Update progress bar jika ada
     let progressBar = document.getElementById('loadProgress');
     if (!progressBar) {
-        // Buat progress bar jika belum ada
         progressBar = document.createElement('div');
         progressBar.id = 'loadProgress';
-        progressBar.style.cssText = `
-            width: 200px;
-            height: 4px;
-            background: #e5e7eb;
-            border-radius: 999px;
-            overflow: hidden;
-            margin-top: 12px;
-        `;
+        progressBar.style.cssText = 'width:200px;height:4px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:12px;';
         const fill = document.createElement('div');
         fill.id = 'loadProgressFill';
-        fill.style.cssText = `
-            width: 0%;
-            height: 100%;
-            background: #2d7d2d;
-            border-radius: inherit;
-            transition: width 0.3s ease;
-        `;
+        fill.style.cssText = 'width:0%;height:100%;background:#2d7d2d;border-radius:inherit;transition:width 0.3s ease;';
         progressBar.appendChild(fill);
         loadingScreen.appendChild(progressBar);
     }
     
     const fill = document.getElementById('loadProgressFill');
     if (fill) {
-        fill.style.width = `${Math.min(progress, 100)}%`;
+        fill.style.width = Math.min(progress, 100) + '%';
     }
 }
 
 async function loadModelsFromUrl(url) {
-    const timeout = 15000; // 15 detik timeout (lebih cepat)
+    const timeout = 10000;
     
     const loadPromises = [
         faceapi.nets.tinyFaceDetector.loadFromUri(url),
@@ -453,40 +462,10 @@ async function loadModelsFromUrl(url) {
     ];
     
     const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error(`Loading timed out`)), timeout);
+        setTimeout(() => reject(new Error('Loading timed out')), timeout);
     });
     
     await Promise.race([Promise.all(loadPromises), timeoutPromise]);
-}
-
-function showModelError(titleMessage, subtitleMessage) {
-    const loadingScreen = document.getElementById('modelLoading');
-    const title = loadingScreen.querySelector("strong");
-    const subtitle = loadingScreen.querySelector("span");
-    if (title) title.textContent = titleMessage || "Model AI gagal dimuat";
-    if (subtitle) subtitle.textContent = subtitleMessage || "Periksa koneksi internet dan refresh halaman.";
-    
-    // Hapus progress bar jika ada
-    const progressBar = document.getElementById('loadProgress');
-    if (progressBar) progressBar.remove();
-    
-    // Tambah tombol retry
-    const retryBtn = document.createElement("button");
-    retryBtn.textContent = "🔄 Coba Lagi";
-    retryBtn.className = "primary-button";
-    retryBtn.style.marginTop = "16px";
-    retryBtn.style.width = "auto";
-    retryBtn.style.padding = "10px 28px";
-    retryBtn.addEventListener("click", () => {
-        retryBtn.remove();
-        modelLoadingStarted = false;
-        const titleEl = loadingScreen.querySelector("strong");
-        const subtitleEl = loadingScreen.querySelector("span");
-        if (titleEl) titleEl.textContent = "Amanah ID";
-        if (subtitleEl) subtitleEl.textContent = "⏳ Menyiapkan sistem computer vision...";
-        loadModels();
-    });
-    loadingScreen.appendChild(retryBtn);
 }
 
 // =========================================================
@@ -513,27 +492,32 @@ async function requestCamera() {
 // =========================================================
 
 async function startAttendanceCamera() {
-    if (!modelsReady) { 
-        showToast("⏳ Sistem AI sedang disiapkan...");
-        // Coba load models jika belum
+    if (!modelsReady) {
+        showToast("AI sedang disiapkan, tunggu sebentar...");
         if (!modelLoadingStarted) {
-            loadModels();
+            loadModelsInBackground();
         }
-        return; 
+        // Tunggu 2 detik lalu coba lagi
+        setTimeout(() => {
+            if (modelsReady) {
+                startAttendanceCamera();
+            }
+        }, 2000);
+        return;
     }
     try {
         stopAttendanceCamera();
         attendanceError.classList.remove("show");
-        attendanceStatus.textContent = "📷 Mengaktifkan kamera...";
+        attendanceStatus.textContent = "Mengaktifkan kamera...";
         attendanceStream = await requestCamera();
         attendanceVideo.srcObject = attendanceStream;
         await attendanceVideo.play();
-        attendanceStatus.textContent = "🔍 Mencari wajah...";
+        attendanceStatus.textContent = "Mencari wajah...";
         attendanceCameraButton.title = "Matikan kamera";
         startAttendanceLoop();
     } catch (error) {
         console.error("[Attendance Camera]", error);
-        attendanceStatus.textContent = "⚠️ Kamera tidak tersedia";
+        attendanceStatus.textContent = "Kamera tidak tersedia";
         attendanceError.classList.add("show");
         showToast("Kamera gagal diakses.");
     }
@@ -548,7 +532,7 @@ function stopAttendanceCamera() {
     attendanceVideo.srcObject = null;
     attendanceOverlay.innerHTML = "";
     welcomeMessage.classList.remove("show");
-    attendanceStatus.textContent = "📷 Kamera belum aktif";
+    attendanceStatus.textContent = "Kamera belum aktif";
     attendanceCameraButton.title = "Aktifkan kamera";
     attendanceProcessing = false;
     attendanceMatchStudentId = null;
@@ -577,7 +561,7 @@ async function processAttendanceFrame() {
         attendanceOverlay.innerHTML = "";
 
         if (detections.length === 0) {
-            attendanceStatus.textContent = "🔍 Mencari wajah...";
+            attendanceStatus.textContent = "Mencari wajah...";
             welcomeMessage.classList.remove("show");
             attendanceMatchStudentId = null;
             attendanceMatchFrames = 0;
@@ -601,8 +585,8 @@ async function processAttendanceFrame() {
 
         if (recognizedFaces.length === 0) {
             attendanceStatus.textContent = detections.length === 1
-                ? "👤 Wajah terdeteksi • belum cocok"
-                : `${detections.length} wajah • tidak ada identitas cocok`;
+                ? "Wajah terdeteksi, belum cocok"
+                : detections.length + " wajah, tidak ada identitas cocok";
             welcomeMessage.classList.remove("show");
             attendanceMatchStudentId = null;
             attendanceMatchFrames = 0;
@@ -620,10 +604,10 @@ async function processAttendanceFrame() {
             attendanceMatchFrames = 1;
         }
 
-        attendanceStatus.textContent = `✅ ${student.name} terdeteksi`;
+        attendanceStatus.textContent = student.name + " terdeteksi";
 
         if (attendanceMatchFrames >= REQUIRED_MATCH_FRAMES) {
-            welcomeMessage.textContent = `👋 Selamat datang, ${student.name}!`;
+            welcomeMessage.textContent = "Selamat datang, " + student.name + "!";
             welcomeMessage.classList.add("show");
             registerAttendance(student, best.match.distance);
         } else {
@@ -645,7 +629,7 @@ function createFaceOutline(box, recognized) {
     const outline = document.createElement("div");
     outline.className = recognized ? "face-outline recognized" : "face-outline";
     const mapped = mapVideoBox(box, attendanceVideo, true);
-    outline.style.cssText = `left:${mapped.x}px;top:${mapped.y}px;width:${mapped.width}px;height:${mapped.height}px;`;
+    outline.style.cssText = 'left:' + mapped.x + 'px;top:' + mapped.y + 'px;width:' + mapped.width + 'px;height:' + mapped.height + 'px;';
     attendanceOverlay.appendChild(outline);
 }
 
@@ -663,7 +647,7 @@ function mapVideoBox(box, video, mirrored) {
     if (mirrored) {
         x = containerWidth - (offsetX + (box.x + box.width) * scale);
     }
-    return { x, y: offsetY + box.y * scale, width: box.width * scale, height: box.height * scale };
+    return { x: x, y: offsetY + box.y * scale, width: box.width * scale, height: box.height * scale };
 }
 
 // =========================================================
@@ -718,7 +702,7 @@ function registerAttendance(student, distance) {
     attendance.unshift(record);
     saveAttendance(attendance);
     renderDatabase();
-    showToast(`✅ ${student.name} berhasil presensi!`);
+    showToast(student.name + " berhasil presensi!");
 }
 
 // =========================================================
@@ -726,12 +710,17 @@ function registerAttendance(student, distance) {
 // =========================================================
 
 async function startEnrollmentCamera() {
-    if (!modelsReady) { 
-        showToast("⏳ Sistem AI sedang disiapkan...");
+    if (!modelsReady) {
+        showToast("AI sedang disiapkan, tunggu sebentar...");
         if (!modelLoadingStarted) {
-            loadModels();
+            loadModelsInBackground();
         }
-        return; 
+        setTimeout(() => {
+            if (modelsReady) {
+                startEnrollmentCamera();
+            }
+        }, 2000);
+        return;
     }
     try {
         stopEnrollmentCamera();
@@ -742,7 +731,7 @@ async function startEnrollmentCamera() {
         enrollmentVideo.classList.add("active");
         previewPlaceholder.style.display = "none";
         await waitForVideoReady(enrollmentVideo);
-        setValidation("📷 Kamera aktif. Posisikan wajah di tengah.", true);
+        setValidation("Kamera aktif. Posisikan wajah di tengah.", true);
         startEnrollmentLoop();
     } catch (error) {
         console.error("[Enrollment Camera]", error);
@@ -814,7 +803,7 @@ async function processEnrollmentFrame() {
             enrollmentReadyFrames = 0;
             lastEnrollmentDetection = null;
             updateEnrollmentProgress(0);
-            setValidation("👤 Wajah belum terdeteksi.", false);
+            setValidation("Wajah belum terdeteksi.", false);
             return;
         }
 
@@ -822,7 +811,7 @@ async function processEnrollmentFrame() {
             enrollmentReadyFrames = 0;
             lastEnrollmentDetection = null;
             updateEnrollmentProgress(5);
-            setValidation("⚠️ Hanya satu wajah yang boleh berada di kamera.", false);
+            setValidation("Hanya satu wajah yang boleh berada di kamera.", false);
             return;
         }
 
@@ -893,11 +882,11 @@ async function processEnrollmentFrame() {
             enrollmentReadyFrames = 0;
         }
 
-        if (enrollmentProgress < 25) setValidation("🔍 Mendeteksi wajah...", true);
-        else if (enrollmentProgress < 50) setValidation("📊 Analisis kualitas...", true);
-        else if (enrollmentProgress < 75) setValidation("🎯 Pertahankan posisi...", true);
-        else if (enrollmentProgress < 100) setValidation("⏳ Hampir selesai...", true);
-        else setValidation("✅ Siap!", true);
+        if (enrollmentProgress < 25) setValidation("Mendeteksi wajah...", true);
+        else if (enrollmentProgress < 50) setValidation("Analisis kualitas...", true);
+        else if (enrollmentProgress < 75) setValidation("Pertahankan posisi...", true);
+        else if (enrollmentProgress < 100) setValidation("Hampir selesai...", true);
+        else setValidation("Siap!", true);
 
         if (enrollmentProgress >= 100 && enrollmentReadyFrames >= REQUIRED_CAPTURE_FRAMES) {
             await captureEnrollment(detection);
@@ -941,8 +930,8 @@ function calculateLightScore(brightness) {
 function updateEnrollmentProgress(value) {
     enrollmentProgress = clamp(value, 0, 100);
     const percentage = Math.round(enrollmentProgress);
-    aiProgress.style.width = `${percentage}%`;
-    aiPercent.textContent = `${percentage}%`;
+    aiProgress.style.width = percentage + '%';
+    aiPercent.textContent = percentage + '%';
 }
 
 function setValidation(message, success) {
@@ -989,9 +978,9 @@ async function captureEnrollment(detection) {
     addReplaceButton();
 
     updateEnrollmentProgress(100);
-    setValidation("✅ Foto wajah berhasil diverifikasi!", true);
+    setValidation("Foto wajah berhasil diverifikasi!", true);
     updateSaveButton();
-    showToast("📸 Wajah berhasil ditangkap!");
+    showToast("Wajah berhasil ditangkap!");
 }
 
 function addReplaceButton() {
@@ -1000,7 +989,7 @@ function addReplaceButton() {
     const replaceBtn = document.createElement('button');
     replaceBtn.id = 'replaceImageBtn';
     replaceBtn.className = 'replace-image-btn';
-    replaceBtn.innerHTML = '🔄 Ganti Foto';
+    replaceBtn.innerHTML = 'Ganti Foto';
     replaceBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         clearEnrollmentImage();
@@ -1014,9 +1003,9 @@ function addReplaceButton() {
 // UPLOAD IMAGE
 // =========================================================
 
-uploadButton.addEventListener("click", () => photoInput.click());
+uploadButton.addEventListener("click", function() { photoInput.click(); });
 
-photoInput.addEventListener("change", async event => {
+photoInput.addEventListener("change", async function(event) {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
@@ -1038,14 +1027,14 @@ photoInput.addEventListener("change", async event => {
         ).withFaceLandmarks().withFaceDescriptors();
 
         if (detections.length === 0) {
-            setValidation("❌ Foto ditolak: wajah tidak ditemukan.", false);
+            setValidation("Foto ditolak: wajah tidak ditemukan.", false);
             clearEnrollmentImage();
             showToast("Wajah tidak terdeteksi di foto.");
             return;
         }
 
         if (detections.length > 1) {
-            setValidation("❌ Foto ditolak: lebih dari satu wajah.", false);
+            setValidation("Foto ditolak: lebih dari satu wajah.", false);
             clearEnrollmentImage();
             showToast("Deteksi lebih dari satu wajah.");
             return;
@@ -1056,7 +1045,7 @@ photoInput.addEventListener("change", async event => {
         const areaRatio = (box.width * box.height) / (image.width * image.height);
 
         if (areaRatio < 0.025) {
-            setValidation("❌ Wajah terlalu kecil dalam foto.", false);
+            setValidation("Wajah terlalu kecil dalam foto.", false);
             clearEnrollmentImage();
             return;
         }
@@ -1064,7 +1053,7 @@ photoInput.addEventListener("change", async event => {
         currentEnrollmentDescriptor = Array.from(detection.descriptor);
         currentEnrollmentImage = image.src;
         updateEnrollmentProgress(100);
-        setValidation("✅ Foto diterima. Wajah berhasil dianalisis.", true);
+        setValidation("Foto diterima. Wajah berhasil dianalisis.", true);
         addReplaceButton();
         updateSaveButton();
     } catch (error) {
@@ -1080,7 +1069,7 @@ photoInput.addEventListener("change", async event => {
 // FORM VALIDATION
 // =========================================================
 
-[nisnInput, studentNameInput, studentClassInput].forEach(input => {
+[nisnInput, studentNameInput, studentClassInput].forEach(function(input) {
     input.addEventListener("input", updateSaveButton);
 });
 
@@ -1103,7 +1092,7 @@ function updateSaveButton() {
 // SAVE STUDENT
 // =========================================================
 
-saveStudentButton.addEventListener("click", () => {
+saveStudentButton.addEventListener("click", function() {
     const nisn = nisnInput.value.trim();
     const name = studentNameInput.value.trim();
     const className = studentClassInput.value.trim();
@@ -1114,7 +1103,7 @@ saveStudentButton.addEventListener("click", () => {
     if (!currentEnrollmentDescriptor) { showToast("Wajah belum diverifikasi."); return; }
 
     const students = getStudents();
-    if (students.find(s => s.nisn === nisn)) {
+    if (students.find(function(s) { return s.nisn === nisn; })) {
         showToast("NISN tersebut sudah terdaftar.");
         return;
     }
@@ -1144,11 +1133,11 @@ saveStudentButton.addEventListener("click", () => {
     resetEnrollmentState();
     updateSaveButton();
     renderDatabase();
-    showToast(`✅ ${name} berhasil didaftarkan!`);
+    showToast(name + " berhasil didaftarkan!");
 });
 
 // =========================================================
-// DATABASE RENDER - DENGAN FITUR HAPUS
+// DATABASE RENDER
 // =========================================================
 
 let filteredData = [];
@@ -1157,21 +1146,21 @@ function renderDatabase() {
     const students = getStudents();
     const attendance = getAttendance();
     const today = getLocalDate();
-    const todayAttendance = attendance.filter(item => item.date === today);
+    const todayAttendance = attendance.filter(function(item) { return item.date === today; });
 
     totalStudents.textContent = students.length;
     totalPresent.textContent = todayAttendance.length;
     totalHistory.textContent = attendance.length;
 
     const percentage = students.length > 0 ? Math.round((todayAttendance.length / students.length) * 100) : 0;
-    attendancePercentage.textContent = `${Math.min(percentage, 100)}%`;
+    attendancePercentage.textContent = Math.min(percentage, 100) + '%';
 
     const searchTerm = dbSearch.value.toLowerCase().trim();
     const startDate = dbDateStart.value;
     const endDate = dbDateEnd.value;
 
-    filteredData = attendance.filter(item => {
-        let match = true;
+    filteredData = attendance.filter(function(item) {
+        var match = true;
         if (searchTerm) {
             match = match && (
                 item.nisn.toLowerCase().includes(searchTerm) ||
@@ -1198,42 +1187,30 @@ function renderDatabase() {
 
     emptyDatabase.style.display = "none";
 
-    filteredData.forEach((item, index) => {
-        const date = new Date(item.timestamp);
-        const dateText = date.toLocaleDateString("id-ID");
-        const timeText = date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    filteredData.forEach(function(item, index) {
+        var date = new Date(item.timestamp);
+        var dateText = date.toLocaleDateString("id-ID");
+        var timeText = date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>${index + 1}</td>
-            <td><strong>${escapeHTML(item.nisn)}</strong></td>
-            <td>${escapeHTML(item.name)}</td>
-            <td>${escapeHTML(item.className)}</td>
-            <td><span class="status-pill"><span class="status-dot"></span>${escapeHTML(item.status)}</span></td>
-            <td>${dateText}</td>
-            <td>${timeText}</td>
-            <td>${escapeHTML(item.method)}</td>
-            <td>${Number(item.confidence).toFixed(1)}%</td>
-            <td>
-                <div class="row-actions">
-                    <button class="row-action-btn" data-id="${item.id}" title="Hapus">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                            <line x1="10" y1="11" x2="10" y2="17"/>
-                            <line x1="14" y1="11" x2="14" y2="17"/>
-                        </svg>
-                    </button>
-                </div>
-            </td>
-        `;
+        var row = document.createElement("tr");
+        row.innerHTML = 
+            '<td>' + (index + 1) + '</td>' +
+            '<td><strong>' + escapeHTML(item.nisn) + '</strong></td>' +
+            '<td>' + escapeHTML(item.name) + '</td>' +
+            '<td>' + escapeHTML(item.className) + '</td>' +
+            '<td><span class="status-pill"><span class="status-dot"></span>' + escapeHTML(item.status) + '</span></td>' +
+            '<td>' + dateText + '</td>' +
+            '<td>' + timeText + '</td>' +
+            '<td>' + escapeHTML(item.method) + '</td>' +
+            '<td>' + Number(item.confidence).toFixed(1) + '%</td>' +
+            '<td><div class="row-actions"><button class="row-action-btn" data-id="' + item.id + '" title="Hapus"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button></div></td>';
         attendanceTableBody.appendChild(row);
     });
 
-    // Event listener untuk tombol hapus
-    document.querySelectorAll('.row-action-btn').forEach(btn => {
+    document.querySelectorAll('.row-action-btn').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
-            const id = this.dataset.id;
+            var id = this.dataset.id;
             showDeleteConfirm(id);
         });
     });
@@ -1244,38 +1221,35 @@ function renderDatabase() {
 // =========================================================
 
 function showDeleteConfirm(id) {
-    // Hapus dialog lama
-    const oldDialog = document.getElementById('deleteDialog');
+    var oldDialog = document.getElementById('deleteDialog');
     if (oldDialog) oldDialog.remove();
 
-    const dialog = document.createElement('div');
+    var dialog = document.createElement('div');
     dialog.id = 'deleteDialog';
     dialog.className = 'delete-dialog-overlay';
-    dialog.innerHTML = `
-        <div class="delete-dialog">
-            <div class="delete-dialog-icon">🗑️</div>
-            <h3>Hapus Data Presensi</h3>
-            <p>Apakah Anda yakin ingin menghapus data ini?</p>
-            <p class="delete-dialog-sub">Tindakan ini tidak dapat dibatalkan.</p>
-            <div class="delete-dialog-actions">
-                <button class="delete-cancel-btn">Batal</button>
-                <button class="delete-confirm-btn" data-id="${id}">Hapus</button>
-            </div>
-        </div>
-    `;
+    dialog.innerHTML = 
+        '<div class="delete-dialog">' +
+            '<div class="delete-dialog-icon">🗑️</div>' +
+            '<h3>Hapus Data Presensi</h3>' +
+            '<p>Apakah Anda yakin ingin menghapus data ini?</p>' +
+            '<p class="delete-dialog-sub">Tindakan ini tidak dapat dibatalkan.</p>' +
+            '<div class="delete-dialog-actions">' +
+                '<button class="delete-cancel-btn">Batal</button>' +
+                '<button class="delete-confirm-btn" data-id="' + id + '">Hapus</button>' +
+            '</div>' +
+        '</div>';
     document.body.appendChild(dialog);
 
-    dialog.querySelector('.delete-cancel-btn').addEventListener('click', () => {
+    dialog.querySelector('.delete-cancel-btn').addEventListener('click', function() {
         dialog.remove();
     });
 
     dialog.querySelector('.delete-confirm-btn').addEventListener('click', function() {
-        const id = this.dataset.id;
+        var id = this.dataset.id;
         deleteAttendanceRecord(id);
         dialog.remove();
     });
 
-    // Tutup dengan klik di luar
     dialog.addEventListener('click', function(e) {
         if (e.target === this) {
             this.remove();
@@ -1284,47 +1258,45 @@ function showDeleteConfirm(id) {
 }
 
 function deleteAttendanceRecord(id) {
-    let attendance = getAttendance();
-    const record = attendance.find(item => item.id === id);
+    var attendance = getAttendance();
+    var record = attendance.find(function(item) { return item.id === id; });
     if (!record) {
         showToast('Data tidak ditemukan.');
         return;
     }
     
-    attendance = attendance.filter(item => item.id !== id);
+    attendance = attendance.filter(function(item) { return item.id !== id; });
     saveAttendance(attendance);
     renderDatabase();
-    showToast(`🗑️ Data presensi ${record.name} telah dihapus.`);
+    showToast('Data presensi ' + record.name + ' telah dihapus.');
 }
 
 function deleteAllAttendance() {
-    // Hapus dialog lama
-    const oldDialog = document.getElementById('deleteDialog');
+    var oldDialog = document.getElementById('deleteDialog');
     if (oldDialog) oldDialog.remove();
 
-    const dialog = document.createElement('div');
+    var dialog = document.createElement('div');
     dialog.id = 'deleteDialog';
     dialog.className = 'delete-dialog-overlay';
-    dialog.innerHTML = `
-        <div class="delete-dialog delete-all-dialog">
-            <div class="delete-dialog-icon">⚠️</div>
-            <h3>Hapus Semua Data?</h3>
-            <p>Anda akan menghapus <strong>SEMUA</strong> data presensi.</p>
-            <p class="delete-dialog-sub">Tindakan ini tidak dapat dibatalkan!</p>
-            <div class="delete-dialog-actions">
-                <button class="delete-cancel-btn">Batal</button>
-                <button class="delete-confirm-btn delete-all-btn">Hapus Semua</button>
-            </div>
-        </div>
-    `;
+    dialog.innerHTML = 
+        '<div class="delete-dialog delete-all-dialog">' +
+            '<div class="delete-dialog-icon">⚠️</div>' +
+            '<h3>Hapus Semua Data?</h3>' +
+            '<p>Anda akan menghapus <strong>SEMUA</strong> data presensi.</p>' +
+            '<p class="delete-dialog-sub">Tindakan ini tidak dapat dibatalkan!</p>' +
+            '<div class="delete-dialog-actions">' +
+                '<button class="delete-cancel-btn">Batal</button>' +
+                '<button class="delete-confirm-btn delete-all-btn">Hapus Semua</button>' +
+            '</div>' +
+        '</div>';
     document.body.appendChild(dialog);
 
-    dialog.querySelector('.delete-cancel-btn').addEventListener('click', () => {
+    dialog.querySelector('.delete-cancel-btn').addEventListener('click', function() {
         dialog.remove();
     });
 
     dialog.querySelector('.delete-all-btn').addEventListener('click', function() {
-        const attendance = getAttendance();
+        var attendance = getAttendance();
         if (attendance.length === 0) {
             showToast('Tidak ada data untuk dihapus.');
             dialog.remove();
@@ -1332,7 +1304,7 @@ function deleteAllAttendance() {
         }
         saveAttendance([]);
         renderDatabase();
-        showToast(`🗑️ Semua data presensi (${attendance.length} data) telah dihapus.`);
+        showToast('Semua data presensi (' + attendance.length + ' data) telah dihapus.');
         dialog.remove();
     });
 
@@ -1347,22 +1319,20 @@ function deleteAllAttendance() {
 // DATABASE TOOLBAR - TAMBAH BUTTON HAPUS SEMUA
 // =========================================================
 
-// Tambahkan tombol hapus semua di toolbar
-const dbToolbar = document.querySelector('.db-toolbar');
+var dbToolbar = document.querySelector('.db-toolbar');
 if (dbToolbar) {
-    const deleteAllBtn = document.createElement('button');
+    var deleteAllBtn = document.createElement('button');
     deleteAllBtn.id = 'dbDeleteAllBtn';
     deleteAllBtn.className = 'db-delete-all-btn';
-    deleteAllBtn.innerHTML = '🗑️ Hapus Semua';
+    deleteAllBtn.innerHTML = 'Hapus Semua';
     deleteAllBtn.addEventListener('click', deleteAllAttendance);
     
-    const filters = dbToolbar.querySelector('.db-filters');
+    var filters = dbToolbar.querySelector('.db-filters');
     if (filters) {
         filters.appendChild(deleteAllBtn);
     }
 }
 
-// Database Filter
 dbFilterBtn.addEventListener("click", renderDatabase);
 dbSearch.addEventListener("input", renderDatabase);
 dbDateStart.addEventListener("change", renderDatabase);
@@ -1375,87 +1345,88 @@ dbDateEnd.addEventListener("change", renderDatabase);
 dbExportBtn.addEventListener("click", showExportDialog);
 
 function showExportDialog() {
-    const existingDialog = document.getElementById('exportDialog');
+    var existingDialog = document.getElementById('exportDialog');
     if (existingDialog) existingDialog.remove();
 
-    const dialog = document.createElement('div');
+    var dialog = document.createElement('div');
     dialog.id = 'exportDialog';
     dialog.className = 'export-dialog-overlay';
-    dialog.innerHTML = `
-        <div class="export-dialog">
-            <div class="export-dialog-header">
-                <h3>📊 Export Data Presensi</h3>
-                <button class="export-dialog-close" onclick="this.closest('#exportDialog').remove()">✕</button>
-            </div>
-            <div class="export-dialog-body">
-                <div class="export-date-range">
-                    <div class="export-date-group">
-                        <label>Dari Tanggal</label>
-                        <input type="date" id="exportStartDate" value="${getDefaultStartDate()}">
-                    </div>
-                    <div class="export-date-group">
-                        <label>Sampai Tanggal</label>
-                        <input type="date" id="exportEndDate" value="${getLocalDate()}">
-                    </div>
-                </div>
-                <div class="export-format-options">
-                    <button class="export-format-btn" data-format="xlsx"><span>📊</span> XLSX</button>
-                    <button class="export-format-btn" data-format="csv"><span>📄</span> CSV</button>
-                    <button class="export-format-btn" data-format="image"><span>🖼️</span> Gambar</button>
-                </div>
-                <div class="export-preview">
-                    <p>Data akan diekspor berdasarkan rentang tanggal yang dipilih.</p>
-                </div>
-            </div>
-            <div class="export-dialog-footer">
-                <button class="export-cancel-btn" onclick="this.closest('#exportDialog').remove()">Batal</button>
-                <button class="export-confirm-btn" id="exportConfirmBtn">Export Data</button>
-            </div>
-        </div>
-    `;
+    dialog.innerHTML = 
+        '<div class="export-dialog">' +
+            '<div class="export-dialog-header">' +
+                '<h3>Export Data Presensi</h3>' +
+                '<button class="export-dialog-close" onclick="this.closest(\'#exportDialog\').remove()">✕</button>' +
+            '</div>' +
+            '<div class="export-dialog-body">' +
+                '<div class="export-date-range">' +
+                    '<div class="export-date-group">' +
+                        '<label>Dari Tanggal</label>' +
+                        '<input type="date" id="exportStartDate" value="' + getDefaultStartDate() + '">' +
+                    '</div>' +
+                    '<div class="export-date-group">' +
+                        '<label>Sampai Tanggal</label>' +
+                        '<input type="date" id="exportEndDate" value="' + getLocalDate() + '">' +
+                    '</div>' +
+                '</div>' +
+                '<div class="export-format-options">' +
+                    '<button class="export-format-btn" data-format="xlsx"><span>📊</span> XLSX</button>' +
+                    '<button class="export-format-btn" data-format="csv"><span>📄</span> CSV</button>' +
+                    '<button class="export-format-btn" data-format="image"><span>🖼️</span> Gambar</button>' +
+                '</div>' +
+                '<div class="export-preview">' +
+                    '<p>Data akan diekspor berdasarkan rentang tanggal yang dipilih.</p>' +
+                '</div>' +
+            '</div>' +
+            '<div class="export-dialog-footer">' +
+                '<button class="export-cancel-btn" onclick="this.closest(\'#exportDialog\').remove()">Batal</button>' +
+                '<button class="export-confirm-btn" id="exportConfirmBtn">Export Data</button>' +
+            '</div>' +
+        '</div>';
     document.body.appendChild(dialog);
 
-    document.getElementById('exportConfirmBtn').addEventListener('click', () => {
-        const startDate = document.getElementById('exportStartDate').value;
-        const endDate = document.getElementById('exportEndDate').value;
+    document.getElementById('exportConfirmBtn').addEventListener('click', function() {
+        var startDate = document.getElementById('exportStartDate').value;
+        var endDate = document.getElementById('exportEndDate').value;
         if (!startDate || !endDate) { showToast('Pilih rentang tanggal.'); return; }
         if (startDate > endDate) { showToast('Tanggal mulai harus sebelum akhir.'); return; }
-        const selectedBtn = document.querySelector('.export-format-btn.active');
+        var selectedBtn = document.querySelector('.export-format-btn.active');
         if (!selectedBtn) { showToast('Pilih format export.'); return; }
         exportAttendanceData(startDate, endDate, selectedBtn.dataset.format);
     });
 
-    document.querySelectorAll('.export-format-btn').forEach(btn => {
+    document.querySelectorAll('.export-format-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            document.querySelectorAll('.export-format-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.export-format-btn').forEach(function(b) { b.classList.remove('active'); });
             this.classList.add('active');
         });
     });
 }
 
 function getDefaultStartDate() {
-    const date = new Date();
+    var date = new Date();
     date.setDate(date.getDate() - 7);
     return date.toISOString().split('T')[0];
 }
 
 function exportAttendanceData(startDate, endDate, format) {
-    const attendance = getAttendance();
-    const filtered = attendance.filter(item => item.date >= startDate && item.date <= endDate);
+    var attendance = getAttendance();
+    var filtered = attendance.filter(function(item) { return item.date >= startDate && item.date <= endDate; });
 
     if (filtered.length === 0) { showToast('Tidak ada data dalam rentang tersebut.'); return; }
 
-    const exportData = filtered.map((item, index) => ({
-        'No': index + 1,
-        'NISN': item.nisn,
-        'Nama': item.name,
-        'Kelas': item.className,
-        'Status': item.status,
-        'Tanggal': item.date,
-        'Waktu': new Date(item.timestamp).toLocaleTimeString('id-ID'),
-        'Metode': item.method,
-        'Confidence': `${Number(item.confidence).toFixed(1)}%`
-    }));
+    var exportData = filtered.map(function(item, index) {
+        return {
+            'No': index + 1,
+            'NISN': item.nisn,
+            'Nama': item.name,
+            'Kelas': item.className,
+            'Status': item.status,
+            'Tanggal': item.date,
+            'Waktu': new Date(item.timestamp).toLocaleTimeString('id-ID'),
+            'Metode': item.method,
+            'Confidence': Number(item.confidence).toFixed(1) + '%'
+        };
+    });
 
     switch(format) {
         case 'xlsx': exportToXLSX(exportData); break;
@@ -1464,15 +1435,15 @@ function exportAttendanceData(startDate, endDate, format) {
         default: showToast('Format tidak didukung.');
     }
 
-    const dialog = document.getElementById('exportDialog');
+    var dialog = document.getElementById('exportDialog');
     if (dialog) dialog.remove();
 }
 
 function exportToXLSX(data) {
     if (typeof XLSX === 'undefined') {
-        const script = document.createElement('script');
+        var script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
-        script.onload = () => createXLSX(data);
+        script.onload = function() { createXLSX(data); };
         document.head.appendChild(script);
         showToast('Memuat library XLSX...');
         return;
@@ -1482,15 +1453,15 @@ function exportToXLSX(data) {
 
 function createXLSX(data) {
     try {
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(data);
+        var wb = XLSX.utils.book_new();
+        var ws = XLSX.utils.json_to_sheet(data);
         ws['!cols'] = [
             { wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 15 },
             { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 12 }
         ];
         XLSX.utils.book_append_sheet(wb, ws, 'Presensi');
-        XLSX.writeFile(wb, `presensi_${getLocalDate()}.xlsx`);
-        showToast(`✅ Berhasil export ${data.length} data.`);
+        XLSX.writeFile(wb, 'presensi_' + getLocalDate() + '.xlsx');
+        showToast('Berhasil export ' + data.length + ' data.');
     } catch (error) {
         console.error('[Export XLSX]', error);
         showToast('Gagal export ke XLSX.');
@@ -1499,26 +1470,27 @@ function createXLSX(data) {
 
 function exportToCSV(data) {
     try {
-        const headers = Object.keys(data[0]);
-        const csvRows = [headers.join(',')];
-        for (const row of data) {
-            const values = headers.map(header => {
-                const val = row[header] || '';
+        var headers = Object.keys(data[0]);
+        var csvRows = [headers.join(',')];
+        for (var i = 0; i < data.length; i++) {
+            var row = data[i];
+            var values = headers.map(function(header) {
+                var val = row[header] || '';
                 if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
-                    return `"${val.replace(/"/g, '""')}"`;
+                    return '"' + val.replace(/"/g, '""') + '"';
                 }
                 return val;
             });
             csvRows.push(values.join(','));
         }
-        const csvString = csvRows.join('\n');
-        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
+        var csvString = csvRows.join('\n');
+        var blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        var link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `presensi_${getLocalDate()}.csv`;
+        link.download = 'presensi_' + getLocalDate() + '.csv';
         link.click();
         URL.revokeObjectURL(link.href);
-        showToast(`✅ Berhasil export ${data.length} data.`);
+        showToast('Berhasil export ' + data.length + ' data.');
     } catch (error) {
         console.error('[Export CSV]', error);
         showToast('Gagal export ke CSV.');
@@ -1527,15 +1499,15 @@ function exportToCSV(data) {
 
 function exportToImage(data) {
     try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const cellPadding = 12;
-        const headerHeight = 40;
-        const rowHeight = 35;
-        const colWidths = [60, 120, 180, 120, 90, 120, 100, 140, 100];
-        const headers = ['No', 'NISN', 'Nama', 'Kelas', 'Status', 'Tanggal', 'Waktu', 'Metode', 'Confidence'];
-        const totalWidth = colWidths.reduce((a, b) => a + b, 0) + cellPadding * 2;
-        const totalHeight = headerHeight + (data.length + 1) * rowHeight + cellPadding * 2 + 50;
+        var canvas = document.createElement('canvas');
+        var ctx = canvas.getContext('2d');
+        var cellPadding = 12;
+        var headerHeight = 40;
+        var rowHeight = 35;
+        var colWidths = [60, 120, 180, 120, 90, 120, 100, 140, 100];
+        var headers = ['No', 'NISN', 'Nama', 'Kelas', 'Status', 'Tanggal', 'Waktu', 'Metode', 'Confidence'];
+        var totalWidth = colWidths.reduce(function(a, b) { return a + b; }, 0) + cellPadding * 2;
+        var totalHeight = headerHeight + (data.length + 1) * rowHeight + cellPadding * 2 + 50;
         canvas.width = totalWidth;
         canvas.height = totalHeight;
 
@@ -1545,48 +1517,49 @@ function exportToImage(data) {
         ctx.fillStyle = '#1a2e1a';
         ctx.font = 'bold 18px Montserrat, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`📊 Laporan Presensi ${getLocalDate()}`, totalWidth / 2, 35);
+        ctx.fillText('Laporan Presensi ' + getLocalDate(), totalWidth / 2, 35);
 
-        let y = headerHeight + cellPadding + 15;
+        var y = headerHeight + cellPadding + 15;
         ctx.fillStyle = '#e8f5e8';
         ctx.fillRect(cellPadding, y, totalWidth - cellPadding * 2, rowHeight);
         ctx.fillStyle = '#1a2e1a';
         ctx.font = 'bold 11px Poppins, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        let x = cellPadding;
-        headers.forEach((header, i) => {
-            ctx.fillText(header, x + colWidths[i] / 2, y + rowHeight / 2);
+        var x = cellPadding;
+        for (var i = 0; i < headers.length; i++) {
+            ctx.fillText(headers[i], x + colWidths[i] / 2, y + rowHeight / 2);
             x += colWidths[i];
-        });
+        }
         y += rowHeight;
 
         ctx.font = '10px Poppins, sans-serif';
         ctx.textBaseline = 'middle';
-        data.forEach((row, rowIndex) => {
-            if (rowIndex % 2 === 0) {
+        for (var j = 0; j < data.length; j++) {
+            var row = data[j];
+            if (j % 2 === 0) {
                 ctx.fillStyle = '#f5f8f5';
                 ctx.fillRect(cellPadding, y, totalWidth - cellPadding * 2, rowHeight);
             }
             ctx.fillStyle = '#1a2e1a';
             x = cellPadding;
-            const values = Object.values(row);
-            values.forEach((val, i) => {
-                ctx.fillText(String(val), x + colWidths[i] / 2, y + rowHeight / 2);
-                x += colWidths[i];
-            });
+            var values = Object.values(row);
+            for (var k = 0; k < values.length; k++) {
+                ctx.fillText(String(values[k]), x + colWidths[k] / 2, y + rowHeight / 2);
+                x += colWidths[k];
+            }
             y += rowHeight;
-        });
+        }
 
         ctx.strokeStyle = '#d4e2d4';
         ctx.lineWidth = 1;
         ctx.strokeRect(cellPadding, headerHeight + cellPadding + 15, totalWidth - cellPadding * 2, (data.length + 1) * rowHeight);
 
-        const link = document.createElement('a');
-        link.download = `presensi_${getLocalDate()}.png`;
+        var link = document.createElement('a');
+        link.download = 'presensi_' + getLocalDate() + '.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
-        showToast(`✅ Berhasil export ${data.length} data.`);
+        showToast('Berhasil export ' + data.length + ' data.');
     } catch (error) {
         console.error('[Export Image]', error);
         showToast('Gagal export ke gambar.');
@@ -1598,10 +1571,10 @@ function exportToImage(data) {
 // =========================================================
 
 function getCameraErrorMessage(error) {
-    if (error?.name === "NotAllowedError") return "Izin kamera ditolak. Izinkan akses kamera.";
-    if (error?.name === "NotFoundError") return "Tidak ada kamera yang ditemukan.";
-    if (error?.name === "NotReadableError") return "Kamera sedang digunakan aplikasi lain.";
-    if (error?.name === "SecurityError") return "Kamera membutuhkan HTTPS atau localhost.";
+    if (error && error.name === "NotAllowedError") return "Izin kamera ditolak. Izinkan akses kamera.";
+    if (error && error.name === "NotFoundError") return "Tidak ada kamera yang ditemukan.";
+    if (error && error.name === "NotReadableError") return "Kamera sedang digunakan aplikasi lain.";
+    if (error && error.name === "SecurityError") return "Kamera membutuhkan HTTPS atau localhost.";
     return "Kamera tidak dapat digunakan pada perangkat ini.";
 }
 
@@ -1609,8 +1582,8 @@ function getCameraErrorMessage(error) {
 // FULLSCREEN
 // =========================================================
 
-fullscreenButton.addEventListener("click", async () => {
-    const stage = document.querySelector(".attendance-stage");
+fullscreenButton.addEventListener("click", async function() {
+    var stage = document.querySelector(".attendance-stage");
     try {
         if (!document.fullscreenElement) {
             await stage.requestFullscreen();
@@ -1627,7 +1600,7 @@ fullscreenButton.addEventListener("click", async () => {
 // BUTTON EVENTS
 // =========================================================
 
-attendanceCameraButton.addEventListener("click", () => {
+attendanceCameraButton.addEventListener("click", function() {
     if (attendanceStream) {
         stopAttendanceCamera();
     } else {
@@ -1635,7 +1608,7 @@ attendanceCameraButton.addEventListener("click", () => {
     }
 });
 
-cameraEnrollmentButton.addEventListener("click", () => {
+cameraEnrollmentButton.addEventListener("click", function() {
     if (enrollmentStream) {
         stopEnrollmentCamera();
         setValidation("Kamera dimatikan.", true);
@@ -1648,14 +1621,14 @@ cameraEnrollmentButton.addEventListener("click", () => {
 // VISIBILITY & UNLOAD
 // =========================================================
 
-document.addEventListener("visibilitychange", () => {
+document.addEventListener("visibilitychange", function() {
     if (document.hidden) {
         stopAttendanceCamera();
         stopEnrollmentCamera();
     }
 });
 
-window.addEventListener("beforeunload", () => {
+window.addEventListener("beforeunload", function() {
     stopAttendanceCamera();
     stopEnrollmentCamera();
 });
@@ -1666,11 +1639,7 @@ window.addEventListener("beforeunload", () => {
 
 function initApp() {
     renderDatabase();
-    // Models akan di-load di background setelah login
 }
 
-// Init default admin user
 initDefaultAdmin();
-
-// Handle authentication
 handleAuth();
