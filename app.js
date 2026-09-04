@@ -1,15 +1,16 @@
 "use strict";
 
 /* =========================================================
-   AMANAH ID v3.0 - ULTRA FAST
+   AMANAH ID v3.0 - SUPER ULTRA FAST
 ========================================================= */
 
 // =========================================================
 // CONFIGURATION
 // =========================================================
 
+// GANTI KE CDN YANG LEBIH CEPAT (jsdelivr sudah di-cache)
 const MODEL_URL = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models";
-const MODEL_URL_BACKUP = "https://justadudewhohacks.github.io/face-api.js/models";
+const MODEL_URL_BACKUP = "https://unpkg.com/face-api.js@0.22.2/models";
 
 const FACE_MATCH_THRESHOLD = 0.42;
 const ATTENDANCE_INTERVAL = 350;
@@ -92,12 +93,14 @@ function handleAuth() {
             isAuthenticated = true;
             authPage.style.display = 'none';
             mainApp.style.display = 'flex';
-            // Load models di background - TIDAK MENUNGGU
-            setTimeout(() => {
+            
+            // LOAD MODELS DI BACKGROUND - TANPA LOADING SCREEN
+            setTimeout(function() {
                 if (!modelsReady && !modelLoadingStarted) {
-                    loadModelsInBackground();
+                    loadModelsSilent();
                 }
-            }, 500);
+            }, 100);
+            
             initApp();
         } catch {
             authPage.style.display = 'flex';
@@ -110,12 +113,12 @@ function handleAuth() {
 }
 
 // Auth Tabs
-document.querySelectorAll('.auth-tab').forEach(tab => {
+document.querySelectorAll('.auth-tab').forEach(function(tab) {
     tab.addEventListener('click', function() {
-        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.auth-tab').forEach(function(t) { t.classList.remove('active'); });
         this.classList.add('active');
-        document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-        const formId = this.dataset.tab === 'login' ? 'loginForm' : 'signupForm';
+        document.querySelectorAll('.auth-form').forEach(function(f) { f.classList.remove('active'); });
+        var formId = this.dataset.tab === 'login' ? 'loginForm' : 'signupForm';
         document.getElementById(formId).classList.add('active');
     });
 });
@@ -123,16 +126,16 @@ document.querySelectorAll('.auth-tab').forEach(tab => {
 // Login
 document.getElementById('loginForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
+    var email = document.getElementById('loginEmail').value.trim();
+    var password = document.getElementById('loginPassword').value.trim();
 
     if (!email || !password) {
         showToast('Harap isi email dan password.');
         return;
     }
 
-    const users = getUsers();
-    const user = users.find(u => u.email === email && u.password === password);
+    var users = getUsers();
+    var user = users.find(function(u) { return u.email === email && u.password === password; });
 
     if (!user) {
         showToast('Email atau password salah.');
@@ -146,11 +149,12 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     document.getElementById('mainApp').style.display = 'flex';
     showToast('Selamat datang, ' + user.name + '!');
     
-    setTimeout(() => {
+    // LOAD MODELS DI BACKGROUND - SANGAT CEPAT
+    setTimeout(function() {
         if (!modelsReady && !modelLoadingStarted) {
-            loadModelsInBackground();
+            loadModelsSilent();
         }
-    }, 300);
+    }, 100);
     
     initApp();
 });
@@ -158,10 +162,10 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
 // Signup
 document.getElementById('signupForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const name = document.getElementById('signupName').value.trim();
-    const email = document.getElementById('signupEmail').value.trim();
-    const password = document.getElementById('signupPassword').value.trim();
-    const confirm = document.getElementById('signupConfirm').value.trim();
+    var name = document.getElementById('signupName').value.trim();
+    var email = document.getElementById('signupEmail').value.trim();
+    var password = document.getElementById('signupPassword').value.trim();
+    var confirm = document.getElementById('signupConfirm').value.trim();
 
     if (!name || !email || !password || !confirm) {
         showToast('Harap isi semua field.');
@@ -178,17 +182,17 @@ document.getElementById('signupForm').addEventListener('submit', function(e) {
         return;
     }
 
-    const users = getUsers();
-    if (users.some(u => u.email === email)) {
+    var users = getUsers();
+    if (users.some(function(u) { return u.email === email; })) {
         showToast('Email sudah terdaftar.');
         return;
     }
 
-    const newUser = {
+    var newUser = {
         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36),
-        name,
-        email,
-        password,
+        name: name,
+        email: email,
+        password: password,
         role: 'user',
         createdAt: new Date().toISOString()
     };
@@ -218,57 +222,57 @@ document.getElementById('logoutButton').addEventListener('click', function() {
 // DOM REFS
 // =========================================================
 
-const navItems = document.querySelectorAll(".nav-item");
-const pages = document.querySelectorAll(".page");
+var navItems = document.querySelectorAll(".nav-item");
+var pages = document.querySelectorAll(".page");
 
-const attendanceVideo = document.getElementById("attendanceVideo");
-const attendanceOverlay = document.getElementById("attendanceOverlay");
-const attendanceStatus = document.getElementById("attendanceStatus");
-const attendanceError = document.getElementById("attendanceError");
-const attendanceCameraButton = document.getElementById("attendanceCameraButton");
-const fullscreenButton = document.getElementById("fullscreenButton");
-const welcomeMessage = document.getElementById("welcomeMessage");
+var attendanceVideo = document.getElementById("attendanceVideo");
+var attendanceOverlay = document.getElementById("attendanceOverlay");
+var attendanceStatus = document.getElementById("attendanceStatus");
+var attendanceError = document.getElementById("attendanceError");
+var attendanceCameraButton = document.getElementById("attendanceCameraButton");
+var fullscreenButton = document.getElementById("fullscreenButton");
+var welcomeMessage = document.getElementById("welcomeMessage");
 
-const totalStudents = document.getElementById("totalStudents");
-const totalPresent = document.getElementById("totalPresent");
-const attendancePercentage = document.getElementById("attendancePercentage");
-const totalHistory = document.getElementById("totalHistory");
-const attendanceTableBody = document.getElementById("attendanceTableBody");
-const emptyDatabase = document.getElementById("emptyDatabase");
+var totalStudents = document.getElementById("totalStudents");
+var totalPresent = document.getElementById("totalPresent");
+var attendancePercentage = document.getElementById("attendancePercentage");
+var totalHistory = document.getElementById("totalHistory");
+var attendanceTableBody = document.getElementById("attendanceTableBody");
+var emptyDatabase = document.getElementById("emptyDatabase");
 
-const nisnInput = document.getElementById("nisn");
-const studentNameInput = document.getElementById("studentName");
-const studentClassInput = document.getElementById("studentClass");
-const saveStudentButton = document.getElementById("saveStudentButton");
-const enrollmentVideo = document.getElementById("enrollmentVideo");
-const enrollmentImage = document.getElementById("enrollmentImage");
-const previewPlaceholder = document.getElementById("previewPlaceholder");
-const uploadButton = document.getElementById("uploadButton");
-const cameraEnrollmentButton = document.getElementById("cameraEnrollmentButton");
-const photoInput = document.getElementById("photoInput");
-const faceValidation = document.getElementById("faceValidation");
-const aiProgress = document.getElementById("aiProgress");
-const aiPercent = document.getElementById("aiPercent");
+var nisnInput = document.getElementById("nisn");
+var studentNameInput = document.getElementById("studentName");
+var studentClassInput = document.getElementById("studentClass");
+var saveStudentButton = document.getElementById("saveStudentButton");
+var enrollmentVideo = document.getElementById("enrollmentVideo");
+var enrollmentImage = document.getElementById("enrollmentImage");
+var previewPlaceholder = document.getElementById("previewPlaceholder");
+var uploadButton = document.getElementById("uploadButton");
+var cameraEnrollmentButton = document.getElementById("cameraEnrollmentButton");
+var photoInput = document.getElementById("photoInput");
+var faceValidation = document.getElementById("faceValidation");
+var aiProgress = document.getElementById("aiProgress");
+var aiPercent = document.getElementById("aiPercent");
 
-const toast = document.getElementById("toast");
-const modelLoading = document.getElementById("modelLoading");
+var toast = document.getElementById("toast");
+var modelLoading = document.getElementById("modelLoading");
 
-const dbSearch = document.getElementById("dbSearch");
-const dbDateStart = document.getElementById("dbDateStart");
-const dbDateEnd = document.getElementById("dbDateEnd");
-const dbFilterBtn = document.getElementById("dbFilterBtn");
-const dbExportBtn = document.getElementById("dbExportBtn");
+var dbSearch = document.getElementById("dbSearch");
+var dbDateStart = document.getElementById("dbDateStart");
+var dbDateEnd = document.getElementById("dbDateEnd");
+var dbFilterBtn = document.getElementById("dbFilterBtn");
+var dbExportBtn = document.getElementById("dbExportBtn");
 
 // =========================================================
 // STORAGE
 // =========================================================
 
-const STUDENTS_KEY = "amanah_students_v3";
-const ATTENDANCE_KEY = "amanah_attendance_v3";
+var STUDENTS_KEY = "amanah_students_v3";
+var ATTENDANCE_KEY = "amanah_attendance_v3";
 
 function getStudents() {
     try {
-        const data = JSON.parse(localStorage.getItem(STUDENTS_KEY));
+        var data = JSON.parse(localStorage.getItem(STUDENTS_KEY));
         return Array.isArray(data) ? data : [];
     } catch { return []; }
 }
@@ -279,7 +283,7 @@ function saveStudents(students) {
 
 function getAttendance() {
     try {
-        const data = JSON.parse(localStorage.getItem(ATTENDANCE_KEY));
+        var data = JSON.parse(localStorage.getItem(ATTENDANCE_KEY));
         return Array.isArray(data) ? data : [];
     } catch { return []; }
 }
@@ -292,13 +296,13 @@ function saveAttendance(attendance) {
 // UTILITIES
 // =========================================================
 
-let toastTimer = null;
+var toastTimer = null;
 
 function showToast(message) {
     toast.textContent = message;
     toast.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+    toastTimer = setTimeout(function() { toast.classList.remove("show"); }, 2600);
 }
 
 function escapeHTML(value) {
@@ -317,7 +321,7 @@ function createId() {
 }
 
 function getLocalDate() {
-    const now = new Date();
+    var now = new Date();
     return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, "0") + '-' + String(now.getDate()).padStart(2, "0");
 }
 
@@ -325,14 +329,14 @@ function getLocalDate() {
 // NAVIGATION
 // =========================================================
 
-navItems.forEach(button => {
-    button.addEventListener("click", () => {
+navItems.forEach(function(button) {
+    button.addEventListener("click", function() {
         if (button.id === 'logoutButton') return;
-        const pageId = button.dataset.page;
-        navItems.forEach(item => item.classList.remove("active"));
+        var pageId = button.dataset.page;
+        navItems.forEach(function(item) { item.classList.remove("active"); });
         button.classList.add("active");
-        pages.forEach(page => page.classList.remove("active"));
-        const targetPage = document.getElementById(pageId);
+        pages.forEach(function(page) { page.classList.remove("active"); });
+        var targetPage = document.getElementById(pageId);
         if (targetPage) targetPage.classList.add("active");
         if (pageId !== "attendancePage") stopAttendanceCamera();
         if (pageId !== "formPage") stopEnrollmentCamera();
@@ -341,131 +345,88 @@ navItems.forEach(button => {
 });
 
 // =========================================================
-// LOAD MODELS - BACKGROUND (TIDAK MENGHALANGI)
+// LOAD MODELS - SILENT (TANPA LOADING SCREEN)
 // =========================================================
 
-function loadModelsInBackground() {
+function loadModelsSilent() {
     if (modelLoadingStarted || modelLoadingComplete) return;
     modelLoadingStarted = true;
     
-    // Tampilkan loading screen singkat
-    const loadingScreen = document.getElementById('modelLoading');
-    loadingScreen.classList.remove('hidden');
-    
-    // Update status
-    updateLoadingStatus('Memuat model AI...', 0);
-    
     if (typeof faceapi === 'undefined') {
         console.error("[Amanah ID] face-api.js not loaded");
-        setTimeout(() => {
-            loadingScreen.classList.add('hidden');
-            showToast('Library face-api.js tidak ditemukan.');
-        }, 2000);
+        modelLoadingStarted = false;
         return;
     }
 
-    // Load dengan timeout agresif
-    const loadTimeout = setTimeout(() => {
-        loadingScreen.classList.add('hidden');
-        showToast('Model AI gagal dimuat, coba lagi nanti.');
+    console.log("[Amanah ID] Loading models silently in background...");
+    
+    // Load dengan timeout agresif 8 detik
+    var loadTimeout = setTimeout(function() {
+        console.log("[Amanah ID] Model loading timeout, continuing without AI");
         modelLoadingStarted = false;
-    }, 15000);
+        // Coba lagi nanti
+        setTimeout(function() {
+            if (!modelsReady && !modelLoadingComplete) {
+                loadModelsSilent();
+            }
+        }, 5000);
+    }, 8000);
 
-    // Jalankan loading di background
-    loadModelsAsync(loadTimeout);
+    // Jalankan loading
+    loadModelsAsyncSilent(loadTimeout);
 }
 
-async function loadModelsAsync(loadTimeout) {
+async function loadModelsAsyncSilent(loadTimeout) {
     try {
-        console.log("[Amanah ID] Loading models in background...");
-        updateLoadingStatus('Mengunduh model AI...', 20);
-        
-        await loadModelsFromUrl(MODEL_URL);
+        await Promise.race([
+            Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+            ]),
+            new Promise(function(_, reject) {
+                setTimeout(function() { reject(new Error('Timeout')); }, 8000);
+            })
+        ]);
         
         modelsReady = true;
         modelLoadingComplete = true;
-        
-        updateLoadingStatus('Siap!', 100);
-        
-        setTimeout(() => {
-            const loadingScreen = document.getElementById('modelLoading');
-            loadingScreen.classList.add('hidden');
-            clearTimeout(loadTimeout);
-        }, 300);
-        
+        clearTimeout(loadTimeout);
+        console.log("[Amanah ID] AI models ready!");
         updateSaveButton();
-        console.log("[Amanah ID] AI models ready.");
         showToast("Sistem AI siap digunakan.");
     } catch (error) {
-        console.error("[Amanah ID] Primary error:", error);
+        console.error("[Amanah ID] Model load error:", error);
         try {
-            updateLoadingStatus('Mencoba server cadangan...', 40);
-            await loadModelsFromUrl(MODEL_URL_BACKUP);
+            await Promise.race([
+                Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL_BACKUP),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL_BACKUP),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL_BACKUP)
+                ]),
+                new Promise(function(_, reject) {
+                    setTimeout(function() { reject(new Error('Timeout')); }, 8000);
+                })
+            ]);
             
             modelsReady = true;
             modelLoadingComplete = true;
-            
-            updateLoadingStatus('Siap!', 100);
-            
-            setTimeout(() => {
-                const loadingScreen = document.getElementById('modelLoading');
-                loadingScreen.classList.add('hidden');
-                clearTimeout(loadTimeout);
-            }, 300);
-            
+            clearTimeout(loadTimeout);
+            console.log("[Amanah ID] AI models ready from backup!");
             updateSaveButton();
-            console.log("[Amanah ID] AI models loaded from backup.");
             showToast("Sistem AI siap (server cadangan).");
         } catch (backupError) {
-            console.error("[Amanah ID] Backup error:", backupError);
+            console.error("[Amanah ID] Backup also failed:", backupError);
             clearTimeout(loadTimeout);
-            const loadingScreen = document.getElementById('modelLoading');
-            loadingScreen.classList.add('hidden');
-            showToast('Gagal memuat model AI. Refresh halaman.');
             modelLoadingStarted = false;
+            // Coba lagi dalam 10 detik
+            setTimeout(function() {
+                if (!modelsReady && !modelLoadingComplete) {
+                    loadModelsSilent();
+                }
+            }, 10000);
         }
     }
-}
-
-function updateLoadingStatus(message, progress) {
-    const loadingScreen = document.getElementById('modelLoading');
-    const statusSpan = loadingScreen.querySelector('span');
-    if (statusSpan) {
-        statusSpan.textContent = message;
-    }
-    
-    let progressBar = document.getElementById('loadProgress');
-    if (!progressBar) {
-        progressBar = document.createElement('div');
-        progressBar.id = 'loadProgress';
-        progressBar.style.cssText = 'width:200px;height:4px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:12px;';
-        const fill = document.createElement('div');
-        fill.id = 'loadProgressFill';
-        fill.style.cssText = 'width:0%;height:100%;background:#2d7d2d;border-radius:inherit;transition:width 0.3s ease;';
-        progressBar.appendChild(fill);
-        loadingScreen.appendChild(progressBar);
-    }
-    
-    const fill = document.getElementById('loadProgressFill');
-    if (fill) {
-        fill.style.width = Math.min(progress, 100) + '%';
-    }
-}
-
-async function loadModelsFromUrl(url) {
-    const timeout = 10000;
-    
-    const loadPromises = [
-        faceapi.nets.tinyFaceDetector.loadFromUri(url),
-        faceapi.nets.faceLandmark68Net.loadFromUri(url),
-        faceapi.nets.faceRecognitionNet.loadFromUri(url)
-    ];
-    
-    const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Loading timed out')), timeout);
-    });
-    
-    await Promise.race([Promise.all(loadPromises), timeoutPromise]);
 }
 
 // =========================================================
@@ -493,16 +454,18 @@ async function requestCamera() {
 
 async function startAttendanceCamera() {
     if (!modelsReady) {
-        showToast("AI sedang disiapkan, tunggu sebentar...");
+        showToast("AI sedang disiapkan...");
         if (!modelLoadingStarted) {
-            loadModelsInBackground();
+            loadModelsSilent();
         }
-        // Tunggu 2 detik lalu coba lagi
-        setTimeout(() => {
+        // Tunggu 1.5 detik lalu coba lagi
+        setTimeout(function() {
             if (modelsReady) {
                 startAttendanceCamera();
+            } else {
+                showToast("AI masih disiapkan, tunggu sebentar...");
             }
-        }, 2000);
+        }, 1500);
         return;
     }
     try {
@@ -526,7 +489,7 @@ async function startAttendanceCamera() {
 function stopAttendanceCamera() {
     if (attendanceTimer) { clearInterval(attendanceTimer); attendanceTimer = null; }
     if (attendanceStream) {
-        attendanceStream.getTracks().forEach(track => track.stop());
+        attendanceStream.getTracks().forEach(function(track) { track.stop(); });
         attendanceStream = null;
     }
     attendanceVideo.srcObject = null;
@@ -553,7 +516,7 @@ async function processAttendanceFrame() {
     attendanceProcessing = true;
 
     try {
-        const detections = await faceapi.detectAllFaces(
+        var detections = await faceapi.detectAllFaces(
             attendanceVideo,
             new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.50 })
         ).withFaceLandmarks().withFaceDescriptors();
@@ -568,34 +531,33 @@ async function processAttendanceFrame() {
             return;
         }
 
-        const students = getStudents();
-        const faceResults = detections.map(detection => ({
-            detection,
-            match: findBestMatch(detection.descriptor, students)
-        }));
+        var students = getStudents();
+        var faceResults = detections.map(function(detection) {
+            var match = findBestMatch(detection.descriptor, students);
+            return { detection: detection, match: match };
+        });
 
-        for (const result of faceResults) {
-            const recognized = Boolean(result.match && result.match.distance <= FACE_MATCH_THRESHOLD);
+        for (var i = 0; i < faceResults.length; i++) {
+            var result = faceResults[i];
+            var recognized = Boolean(result.match && result.match.distance <= FACE_MATCH_THRESHOLD);
             createFaceOutline(result.detection.detection.box, recognized);
         }
 
-        const recognizedFaces = faceResults.filter(result =>
-            result.match && result.match.distance <= FACE_MATCH_THRESHOLD
-        );
+        var recognizedFaces = faceResults.filter(function(result) {
+            return result.match && result.match.distance <= FACE_MATCH_THRESHOLD;
+        });
 
         if (recognizedFaces.length === 0) {
-            attendanceStatus.textContent = detections.length === 1
-                ? "Wajah terdeteksi, belum cocok"
-                : detections.length + " wajah, tidak ada identitas cocok";
+            attendanceStatus.textContent = detections.length === 1 ? "Wajah terdeteksi, belum cocok" : detections.length + " wajah, tidak ada identitas cocok";
             welcomeMessage.classList.remove("show");
             attendanceMatchStudentId = null;
             attendanceMatchFrames = 0;
             return;
         }
 
-        recognizedFaces.sort((a, b) => a.match.distance - b.match.distance);
-        const best = recognizedFaces[0];
-        const student = best.match.student;
+        recognizedFaces.sort(function(a, b) { return a.match.distance - b.match.distance; });
+        var best = recognizedFaces[0];
+        var student = best.match.student;
 
         if (attendanceMatchStudentId === student.id) {
             attendanceMatchFrames += 1;
@@ -626,24 +588,24 @@ async function processAttendanceFrame() {
 
 function createFaceOutline(box, recognized) {
     if (!attendanceVideo.videoWidth || !attendanceVideo.videoHeight) return;
-    const outline = document.createElement("div");
+    var outline = document.createElement("div");
     outline.className = recognized ? "face-outline recognized" : "face-outline";
-    const mapped = mapVideoBox(box, attendanceVideo, true);
+    var mapped = mapVideoBox(box, attendanceVideo, true);
     outline.style.cssText = 'left:' + mapped.x + 'px;top:' + mapped.y + 'px;width:' + mapped.width + 'px;height:' + mapped.height + 'px;';
     attendanceOverlay.appendChild(outline);
 }
 
 function mapVideoBox(box, video, mirrored) {
-    const videoWidth = video.videoWidth;
-    const videoHeight = video.videoHeight;
-    const containerWidth = video.clientWidth;
-    const containerHeight = video.clientHeight;
-    const scale = Math.max(containerWidth / videoWidth, containerHeight / videoHeight);
-    const renderedWidth = videoWidth * scale;
-    const renderedHeight = videoHeight * scale;
-    const offsetX = (containerWidth - renderedWidth) / 2;
-    const offsetY = (containerHeight - renderedHeight) / 2;
-    let x = offsetX + box.x * scale;
+    var videoWidth = video.videoWidth;
+    var videoHeight = video.videoHeight;
+    var containerWidth = video.clientWidth;
+    var containerHeight = video.clientHeight;
+    var scale = Math.max(containerWidth / videoWidth, containerHeight / videoHeight);
+    var renderedWidth = videoWidth * scale;
+    var renderedHeight = videoHeight * scale;
+    var offsetX = (containerWidth - renderedWidth) / 2;
+    var offsetY = (containerHeight - renderedHeight) / 2;
+    var x = offsetX + box.x * scale;
     if (mirrored) {
         x = containerWidth - (offsetX + (box.x + box.width) * scale);
     }
@@ -655,12 +617,13 @@ function mapVideoBox(box, video, mirrored) {
 // =========================================================
 
 function findBestMatch(descriptor, students) {
-    let bestStudent = null;
-    let bestDistance = Infinity;
+    var bestStudent = null;
+    var bestDistance = Infinity;
 
-    for (const student of students) {
+    for (var i = 0; i < students.length; i++) {
+        var student = students[i];
         if (!Array.isArray(student.descriptor) || student.descriptor.length !== descriptor.length) continue;
-        const distance = faceapi.euclideanDistance(descriptor, new Float32Array(student.descriptor));
+        var distance = faceapi.euclideanDistance(descriptor, new Float32Array(student.descriptor));
         if (distance < bestDistance) {
             bestDistance = distance;
             bestStudent = student;
@@ -676,18 +639,18 @@ function findBestMatch(descriptor, students) {
 // =========================================================
 
 function registerAttendance(student, distance) {
-    const attendance = getAttendance();
-    const today = getLocalDate();
-    const existing = attendance.find(item => item.nisn === student.nisn && item.date === today);
+    var attendance = getAttendance();
+    var today = getLocalDate();
+    var existing = attendance.find(function(item) { return item.nisn === student.nisn && item.date === today; });
     if (existing) return;
 
-    const currentTime = Date.now();
-    const previous = attendanceCooldown.get(student.id);
+    var currentTime = Date.now();
+    var previous = attendanceCooldown.get(student.id);
     if (previous && currentTime - previous < 5000) return;
     attendanceCooldown.set(student.id, currentTime);
 
-    const confidence = Math.max(0, Math.min(100, (1 - distance) * 100));
-    const record = {
+    var confidence = Math.max(0, Math.min(100, (1 - distance) * 100));
+    var record = {
         id: createId(),
         nisn: student.nisn,
         name: student.name,
@@ -711,15 +674,17 @@ function registerAttendance(student, distance) {
 
 async function startEnrollmentCamera() {
     if (!modelsReady) {
-        showToast("AI sedang disiapkan, tunggu sebentar...");
+        showToast("AI sedang disiapkan...");
         if (!modelLoadingStarted) {
-            loadModelsInBackground();
+            loadModelsSilent();
         }
-        setTimeout(() => {
+        setTimeout(function() {
             if (modelsReady) {
                 startEnrollmentCamera();
+            } else {
+                showToast("AI masih disiapkan...");
             }
-        }, 2000);
+        }, 1500);
         return;
     }
     try {
@@ -743,7 +708,7 @@ async function startEnrollmentCamera() {
 function stopEnrollmentCamera() {
     if (enrollmentTimer) { clearInterval(enrollmentTimer); enrollmentTimer = null; }
     if (enrollmentStream) {
-        enrollmentStream.getTracks().forEach(track => track.stop());
+        enrollmentStream.getTracks().forEach(function(track) { track.stop(); });
         enrollmentStream = null;
     }
     enrollmentVideo.pause();
@@ -761,7 +726,7 @@ function clearEnrollmentImage() {
     currentEnrollmentImage = null;
     enrollmentImage.src = "";
     enrollmentImage.classList.remove("active", "has-image");
-    const replaceBtn = document.getElementById('replaceImageBtn');
+    var replaceBtn = document.getElementById('replaceImageBtn');
     if (replaceBtn) replaceBtn.remove();
     previewPlaceholder.style.display = "flex";
     resetEnrollmentState();
@@ -769,9 +734,9 @@ function clearEnrollmentImage() {
 }
 
 function waitForVideoReady(video) {
-    return new Promise(resolve => {
+    return new Promise(function(resolve) {
         if (video.readyState >= 2) { resolve(); return; }
-        const handler = () => {
+        var handler = function() {
             video.removeEventListener("loadedmetadata", handler);
             resolve();
         };
@@ -794,7 +759,7 @@ async function processEnrollmentFrame() {
     detectionCounter++;
 
     try {
-        const detections = await faceapi.detectAllFaces(
+        var detections = await faceapi.detectAllFaces(
             enrollmentVideo,
             new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.42 })
         ).withFaceLandmarks().withFaceDescriptors();
@@ -815,14 +780,14 @@ async function processEnrollmentFrame() {
             return;
         }
 
-        const detection = detections[0];
-        const box = detection.detection.box;
-        const width = enrollmentVideo.videoWidth;
-        const height = enrollmentVideo.videoHeight;
+        var detection = detections[0];
+        var box = detection.detection.box;
+        var width = enrollmentVideo.videoWidth;
+        var height = enrollmentVideo.videoHeight;
         lastEnrollmentDetection = detection;
 
-        const faceArea = (box.width * box.height) / (width * height);
-        let sizeScore = 0;
+        var faceArea = (box.width * box.height) / (width * height);
+        var sizeScore = 0;
         if (faceArea >= 0.05 && faceArea <= 0.50) {
             sizeScore = 90 + (1 - Math.abs(faceArea - 0.20) * 100);
         } else if (faceArea > 0.50 && faceArea <= 0.70) {
@@ -834,32 +799,32 @@ async function processEnrollmentFrame() {
         }
         sizeScore = clamp(sizeScore, 0, 100);
 
-        const faceCenterX = box.x + box.width / 2;
-        const faceCenterY = box.y + box.height / 2;
-        const frameCenterX = width / 2;
-        const frameCenterY = height / 2;
-        const dist = Math.hypot((faceCenterX - frameCenterX) / width, (faceCenterY - frameCenterY) / height);
-        const centerScore = clamp(100 - (dist * 250), 0, 100);
+        var faceCenterX = box.x + box.width / 2;
+        var faceCenterY = box.y + box.height / 2;
+        var frameCenterX = width / 2;
+        var frameCenterY = height / 2;
+        var dist = Math.hypot((faceCenterX - frameCenterX) / width, (faceCenterY - frameCenterY) / height);
+        var centerScore = clamp(100 - (dist * 250), 0, 100);
 
-        let lightScore = 80;
+        var lightScore = 80;
         if (detectionCounter % 4 === 0) {
-            const brightness = calculateBrightness(enrollmentVideo);
+            var brightness = calculateBrightness(enrollmentVideo);
             lightScore = calculateLightScore(brightness);
         }
 
         stabilityHistory.push({ x: faceCenterX, y: faceCenterY, width: box.width, height: box.height });
         if (stabilityHistory.length > STABILITY_HISTORY) stabilityHistory.shift();
 
-        let stabilityScore = 50;
+        var stabilityScore = 50;
         if (stabilityHistory.length >= STABILITY_HISTORY) {
-            const first = stabilityHistory[0];
-            const last = stabilityHistory[stabilityHistory.length - 1];
-            const movement = Math.hypot(last.x - first.x, last.y - first.y);
-            const sizeMovement = Math.abs(last.width - first.width);
+            var first = stabilityHistory[0];
+            var last = stabilityHistory[stabilityHistory.length - 1];
+            var movement = Math.hypot(last.x - first.x, last.y - first.y);
+            var sizeMovement = Math.abs(last.width - first.width);
             stabilityScore = clamp(100 - (movement * 0.5) - (sizeMovement * 0.4), 0, 100);
         }
 
-        const finalScore = (sizeScore * 0.30 + centerScore * 0.30 + lightScore * 0.15 + stabilityScore * 0.25);
+        var finalScore = (sizeScore * 0.30 + centerScore * 0.30 + lightScore * 0.15 + stabilityScore * 0.25);
 
         if (finalScore > enrollmentProgress) {
             enrollmentProgress = enrollmentProgress * 0.30 + finalScore * 0.70;
@@ -874,7 +839,7 @@ async function processEnrollmentFrame() {
         enrollmentProgress = clamp(enrollmentProgress, 0, 100);
         updateEnrollmentProgress(enrollmentProgress);
 
-        const ready = finalScore >= 75 && faceArea >= 0.04 && faceArea <= 0.65 && centerScore >= 70 && stabilityScore >= 60;
+        var ready = finalScore >= 75 && faceArea >= 0.04 && faceArea <= 0.65 && centerScore >= 70 && stabilityScore >= 60;
 
         if (ready && enrollmentProgress >= 80) {
             enrollmentReadyFrames += 1;
@@ -903,15 +868,15 @@ async function processEnrollmentFrame() {
 // =========================================================
 
 function calculateBrightness(video) {
-    const canvas = document.createElement("canvas");
+    var canvas = document.createElement("canvas");
     canvas.width = 8;
     canvas.height = 6;
-    const context = canvas.getContext("2d", { willReadFrequently: true });
+    var context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) return 128;
     context.drawImage(video, 0, 0, 8, 6);
-    const image = context.getImageData(0, 0, 8, 6);
-    let sum = 0;
-    for (let i = 0; i < image.data.length; i += 4) {
+    var image = context.getImageData(0, 0, 8, 6);
+    var sum = 0;
+    for (var i = 0; i < image.data.length; i += 4) {
         sum += (0.299 * image.data[i]) + (0.587 * image.data[i + 1]) + (0.114 * image.data[i + 2]);
     }
     return sum / (image.data.length / 4);
@@ -929,7 +894,7 @@ function calculateLightScore(brightness) {
 
 function updateEnrollmentProgress(value) {
     enrollmentProgress = clamp(value, 0, 100);
-    const percentage = Math.round(enrollmentProgress);
+    var percentage = Math.round(enrollmentProgress);
     aiProgress.style.width = percentage + '%';
     aiPercent.textContent = percentage + '%';
 }
@@ -958,15 +923,15 @@ function resetEnrollmentState() {
 
 async function captureEnrollment(detection) {
     stopEnrollmentCamera();
-    const canvas = document.createElement("canvas");
+    var canvas = document.createElement("canvas");
     canvas.width = enrollmentVideo.videoWidth;
     canvas.height = enrollmentVideo.videoHeight;
-    const context = canvas.getContext("2d");
+    var context = canvas.getContext("2d");
     if (!context) { setValidation("Gagal memproses gambar.", false); return; }
     context.translate(canvas.width, 0);
     context.scale(-1, 1);
     context.drawImage(enrollmentVideo, 0, 0, canvas.width, canvas.height);
-    const imageData = canvas.toDataURL("image/jpeg", 0.90);
+    var imageData = canvas.toDataURL("image/jpeg", 0.90);
 
     currentEnrollmentDescriptor = Array.from(detection.descriptor);
     currentEnrollmentImage = imageData;
@@ -984,9 +949,9 @@ async function captureEnrollment(detection) {
 }
 
 function addReplaceButton() {
-    const oldBtn = document.getElementById('replaceImageBtn');
+    var oldBtn = document.getElementById('replaceImageBtn');
     if (oldBtn) oldBtn.remove();
-    const replaceBtn = document.createElement('button');
+    var replaceBtn = document.createElement('button');
     replaceBtn.id = 'replaceImageBtn';
     replaceBtn.className = 'replace-image-btn';
     replaceBtn.innerHTML = 'Ganti Foto';
@@ -995,7 +960,7 @@ function addReplaceButton() {
         clearEnrollmentImage();
         showToast('Foto dihapus. Silakan ambil foto baru.');
     });
-    const preview = document.getElementById('enrollmentPreview');
+    var preview = document.getElementById('enrollmentPreview');
     if (preview) { preview.style.position = 'relative'; preview.appendChild(replaceBtn); }
 }
 
@@ -1006,7 +971,7 @@ function addReplaceButton() {
 uploadButton.addEventListener("click", function() { photoInput.click(); });
 
 photoInput.addEventListener("change", async function(event) {
-    const file = event.target.files?.[0];
+    var file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
         setValidation("File bukan gambar.", false);
@@ -1016,12 +981,12 @@ photoInput.addEventListener("change", async function(event) {
     try {
         stopEnrollmentCamera();
         resetEnrollmentState();
-        const image = await faceapi.bufferToImage(file);
+        var image = await faceapi.bufferToImage(file);
         enrollmentImage.src = image.src;
         enrollmentImage.classList.add("active", "has-image");
         previewPlaceholder.style.display = "none";
 
-        const detections = await faceapi.detectAllFaces(
+        var detections = await faceapi.detectAllFaces(
             image,
             new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.45 })
         ).withFaceLandmarks().withFaceDescriptors();
@@ -1040,9 +1005,9 @@ photoInput.addEventListener("change", async function(event) {
             return;
         }
 
-        const detection = detections[0];
-        const box = detection.detection.box;
-        const areaRatio = (box.width * box.height) / (image.width * image.height);
+        var detection = detections[0];
+        var box = detection.detection.box;
+        var areaRatio = (box.width * box.height) / (image.width * image.height);
 
         if (areaRatio < 0.025) {
             setValidation("Wajah terlalu kecil dalam foto.", false);
@@ -1074,9 +1039,9 @@ photoInput.addEventListener("change", async function(event) {
 });
 
 function updateSaveButton() {
-    const nisn = nisnInput.value.trim();
-    const name = studentNameInput.value.trim();
-    const className = studentClassInput.value.trim();
+    var nisn = nisnInput.value.trim();
+    var name = studentNameInput.value.trim();
+    var className = studentClassInput.value.trim();
     saveStudentButton.disabled = !(
         modelsReady &&
         /^\d+$/.test(nisn) &&
@@ -1093,22 +1058,22 @@ function updateSaveButton() {
 // =========================================================
 
 saveStudentButton.addEventListener("click", function() {
-    const nisn = nisnInput.value.trim();
-    const name = studentNameInput.value.trim();
-    const className = studentClassInput.value.trim();
+    var nisn = nisnInput.value.trim();
+    var name = studentNameInput.value.trim();
+    var className = studentClassInput.value.trim();
 
     if (!/^\d+$/.test(nisn)) { showToast("NISN hanya boleh berisi angka."); return; }
     if (name.length < 2) { showToast("Nama siswa belum valid."); return; }
     if (!className) { showToast("Kelas belum diisi."); return; }
     if (!currentEnrollmentDescriptor) { showToast("Wajah belum diverifikasi."); return; }
 
-    const students = getStudents();
+    var students = getStudents();
     if (students.find(function(s) { return s.nisn === nisn; })) {
         showToast("NISN tersebut sudah terdaftar.");
         return;
     }
 
-    const student = {
+    var student = {
         id: createId(),
         nisn: nisn,
         name: name,
@@ -1127,7 +1092,7 @@ saveStudentButton.addEventListener("click", function() {
     currentEnrollmentImage = null;
     enrollmentImage.src = "";
     enrollmentImage.classList.remove("active", "has-image");
-    const replaceBtn = document.getElementById('replaceImageBtn');
+    var replaceBtn = document.getElementById('replaceImageBtn');
     if (replaceBtn) replaceBtn.remove();
     previewPlaceholder.style.display = "flex";
     resetEnrollmentState();
@@ -1140,24 +1105,24 @@ saveStudentButton.addEventListener("click", function() {
 // DATABASE RENDER
 // =========================================================
 
-let filteredData = [];
+var filteredData = [];
 
 function renderDatabase() {
-    const students = getStudents();
-    const attendance = getAttendance();
-    const today = getLocalDate();
-    const todayAttendance = attendance.filter(function(item) { return item.date === today; });
+    var students = getStudents();
+    var attendance = getAttendance();
+    var today = getLocalDate();
+    var todayAttendance = attendance.filter(function(item) { return item.date === today; });
 
     totalStudents.textContent = students.length;
     totalPresent.textContent = todayAttendance.length;
     totalHistory.textContent = attendance.length;
 
-    const percentage = students.length > 0 ? Math.round((todayAttendance.length / students.length) * 100) : 0;
+    var percentage = students.length > 0 ? Math.round((todayAttendance.length / students.length) * 100) : 0;
     attendancePercentage.textContent = Math.min(percentage, 100) + '%';
 
-    const searchTerm = dbSearch.value.toLowerCase().trim();
-    const startDate = dbDateStart.value;
-    const endDate = dbDateEnd.value;
+    var searchTerm = dbSearch.value.toLowerCase().trim();
+    var startDate = dbDateStart.value;
+    var endDate = dbDateEnd.value;
 
     filteredData = attendance.filter(function(item) {
         var match = true;
