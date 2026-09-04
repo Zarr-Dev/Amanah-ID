@@ -1,7 +1,7 @@
 "use strict";
 
 /* =========================================================
-   AMANAH ID v3.0 - FULL APPLICATION
+   AMANAH ID v3.0 - FULL APPLICATION (OPTIMIZED)
 ========================================================= */
 
 // =========================================================
@@ -11,12 +11,12 @@
 const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
 const MODEL_URL_BACKUP = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models";
 
-const FACE_MATCH_THRESHOLD = 0.42; // LEBIH KETAT (lebih akurat)
-const ATTENDANCE_INTERVAL = 300;
-const ENROLLMENT_INTERVAL = 120; // LEBIH CEPAT
+const FACE_MATCH_THRESHOLD = 0.42;
+const ATTENDANCE_INTERVAL = 350; // Sedikit lebih lambat untuk stabilitas
+const ENROLLMENT_INTERVAL = 100; // SUPER CEPAT
 const REQUIRED_MATCH_FRAMES = 2;
-const REQUIRED_CAPTURE_FRAMES = 2;
-const STABILITY_HISTORY = 4;
+const REQUIRED_CAPTURE_FRAMES = 1; // LEBIH CEPAT: hanya 1 frame
+const STABILITY_HISTORY = 3; // LEBIH CEPAT
 
 // =========================================================
 // STATE
@@ -182,7 +182,6 @@ document.getElementById('signupForm').addEventListener('submit', function(e) {
     saveUsers(users);
     showToast('Akun berhasil dibuat! Silakan login.');
     
-    // Switch ke login tab
     document.querySelector('.auth-tab[data-tab="login"]').click();
     document.getElementById('loginEmail').value = email;
     document.getElementById('loginPassword').value = '';
@@ -327,7 +326,7 @@ navItems.forEach(button => {
 });
 
 // =========================================================
-// LOAD MODELS
+// LOAD MODELS - DENGAN PROGRESS
 // =========================================================
 
 async function loadModels() {
@@ -339,7 +338,11 @@ async function loadModels() {
 
     try {
         console.log("[Amanah ID] Loading models...");
+        showModelStatus("Memuat model AI (0%)...");
+        
+        // Load dengan progress tracking
         await loadModelsFromUrl(MODEL_URL);
+        
         modelsReady = true;
         modelLoading.classList.add("hidden");
         updateSaveButton();
@@ -364,16 +367,20 @@ async function loadModels() {
 }
 
 async function loadModelsFromUrl(url) {
-    const timeout = 30000;
-    const loadPromise = Promise.all([
+    const timeout = 20000; // 20 detik timeout (lebih cepat)
+    
+    // Load models satu per satu dengan timeout
+    const loadPromises = [
         faceapi.nets.tinyFaceDetector.loadFromUri(url),
         faceapi.nets.faceLandmark68Net.loadFromUri(url),
         faceapi.nets.faceRecognitionNet.loadFromUri(url)
-    ]);
+    ];
+    
     const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error(`Loading timed out after ${timeout}ms`)), timeout);
+        setTimeout(() => reject(new Error(`Loading timed out after 20s`)), timeout);
     });
-    await Promise.race([loadPromise, timeoutPromise]);
+    
+    await Promise.race([Promise.all(loadPromises), timeoutPromise]);
 }
 
 function showModelStatus(message) {
@@ -388,6 +395,23 @@ function showModelError(titleMessage, subtitleMessage) {
     const subtitle = modelLoading.querySelector("span");
     if (title) title.textContent = titleMessage || "Model AI gagal dimuat";
     if (subtitle) subtitle.textContent = subtitleMessage || "Periksa koneksi internet dan refresh halaman.";
+    
+    // Tambah tombol retry
+    const retryBtn = document.createElement("button");
+    retryBtn.textContent = "🔄 Coba Lagi";
+    retryBtn.className = "primary-button";
+    retryBtn.style.marginTop = "16px";
+    retryBtn.style.width = "auto";
+    retryBtn.style.padding = "10px 28px";
+    retryBtn.addEventListener("click", () => {
+        retryBtn.remove();
+        const titleEl = modelLoading.querySelector("strong");
+        const subtitleEl = modelLoading.querySelector("span");
+        if (titleEl) titleEl.textContent = "Amanah ID";
+        if (subtitleEl) subtitleEl.textContent = "Menyiapkan sistem computer vision...";
+        loadModels();
+    });
+    modelLoading.appendChild(retryBtn);
 }
 
 // =========================================================
@@ -401,9 +425,9 @@ async function requestCamera() {
     return navigator.mediaDevices.getUserMedia({
         video: {
             facingMode: "user",
-            width: { ideal: 640 },
-            height: { ideal: 480 },
-            frameRate: { ideal: 30, max: 30 }
+            width: { ideal: 480 }, // Resolusi lebih rendah = lebih cepat
+            height: { ideal: 360 },
+            frameRate: { ideal: 24, max: 30 }
         },
         audio: false
     });
@@ -455,7 +479,7 @@ function startAttendanceLoop() {
 }
 
 // =========================================================
-// ATTENDANCE PROCESSING - AKURAT
+// ATTENDANCE PROCESSING
 // =========================================================
 
 async function processAttendanceFrame() {
@@ -465,7 +489,7 @@ async function processAttendanceFrame() {
     try {
         const detections = await faceapi.detectAllFaces(
             attendanceVideo,
-            new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.50 })
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.50 }) // LEBIH CEPAT
         ).withFaceLandmarks().withFaceDescriptors();
 
         attendanceOverlay.innerHTML = "";
@@ -561,7 +585,7 @@ function mapVideoBox(box, video, mirrored) {
 }
 
 // =========================================================
-// MATCHING - LEBIH AKURAT
+// MATCHING
 // =========================================================
 
 function findBestMatch(descriptor, students) {
@@ -616,7 +640,7 @@ function registerAttendance(student, distance) {
 }
 
 // =========================================================
-// ENROLLMENT - SUPER FAST & AKURAT
+// ENROLLMENT - SUPER FAST
 // =========================================================
 
 async function startEnrollmentCamera() {
@@ -630,7 +654,7 @@ async function startEnrollmentCamera() {
         enrollmentVideo.classList.add("active");
         previewPlaceholder.style.display = "none";
         await waitForVideoReady(enrollmentVideo);
-        setValidation("Kamera aktif. Posisikan satu wajah di tengah.", true);
+        setValidation("Kamera aktif. Posisikan wajah di tengah.", true);
         startEnrollmentLoop();
     } catch (error) {
         console.error("[Enrollment Camera]", error);
@@ -683,16 +707,20 @@ function startEnrollmentLoop() {
     enrollmentTimer = setInterval(processEnrollmentFrame, ENROLLMENT_INTERVAL);
 }
 
+// =========================================================
+// ENROLLMENT PROCESSING - SUPER FAST
+// =========================================================
+
 async function processEnrollmentFrame() {
     if (enrollmentProcessing || !enrollmentStream || enrollmentVideo.readyState < 2) return;
     enrollmentProcessing = true;
     detectionCounter++;
 
     try {
-        // LEBIH AKURAT: InputSize 256 untuk balance speed vs accuracy
+        // OPTIMASI: InputSize 160 untuk kecepatan ekstrim
         const detections = await faceapi.detectAllFaces(
             enrollmentVideo,
-            new faceapi.TinyFaceDetectorOptions({ inputSize: 256, scoreThreshold: 0.45 })
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.42 })
         ).withFaceLandmarks().withFaceDescriptors();
 
         if (detections.length === 0) {
@@ -717,17 +745,17 @@ async function processEnrollmentFrame() {
         const height = enrollmentVideo.videoHeight;
         lastEnrollmentDetection = detection;
 
-        // FACE SIZE - Range lebih luas untuk akurasi
+        // FACE SIZE
         const faceArea = (box.width * box.height) / (width * height);
         let sizeScore = 0;
-        if (faceArea >= 0.06 && faceArea <= 0.45) {
-            sizeScore = 95 + (1 - Math.abs(faceArea - 0.22) * 120);
-        } else if (faceArea > 0.45 && faceArea <= 0.65) {
-            sizeScore = 70 - (faceArea - 0.45) * 150;
-        } else if (faceArea >= 0.03 && faceArea < 0.06) {
-            sizeScore = 50 + (faceArea - 0.03) * 500;
+        if (faceArea >= 0.05 && faceArea <= 0.50) {
+            sizeScore = 90 + (1 - Math.abs(faceArea - 0.20) * 100);
+        } else if (faceArea > 0.50 && faceArea <= 0.70) {
+            sizeScore = 65 - (faceArea - 0.50) * 120;
+        } else if (faceArea >= 0.025 && faceArea < 0.05) {
+            sizeScore = 45 + (faceArea - 0.025) * 600;
         } else {
-            sizeScore = Math.max(0, 100 - Math.abs(faceArea - 0.22) * 250);
+            sizeScore = Math.max(0, 100 - Math.abs(faceArea - 0.20) * 200);
         }
         sizeScore = clamp(sizeScore, 0, 100);
 
@@ -737,7 +765,7 @@ async function processEnrollmentFrame() {
         const frameCenterX = width / 2;
         const frameCenterY = height / 2;
         const dist = Math.hypot((faceCenterX - frameCenterX) / width, (faceCenterY - frameCenterY) / height);
-        const centerScore = clamp(100 - (dist * 280), 0, 100);
+        const centerScore = clamp(100 - (dist * 250), 0, 100);
 
         // BRIGHTNESS - Skip lebih sering
         let lightScore = 80;
@@ -746,7 +774,7 @@ async function processEnrollmentFrame() {
             lightScore = calculateLightScore(brightness);
         }
 
-        // STABILITY - Lebih responsif
+        // STABILITY
         stabilityHistory.push({ x: faceCenterX, y: faceCenterY, width: box.width, height: box.height });
         if (stabilityHistory.length > STABILITY_HISTORY) stabilityHistory.shift();
 
@@ -756,10 +784,10 @@ async function processEnrollmentFrame() {
             const last = stabilityHistory[stabilityHistory.length - 1];
             const movement = Math.hypot(last.x - first.x, last.y - first.y);
             const sizeMovement = Math.abs(last.width - first.width);
-            stabilityScore = clamp(100 - (movement * 0.6) - (sizeMovement * 0.5), 0, 100);
+            stabilityScore = clamp(100 - (movement * 0.5) - (sizeMovement * 0.4), 0, 100);
         }
 
-        // FINAL SCORE - Bobot dioptimasi
+        // FINAL SCORE
         const finalScore = (sizeScore * 0.30 + centerScore * 0.30 + lightScore * 0.15 + stabilityScore * 0.25);
 
         // Progress agresif
@@ -769,16 +797,16 @@ async function processEnrollmentFrame() {
             enrollmentProgress = enrollmentProgress * 0.50 + finalScore * 0.50;
         }
 
-        if (finalScore >= 82 && sizeScore >= 72 && centerScore >= 75) {
-            enrollmentProgress = Math.min(100, enrollmentProgress + 18);
+        if (finalScore >= 80 && sizeScore >= 70 && centerScore >= 75) {
+            enrollmentProgress = Math.min(100, enrollmentProgress + 20);
         }
 
         enrollmentProgress = clamp(enrollmentProgress, 0, 100);
         updateEnrollmentProgress(enrollmentProgress);
 
-        const ready = finalScore >= 78 && faceArea >= 0.04 && faceArea <= 0.60 && centerScore >= 72 && stabilityScore >= 62;
+        const ready = finalScore >= 75 && faceArea >= 0.04 && faceArea <= 0.65 && centerScore >= 70 && stabilityScore >= 60;
 
-        if (ready && enrollmentProgress >= 82) {
+        if (ready && enrollmentProgress >= 80) {
             enrollmentReadyFrames += 1;
         } else {
             enrollmentReadyFrames = 0;
@@ -786,7 +814,7 @@ async function processEnrollmentFrame() {
 
         // Status messages
         if (enrollmentProgress < 25) setValidation("Mendeteksi wajah...", true);
-        else if (enrollmentProgress < 50) setValidation("Analisis kualitas wajah...", true);
+        else if (enrollmentProgress < 50) setValidation("Analisis kualitas...", true);
         else if (enrollmentProgress < 75) setValidation("Pertahankan posisi...", true);
         else if (enrollmentProgress < 100) setValidation("Hampir selesai...", true);
         else setValidation("Siap!", true);
@@ -821,12 +849,12 @@ function calculateBrightness(video) {
 }
 
 function calculateLightScore(brightness) {
-    if (brightness >= 55 && brightness <= 215) {
-        return 100 - Math.abs(brightness - 135) * 0.35;
-    } else if (brightness < 55) {
-        return clamp(brightness / 55 * 100, 0, 100);
+    if (brightness >= 50 && brightness <= 220) {
+        return 100 - Math.abs(brightness - 130) * 0.3;
+    } else if (brightness < 50) {
+        return clamp(brightness / 50 * 100, 0, 100);
     } else {
-        return clamp(100 - (brightness - 215) / 45 * 100, 0, 100);
+        return clamp(100 - (brightness - 220) / 40 * 100, 0, 100);
     }
 }
 
@@ -926,7 +954,7 @@ photoInput.addEventListener("change", async event => {
 
         const detections = await faceapi.detectAllFaces(
             image,
-            new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.45 })
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.45 })
         ).withFaceLandmarks().withFaceDescriptors();
 
         if (detections.length === 0) {
@@ -1040,7 +1068,7 @@ saveStudentButton.addEventListener("click", () => {
 });
 
 // =========================================================
-// DATABASE RENDER - DENGAN FILTER & SEARCH
+// DATABASE RENDER
 // =========================================================
 
 let filteredData = [];
@@ -1058,7 +1086,6 @@ function renderDatabase() {
     const percentage = students.length > 0 ? Math.round((todayAttendance.length / students.length) * 100) : 0;
     attendancePercentage.textContent = `${Math.min(percentage, 100)}%`;
 
-    // Filter data
     const searchTerm = dbSearch.value.toLowerCase().trim();
     const startDate = dbDateStart.value;
     const endDate = dbDateEnd.value;
@@ -1416,22 +1443,21 @@ window.addEventListener("beforeunload", () => {
 
 function initApp() {
     renderDatabase();
-    // Load models after a short delay
     if (typeof faceapi !== 'undefined') {
-        setTimeout(loadModels, 200);
+        setTimeout(loadModels, 100);
     } else {
         let checkInterval = setInterval(() => {
             if (typeof faceapi !== 'undefined') {
                 clearInterval(checkInterval);
-                setTimeout(loadModels, 200);
+                setTimeout(loadModels, 100);
             }
-        }, 500);
+        }, 300);
         setTimeout(() => {
             clearInterval(checkInterval);
             if (!modelsReady) {
                 showModelError("Library face-api.js tidak ditemukan", "Pastikan koneksi internet aktif.");
             }
-        }, 10000);
+        }, 8000);
     }
 }
 
