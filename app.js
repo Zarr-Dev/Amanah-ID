@@ -1,3519 +1,1142 @@
 "use strict";
 
 /* =========================================================
-   AMANAH ID
-   FRONTEND COMPUTER VISION PROTOTYPE
+   AMANAH ID v3.0 - FULL APPLICATION
 ========================================================= */
 
+// =========================================================
+// CONFIGURATION
+// =========================================================
 
-/* =========================================================
-   CONFIGURATION
-========================================================= */
+const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
+const MODEL_URL_BACKUP = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models";
 
-// PERBAIKAN: URL model yang benar
-const MODEL_URL =
-    "https://justadudewhohacks.github.io/face-api.js/models";
+const FACE_MATCH_THRESHOLD = 0.42; // LEBIH KETAT (lebih akurat)
+const ATTENDANCE_INTERVAL = 300;
+const ENROLLMENT_INTERVAL = 120; // LEBIH CEPAT
+const REQUIRED_MATCH_FRAMES = 2;
+const REQUIRED_CAPTURE_FRAMES = 2;
+const STABILITY_HISTORY = 4;
 
-// URL cadangan jika primary gagal
-const MODEL_URL_BACKUP =
-    "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models";
+// =========================================================
+// STATE
+// =========================================================
 
+let modelsReady = false;
+let isAuthenticated = false;
+let currentUser = null;
 
-/*
- * Recognition threshold.
- *
- * Smaller value = stricter match.
- *
- * Untuk prototype, 0.46 cukup ketat.
- * Nilai produksi nantinya harus ditentukan
- * melalui dataset dan pengujian FAR/FRR.
- */
+let attendanceStream = null;
+let enrollmentStream = null;
+let attendanceTimer = null;
+let enrollmentTimer = null;
+let attendanceProcessing = false;
+let enrollmentProcessing = false;
 
-const FACE_MATCH_THRESHOLD =
-    0.46;
+let currentEnrollmentDescriptor = null;
+let currentEnrollmentImage = null;
+let enrollmentProgress = 0;
+let enrollmentReadyFrames = 0;
+let stabilityHistory = [];
 
-
-/*
- * AI inference interval.
- *
- * OPTIMASI: Interval lebih cepat untuk enrollment
- */
-
-const ATTENDANCE_INTERVAL =
-    300;
-
-const ENROLLMENT_INTERVAL =
-    150; // PERCEPAT: dari 200 ke 150 untuk respons lebih cepat
-
-
-/*
- * Recognition confirmation.
- *
- * Satu match tidak langsung dianggap
- * sebagai presensi.
- */
-
-const REQUIRED_MATCH_FRAMES =
-    2;
-
-
-/*
- * Enrollment harus mencapai
- * 100% selama beberapa frame.
- * 
- * OPTIMASI: 2 frame untuk stabilitas
- */
-
-const REQUIRED_CAPTURE_FRAMES =
-    2;
-
-
-/*
- * Stabilitas wajah.
- */
-
-const STABILITY_HISTORY =
-    4; // PERCEPAT: dari 5 ke 4
-
-
-/* =========================================================
-   STATE
-========================================================= */
-
-let modelsReady =
-    false;
-
-let modelLoadingAttempts =
-    0;
-
-const MAX_MODEL_ATTEMPTS =
-    3;
-
-
-let attendanceStream =
-    null;
-
-let enrollmentStream =
-    null;
-
-
-let attendanceTimer =
-    null;
-
-let enrollmentTimer =
-    null;
-
-
-let attendanceProcessing =
-    false;
-
-let enrollmentProcessing =
-    false;
-
-
-/*
- * Enrollment face descriptor.
- */
-
-let currentEnrollmentDescriptor =
-    null;
-
-
-/*
- * Enrollment captured image.
- */
-
-let currentEnrollmentImage =
-    null;
-
-
-/*
- * Enrollment progress.
- */
-
-let enrollmentProgress =
-    0;
-
-
-/*
- * Consecutive valid capture frames.
- */
-
-let enrollmentReadyFrames =
-    0;
-
-
-/*
- * Face movement history.
- */
-
-let stabilityHistory =
-    [];
-
-
-/*
- * Attendance recognition confirmation.
- */
-
-let attendanceMatchStudentId =
-    null;
-
-let attendanceMatchFrames =
-    0;
-
-
-/*
- * Short attendance cooldown.
- */
-
-const attendanceCooldown =
-    new Map();
-
-
-/*
- * OPTIMASI: Cache untuk deteksi wajah
- */
+let attendanceMatchStudentId = null;
+let attendanceMatchFrames = 0;
+const attendanceCooldown = new Map();
 
 let lastEnrollmentDetection = null;
 let detectionCounter = 0;
 
-
-/* =========================================================
-   DOM
-========================================================= */
-
-const navItems =
-    document.querySelectorAll(
-        ".nav-item"
-    );
-
-
-const pages =
-    document.querySelectorAll(
-        ".page"
-    );
-
-
-/* Attendance */
-
-const attendanceVideo =
-    document.getElementById(
-        "attendanceVideo"
-    );
-
-
-const attendanceOverlay =
-    document.getElementById(
-        "attendanceOverlay"
-    );
-
-
-const attendanceStatus =
-    document.getElementById(
-        "attendanceStatus"
-    );
-
-
-const attendanceError =
-    document.getElementById(
-        "attendanceError"
-    );
-
-
-const attendanceCameraButton =
-    document.getElementById(
-        "attendanceCameraButton"
-    );
-
-
-const fullscreenButton =
-    document.getElementById(
-        "fullscreenButton"
-    );
-
-
-const welcomeMessage =
-    document.getElementById(
-        "welcomeMessage"
-    );
-
-
-/* Database */
-
-const totalStudents =
-    document.getElementById(
-        "totalStudents"
-    );
-
-
-const totalPresent =
-    document.getElementById(
-        "totalPresent"
-    );
-
-
-const attendancePercentage =
-    document.getElementById(
-        "attendancePercentage"
-    );
-
-
-const attendanceTableBody =
-    document.getElementById(
-        "attendanceTableBody"
-    );
-
-
-const emptyDatabase =
-    document.getElementById(
-        "emptyDatabase"
-    );
-
-
-/* Form */
-
-const nisnInput =
-    document.getElementById(
-        "nisn"
-    );
-
-
-const studentNameInput =
-    document.getElementById(
-        "studentName"
-    );
-
-
-const studentClassInput =
-    document.getElementById(
-        "studentClass"
-    );
-
-
-const saveStudentButton =
-    document.getElementById(
-        "saveStudentButton"
-    );
-
-
-const enrollmentPreview =
-    document.getElementById(
-        "enrollmentPreview"
-    );
-
-
-const enrollmentVideo =
-    document.getElementById(
-        "enrollmentVideo"
-    );
-
-
-const enrollmentImage =
-    document.getElementById(
-        "enrollmentImage"
-    );
-
-
-const previewPlaceholder =
-    document.getElementById(
-        "previewPlaceholder"
-    );
-
-
-const uploadButton =
-    document.getElementById(
-        "uploadButton"
-    );
-
-
-const cameraEnrollmentButton =
-    document.getElementById(
-        "cameraEnrollmentButton"
-    );
-
-
-const photoInput =
-    document.getElementById(
-        "photoInput"
-    );
-
-
-const faceValidation =
-    document.getElementById(
-        "faceValidation"
-    );
-
-
-const aiProgress =
-    document.getElementById(
-        "aiProgress"
-    );
-
-
-const aiPercent =
-    document.getElementById(
-        "aiPercent"
-    );
-
-
-/* Misc */
-
-const toast =
-    document.getElementById(
-        "toast"
-    );
-
-
-const modelLoading =
-    document.getElementById(
-        "modelLoading"
-    );
-
-
-/* =========================================================
-   STORAGE
-========================================================= */
-
-const STUDENTS_KEY =
-    "amanah_students_v3";
-
-
-const ATTENDANCE_KEY =
-    "amanah_attendance_v3";
-
+// =========================================================
+// AUTHENTICATION
+// =========================================================
+
+const USERS_KEY = "amanah_users_v3";
+
+function getUsers() {
+    try {
+        const data = JSON.parse(localStorage.getItem(USERS_KEY));
+        return Array.isArray(data) ? data : [];
+    } catch { return []; }
+}
+
+function saveUsers(users) {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+function initDefaultAdmin() {
+    const users = getUsers();
+    const adminExists = users.some(u => u.email === "admin@amanahid.sch.id");
+    if (!adminExists) {
+        users.push({
+            id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36),
+            name: "Admin",
+            email: "admin@amanahid.sch.id",
+            password: "admin123",
+            role: "admin",
+            createdAt: new Date().toISOString()
+        });
+        saveUsers(users);
+    }
+}
+
+function handleAuth() {
+    const authPage = document.getElementById('authPage');
+    const mainApp = document.getElementById('mainApp');
+    const savedUser = localStorage.getItem('amanah_session');
+
+    if (savedUser) {
+        try {
+            currentUser = JSON.parse(savedUser);
+            isAuthenticated = true;
+            authPage.style.display = 'none';
+            mainApp.style.display = 'flex';
+            initApp();
+        } catch {
+            authPage.style.display = 'flex';
+            mainApp.style.display = 'none';
+        }
+    } else {
+        authPage.style.display = 'flex';
+        mainApp.style.display = 'none';
+    }
+}
+
+// Auth Tabs
+document.querySelectorAll('.auth-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+        const formId = this.dataset.tab === 'login' ? 'loginForm' : 'signupForm';
+        document.getElementById(formId).classList.add('active');
+    });
+});
+
+// Login
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+
+    if (!email || !password) {
+        showToast('Harap isi email dan password.');
+        return;
+    }
+
+    const users = getUsers();
+    const user = users.find(u => u.email === email && u.password === password);
+
+    if (!user) {
+        showToast('Email atau password salah.');
+        return;
+    }
+
+    currentUser = user;
+    isAuthenticated = true;
+    localStorage.setItem('amanah_session', JSON.stringify(user));
+    document.getElementById('authPage').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'flex';
+    showToast(`Selamat datang, ${user.name}!`);
+    initApp();
+});
+
+// Signup
+document.getElementById('signupForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const name = document.getElementById('signupName').value.trim();
+    const email = document.getElementById('signupEmail').value.trim();
+    const password = document.getElementById('signupPassword').value.trim();
+    const confirm = document.getElementById('signupConfirm').value.trim();
+
+    if (!name || !email || !password || !confirm) {
+        showToast('Harap isi semua field.');
+        return;
+    }
+
+    if (password.length < 6) {
+        showToast('Password minimal 6 karakter.');
+        return;
+    }
+
+    if (password !== confirm) {
+        showToast('Password tidak cocok.');
+        return;
+    }
+
+    const users = getUsers();
+    if (users.some(u => u.email === email)) {
+        showToast('Email sudah terdaftar.');
+        return;
+    }
+
+    const newUser = {
+        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36),
+        name,
+        email,
+        password,
+        role: 'user',
+        createdAt: new Date().toISOString()
+    };
+
+    users.push(newUser);
+    saveUsers(users);
+    showToast('Akun berhasil dibuat! Silakan login.');
+    
+    // Switch ke login tab
+    document.querySelector('.auth-tab[data-tab="login"]').click();
+    document.getElementById('loginEmail').value = email;
+    document.getElementById('loginPassword').value = '';
+});
+
+// Logout
+document.getElementById('logoutButton').addEventListener('click', function() {
+    localStorage.removeItem('amanah_session');
+    isAuthenticated = false;
+    currentUser = null;
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('authPage').style.display = 'flex';
+    stopAttendanceCamera();
+    stopEnrollmentCamera();
+    showToast('Berhasil keluar.');
+});
+
+// =========================================================
+// DOM REFS
+// =========================================================
+
+const navItems = document.querySelectorAll(".nav-item");
+const pages = document.querySelectorAll(".page");
+
+const attendanceVideo = document.getElementById("attendanceVideo");
+const attendanceOverlay = document.getElementById("attendanceOverlay");
+const attendanceStatus = document.getElementById("attendanceStatus");
+const attendanceError = document.getElementById("attendanceError");
+const attendanceCameraButton = document.getElementById("attendanceCameraButton");
+const fullscreenButton = document.getElementById("fullscreenButton");
+const welcomeMessage = document.getElementById("welcomeMessage");
+
+const totalStudents = document.getElementById("totalStudents");
+const totalPresent = document.getElementById("totalPresent");
+const attendancePercentage = document.getElementById("attendancePercentage");
+const totalHistory = document.getElementById("totalHistory");
+const attendanceTableBody = document.getElementById("attendanceTableBody");
+const emptyDatabase = document.getElementById("emptyDatabase");
+
+const nisnInput = document.getElementById("nisn");
+const studentNameInput = document.getElementById("studentName");
+const studentClassInput = document.getElementById("studentClass");
+const saveStudentButton = document.getElementById("saveStudentButton");
+const enrollmentVideo = document.getElementById("enrollmentVideo");
+const enrollmentImage = document.getElementById("enrollmentImage");
+const previewPlaceholder = document.getElementById("previewPlaceholder");
+const uploadButton = document.getElementById("uploadButton");
+const cameraEnrollmentButton = document.getElementById("cameraEnrollmentButton");
+const photoInput = document.getElementById("photoInput");
+const faceValidation = document.getElementById("faceValidation");
+const aiProgress = document.getElementById("aiProgress");
+const aiPercent = document.getElementById("aiPercent");
+
+const toast = document.getElementById("toast");
+const modelLoading = document.getElementById("modelLoading");
+
+const dbSearch = document.getElementById("dbSearch");
+const dbDateStart = document.getElementById("dbDateStart");
+const dbDateEnd = document.getElementById("dbDateEnd");
+const dbFilterBtn = document.getElementById("dbFilterBtn");
+const dbExportBtn = document.getElementById("dbExportBtn");
+
+// =========================================================
+// STORAGE
+// =========================================================
+
+const STUDENTS_KEY = "amanah_students_v3";
+const ATTENDANCE_KEY = "amanah_attendance_v3";
 
 function getStudents() {
-
     try {
-
-        const data =
-            JSON.parse(
-                localStorage.getItem(
-                    STUDENTS_KEY
-                )
-            );
-
-        return Array.isArray(data)
-            ? data
-            : [];
-
-    } catch {
-
-        return [];
-
-    }
-
+        const data = JSON.parse(localStorage.getItem(STUDENTS_KEY));
+        return Array.isArray(data) ? data : [];
+    } catch { return []; }
 }
 
-
-function saveStudents(
-    students
-) {
-
-    localStorage.setItem(
-        STUDENTS_KEY,
-        JSON.stringify(
-            students
-        )
-    );
-
+function saveStudents(students) {
+    localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
 }
-
 
 function getAttendance() {
-
     try {
+        const data = JSON.parse(localStorage.getItem(ATTENDANCE_KEY));
+        return Array.isArray(data) ? data : [];
+    } catch { return []; }
+}
 
-        const data =
-            JSON.parse(
-                localStorage.getItem(
-                    ATTENDANCE_KEY
-                )
-            );
+function saveAttendance(attendance) {
+    localStorage.setItem(ATTENDANCE_KEY, JSON.stringify(attendance));
+}
 
-        return Array.isArray(data)
-            ? data
-            : [];
+// =========================================================
+// UTILITIES
+// =========================================================
 
-    } catch {
+let toastTimer = null;
 
-        return [];
+function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+}
 
+function escapeHTML(value) {
+    return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+}
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+function createId() {
+    if (window.crypto && typeof window.crypto.randomUUID === "function") {
+        return window.crypto.randomUUID();
     }
-
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
-
-function saveAttendance(
-    attendance
-) {
-
-    localStorage.setItem(
-        ATTENDANCE_KEY,
-        JSON.stringify(
-            attendance
-        )
-    );
-
+function getLocalDate() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
+// =========================================================
+// NAVIGATION
+// =========================================================
 
-/* =========================================================
-   UTILITIES
-========================================================= */
+navItems.forEach(button => {
+    button.addEventListener("click", () => {
+        if (button.id === 'logoutButton') return;
+        const pageId = button.dataset.page;
+        navItems.forEach(item => item.classList.remove("active"));
+        button.classList.add("active");
+        pages.forEach(page => page.classList.remove("active"));
+        const targetPage = document.getElementById(pageId);
+        if (targetPage) targetPage.classList.add("active");
+        if (pageId !== "attendancePage") stopAttendanceCamera();
+        if (pageId !== "formPage") stopEnrollmentCamera();
+        if (pageId === "databasePage") renderDatabase();
+    });
+});
 
-let toastTimer =
-    null;
-
-
-function showToast(
-    message
-) {
-
-    toast.textContent =
-        message;
-
-    toast.classList.add(
-        "show"
-    );
-
-
-    clearTimeout(
-        toastTimer
-    );
-
-
-    toastTimer =
-        setTimeout(
-            () => {
-
-                toast.classList.remove(
-                    "show"
-                );
-
-            },
-            2600
-        );
-
-}
-
-
-function escapeHTML(
-    value
-) {
-
-    return String(
-        value
-    )
-        .replaceAll(
-            "&",
-            "&amp;"
-        )
-        .replaceAll(
-            "<",
-            "&lt;"
-        )
-        .replaceAll(
-            ">",
-            "&gt;"
-        )
-        .replaceAll(
-            '"',
-            "&quot;"
-        )
-        .replaceAll(
-            "'",
-            "&#039;"
-        );
-
-}
-
-
-/* =========================================================
-   NAVIGATION
-========================================================= */
-
-navItems.forEach(
-    button => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                const pageId =
-                    button.dataset.page;
-
-
-                navItems.forEach(
-                    item => {
-
-                        item.classList.remove(
-                            "active"
-                        );
-
-                    }
-                );
-
-
-                button.classList.add(
-                    "active"
-                );
-
-
-                pages.forEach(
-                    page => {
-
-                        page.classList.remove(
-                            "active"
-                        );
-
-                    }
-                );
-
-
-                const targetPage =
-                    document.getElementById(
-                        pageId
-                    );
-
-
-                if (targetPage) {
-
-                    targetPage.classList.add(
-                        "active"
-                    );
-
-                }
-
-
-                /*
-                 * Kamera hanya aktif
-                 * pada halaman yang membutuhkan.
-                 */
-
-                if (
-                    pageId !==
-                    "attendancePage"
-                ) {
-
-                    stopAttendanceCamera();
-
-                }
-
-
-                if (
-                    pageId !==
-                    "formPage"
-                ) {
-
-                    stopEnrollmentCamera();
-
-                }
-
-
-                if (
-                    pageId ===
-                    "databasePage"
-                ) {
-
-                    renderDatabase();
-
-                }
-
-            }
-        );
-
-    }
-);
-
-
-/* =========================================================
-   LOAD MODELS - REVISED WITH BETTER ERROR HANDLING
-========================================================= */
+// =========================================================
+// LOAD MODELS
+// =========================================================
 
 async function loadModels() {
-
-    // Cek apakah faceapi tersedia
     if (typeof faceapi === 'undefined') {
-        console.error("[Amanah ID] face-api.js library not loaded");
-        showModelError(
-            "Library face-api.js tidak ditemukan",
-            "Pastikan koneksi internet aktif dan refresh halaman."
-        );
+        console.error("[Amanah ID] face-api.js not loaded");
+        showModelError("Library face-api.js tidak ditemukan", "Pastikan koneksi internet aktif.");
         return;
     }
 
     try {
-
-        console.log("[Amanah ID] Starting model loading...");
-
-        // Coba load dari primary URL
+        console.log("[Amanah ID] Loading models...");
         await loadModelsFromUrl(MODEL_URL);
-        
         modelsReady = true;
         modelLoading.classList.add("hidden");
         updateSaveButton();
-
-        console.log(
-            "[Amanah ID] AI models loaded successfully."
-        );
-
-        showToast(
-            "Sistem AI siap digunakan."
-        );
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            "[Amanah ID] Primary model load error:",
-            error
-        );
-
-        // Coba backup URL
+        console.log("[Amanah ID] AI models ready.");
+        showToast("Sistem AI siap digunakan.");
+    } catch (error) {
+        console.error("[Amanah ID] Primary error:", error);
         try {
-            console.log("[Amanah ID] Trying backup URL...");
+            console.log("[Amanah ID] Trying backup...");
             showModelStatus("Mencoba server cadangan...");
-            
             await loadModelsFromUrl(MODEL_URL_BACKUP);
-            
             modelsReady = true;
             modelLoading.classList.add("hidden");
             updateSaveButton();
-
-            console.log(
-                "[Amanah ID] AI models loaded from backup URL."
-            );
-
-            showToast(
-                "Sistem AI siap digunakan (server cadangan)."
-            );
-
+            console.log("[Amanah ID] AI models loaded from backup.");
+            showToast("Sistem AI siap (server cadangan).");
         } catch (backupError) {
-
-            console.error(
-                "[Amanah ID] Backup model load error:",
-                backupError
-            );
-
-            // Semua percobaan gagal
-            showModelError(
-                "Model AI gagal dimuat",
-                "Periksa koneksi internet dan muat ulang halaman. " +
-                "Pastikan tidak ada pemblokiran CORS."
-            );
-
-            // Tampilkan detail error di console untuk debugging
-            console.warn("[Amanah ID] Detailed error info:", {
-                primaryError: error.message,
-                backupError: backupError.message,
-                primaryUrl: MODEL_URL,
-                backupUrl: MODEL_URL_BACKUP,
-                faceapiVersion: faceapi?.version || 'unknown'
-            });
+            console.error("[Amanah ID] Backup error:", backupError);
+            showModelError("Model AI gagal dimuat", "Periksa koneksi internet dan refresh halaman.");
         }
-
     }
-
 }
-
 
 async function loadModelsFromUrl(url) {
-
-    // PERBAIKAN: Load dengan timeout untuk menghindari hang
-    const timeout = 30000; // 30 detik timeout
+    const timeout = 30000;
     const loadPromise = Promise.all([
-        faceapi.nets
-            .tinyFaceDetector
-            .loadFromUri(url),
-        faceapi.nets
-            .faceLandmark68Net
-            .loadFromUri(url),
-        faceapi.nets
-            .faceRecognitionNet
-            .loadFromUri(url)
+        faceapi.nets.tinyFaceDetector.loadFromUri(url),
+        faceapi.nets.faceLandmark68Net.loadFromUri(url),
+        faceapi.nets.faceRecognitionNet.loadFromUri(url)
     ]);
-
     const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-            reject(new Error(`Loading models from ${url} timed out after ${timeout}ms`));
-        }, timeout);
+        setTimeout(() => reject(new Error(`Loading timed out after ${timeout}ms`)), timeout);
     });
-
     await Promise.race([loadPromise, timeoutPromise]);
-
 }
-
 
 function showModelStatus(message) {
     const title = modelLoading.querySelector("strong");
     const subtitle = modelLoading.querySelector("span");
-
-    if (title) {
-        title.textContent = "Memuat Model AI";
-    }
-
-    if (subtitle) {
-        subtitle.textContent = message;
-    }
+    if (title) title.textContent = "Memuat Model AI";
+    if (subtitle) subtitle.textContent = message;
 }
-
 
 function showModelError(titleMessage, subtitleMessage) {
     const title = modelLoading.querySelector("strong");
     const subtitle = modelLoading.querySelector("span");
-
-    if (title) {
-        title.textContent = titleMessage || "Model AI gagal dimuat";
-    }
-
-    if (subtitle) {
-        subtitle.textContent = subtitleMessage || 
-            "Periksa koneksi internet dan pastikan tidak ada pemblokiran CORS. " +
-            "Refresh halaman untuk mencoba lagi.";
-    }
-
-    // Tambahkan tombol retry
-    const retryButton = document.createElement("button");
-    retryButton.textContent = "Coba Lagi";
-    retryButton.className = "primary-button";
-    retryButton.style.marginTop = "15px";
-    retryButton.style.padding = "10px 24px";
-    retryButton.style.width = "auto";
-    retryButton.style.fontSize = "12px";
-
-    retryButton.addEventListener("click", () => {
-        // Hapus tombol retry lama
-        retryButton.remove();
-        // Reset loading screen
-        const titleEl = modelLoading.querySelector("strong");
-        const subtitleEl = modelLoading.querySelector("span");
-        if (titleEl) titleEl.textContent = "Amanah ID";
-        if (subtitleEl) subtitleEl.textContent = "Menyiapkan sistem computer vision...";
-        // Muat ulang models
-        loadModels();
-    });
-
-    modelLoading.appendChild(retryButton);
+    if (title) title.textContent = titleMessage || "Model AI gagal dimuat";
+    if (subtitle) subtitle.textContent = subtitleMessage || "Periksa koneksi internet dan refresh halaman.";
 }
 
-
-/* =========================================================
-   CAMERA
-========================================================= */
+// =========================================================
+// CAMERA
+// =========================================================
 
 async function requestCamera() {
-
-    if (
-        !navigator.mediaDevices ||
-        !navigator.mediaDevices.getUserMedia
-    ) {
-
-        throw new Error(
-            "Browser tidak mendukung getUserMedia."
-        );
-
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Browser tidak mendukung getUserMedia.");
     }
-
-
     return navigator.mediaDevices.getUserMedia({
-
         video: {
-
-            facingMode:
-                "user",
-
-            width: {
-
-                ideal:
-                    640
-
-            },
-
-            height: {
-
-                ideal:
-                    480
-
-            },
-
-            frameRate: {
-
-                ideal:
-                    30, // PERCEPAT: dari 24 ke 30
-
-                max:
-                    30
-
-            }
-
+            facingMode: "user",
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            frameRate: { ideal: 30, max: 30 }
         },
-
-        audio:
-            false
-
+        audio: false
     });
-
 }
 
-
-/* =========================================================
-   ATTENDANCE CAMERA
-========================================================= */
+// =========================================================
+// ATTENDANCE CAMERA
+// =========================================================
 
 async function startAttendanceCamera() {
-
-    if (
-        !modelsReady
-    ) {
-
-        showToast(
-            "Sistem AI belum siap."
-        );
-
-        return;
-
-    }
-
-
+    if (!modelsReady) { showToast("Sistem AI belum siap."); return; }
     try {
-
         stopAttendanceCamera();
-
-
-        attendanceError.classList.remove(
-            "show"
-        );
-
-
-        attendanceStatus.textContent =
-            "Mengaktifkan kamera...";
-
-
-        attendanceStream =
-            await requestCamera();
-
-
-        attendanceVideo.srcObject =
-            attendanceStream;
-
-
+        attendanceError.classList.remove("show");
+        attendanceStatus.textContent = "Mengaktifkan kamera...";
+        attendanceStream = await requestCamera();
+        attendanceVideo.srcObject = attendanceStream;
         await attendanceVideo.play();
-
-
-        attendanceStatus.textContent =
-            "Mencari wajah...";
-
-
-        attendanceCameraButton.title =
-            "Matikan kamera";
-
-
+        attendanceStatus.textContent = "Mencari wajah...";
+        attendanceCameraButton.title = "Matikan kamera";
         startAttendanceLoop();
-
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            "[Attendance Camera]",
-            error
-        );
-
-
-        attendanceStatus.textContent =
-            "Kamera tidak tersedia";
-
-
-        attendanceError.classList.add(
-            "show"
-        );
-
-
-        showToast(
-            "Kamera gagal diakses."
-        );
-
+    } catch (error) {
+        console.error("[Attendance Camera]", error);
+        attendanceStatus.textContent = "Kamera tidak tersedia";
+        attendanceError.classList.add("show");
+        showToast("Kamera gagal diakses.");
     }
-
 }
-
 
 function stopAttendanceCamera() {
-
-    if (
-        attendanceTimer
-    ) {
-
-        clearInterval(
-            attendanceTimer
-        );
-
-        attendanceTimer =
-            null;
-
+    if (attendanceTimer) { clearInterval(attendanceTimer); attendanceTimer = null; }
+    if (attendanceStream) {
+        attendanceStream.getTracks().forEach(track => track.stop());
+        attendanceStream = null;
     }
-
-
-    if (
-        attendanceStream
-    ) {
-
-        attendanceStream
-            .getTracks()
-            .forEach(
-                track => {
-
-                    track.stop();
-
-                }
-            );
-
-        attendanceStream =
-            null;
-
-    }
-
-
-    attendanceVideo.srcObject =
-        null;
-
-
-    attendanceOverlay.innerHTML =
-        "";
-
-
-    welcomeMessage.classList.remove(
-        "show"
-    );
-
-
-    attendanceStatus.textContent =
-        "Kamera belum aktif";
-
-
-    attendanceCameraButton.title =
-        "Aktifkan kamera";
-
-
-    attendanceProcessing =
-        false;
-
-
-    attendanceMatchStudentId =
-        null;
-
-
-    attendanceMatchFrames =
-        0;
-
+    attendanceVideo.srcObject = null;
+    attendanceOverlay.innerHTML = "";
+    welcomeMessage.classList.remove("show");
+    attendanceStatus.textContent = "Kamera belum aktif";
+    attendanceCameraButton.title = "Aktifkan kamera";
+    attendanceProcessing = false;
+    attendanceMatchStudentId = null;
+    attendanceMatchFrames = 0;
 }
-
-
-/* =========================================================
-   ATTENDANCE LOOP
-========================================================= */
 
 function startAttendanceLoop() {
-
-    if (
-        attendanceTimer
-    ) {
-
-        clearInterval(
-            attendanceTimer
-        );
-
-    }
-
-
-    attendanceTimer =
-        setInterval(
-            processAttendanceFrame,
-            ATTENDANCE_INTERVAL
-        );
-
+    if (attendanceTimer) clearInterval(attendanceTimer);
+    attendanceTimer = setInterval(processAttendanceFrame, ATTENDANCE_INTERVAL);
 }
 
+// =========================================================
+// ATTENDANCE PROCESSING - AKURAT
+// =========================================================
 
 async function processAttendanceFrame() {
-
-    if (
-        attendanceProcessing ||
-        !modelsReady ||
-        !attendanceStream ||
-        attendanceVideo.readyState < 2
-    ) {
-
-        return;
-
-    }
-
-
-    attendanceProcessing =
-        true;
-
+    if (attendanceProcessing || !modelsReady || !attendanceStream || attendanceVideo.readyState < 2) return;
+    attendanceProcessing = true;
 
     try {
-
-        const detections =
-            await faceapi
-                .detectAllFaces(
-                    attendanceVideo,
-                    new faceapi.TinyFaceDetectorOptions({
-
-                        inputSize:
-                            224, // PERCEPAT: dari 320 ke 224
-
-                        scoreThreshold:
-                            0.55
-
-                    })
-                )
-                .withFaceLandmarks()
-                .withFaceDescriptors();
-
-
-        /*
-         * ALWAYS clear old boxes.
-         *
-         * This prevents frozen
-         * / stale outlines.
-         */
-
-        attendanceOverlay.innerHTML =
-            "";
-
-
-        /*
-         * No face.
-         */
-
-        if (
-            detections.length === 0
-        ) {
-
-            attendanceStatus.textContent =
-                "Mencari wajah...";
-
-
-            welcomeMessage.classList.remove(
-                "show"
-            );
-
-
-            attendanceMatchStudentId =
-                null;
-
-            attendanceMatchFrames =
-                0;
-
-
-            return;
-
-        }
-
-
-        const students =
-            getStudents();
-
-
-        /*
-         * Find match for every detected face.
-         */
-
-        const faceResults =
-            detections.map(
-                detection => {
-
-                    const match =
-                        findBestMatch(
-                            detection.descriptor,
-                            students
-                        );
-
-
-                    return {
-
-                        detection,
-                        match
-
-                    };
-
-                }
-            );
-
-
-        /*
-         * Draw every face.
-         */
-
-        for (
-            const result
-            of faceResults
-        ) {
-
-            const recognized =
-                Boolean(
-                    result.match &&
-                    result.match.distance <=
-                    FACE_MATCH_THRESHOLD
-                );
-
-
-            createFaceOutline(
-                result.detection.detection.box,
-                recognized
-            );
-
-        }
-
-
-        /*
-         * Multiple faces:
-         *
-         * Each can have its own
-         * white/green result.
-         *
-         * But attendance still
-         * uses temporal confirmation.
-         */
-
-        const recognizedFaces =
-            faceResults.filter(
-                result =>
-                    result.match &&
-                    result.match.distance <=
-                    FACE_MATCH_THRESHOLD
-            );
-
-
-        if (
-            recognizedFaces.length === 0
-        ) {
-
-            attendanceStatus.textContent =
-                detections.length === 1
-                    ? "Wajah terdeteksi • identitas belum cocok"
-                    : `${detections.length} wajah terdeteksi • tidak ada identitas cocok`;
-
-
-            welcomeMessage.classList.remove(
-                "show"
-            );
-
-
-            attendanceMatchStudentId =
-                null;
-
-            attendanceMatchFrames =
-                0;
-
-
-            return;
-
-        }
-
-
-        /*
-         * Select best recognized face.
-         */
-
-        recognizedFaces.sort(
-            (
-                a,
-                b
-            ) =>
-                a.match.distance -
-                b.match.distance
-        );
-
-
-        const best =
-            recognizedFaces[0];
-
-
-        const student =
-            best.match.student;
-
-
-        /*
-         * Multi-frame confirmation.
-         */
-
-        if (
-            attendanceMatchStudentId ===
-            student.id
-        ) {
-
-            attendanceMatchFrames +=
-                1;
-
-        } else {
-
-            attendanceMatchStudentId =
-                student.id;
-
-            attendanceMatchFrames =
-                1;
-
-        }
-
-
-        attendanceStatus.textContent =
-            `${student.name} terdeteksi`;
-
-
-        /*
-         * Require multiple frames
-         * before attendance.
-         */
-
-        if (
-            attendanceMatchFrames >=
-            REQUIRED_MATCH_FRAMES
-        ) {
-
-            welcomeMessage.textContent =
-                `Selamat datang, ${student.name}!`;
-
-
-            welcomeMessage.classList.add(
-                "show"
-            );
-
-
-            registerAttendance(
-                student,
-                best.match.distance
-            );
-
-        } else {
-
-            welcomeMessage.classList.remove(
-                "show"
-            );
-
-        }
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            "[Attendance Detection]",
-            error
-        );
-
-    } finally {
-
-        attendanceProcessing =
-            false;
-
-    }
-
-}
-
-
-/* =========================================================
-   FACE OUTLINE
-========================================================= */
-
-function createFaceOutline(
-    box,
-    recognized
-) {
-
-    if (
-        !attendanceVideo.videoWidth ||
-        !attendanceVideo.videoHeight
-    ) {
-
-        return;
-
-    }
-
-
-    const outline =
-        document.createElement(
-            "div"
-        );
-
-
-    outline.className =
-        recognized
-            ? "face-outline recognized"
-            : "face-outline";
-
-
-    /*
-     * Correctly map face-api coordinates
-     * to object-fit: cover.
-     */
-
-    const mapped =
-        mapVideoBox(
-            box,
+        const detections = await faceapi.detectAllFaces(
             attendanceVideo,
-            true
-        );
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.50 })
+        ).withFaceLandmarks().withFaceDescriptors();
 
+        attendanceOverlay.innerHTML = "";
 
-    outline.style.left =
-        `${mapped.x}px`;
-
-
-    outline.style.top =
-        `${mapped.y}px`;
-
-
-    outline.style.width =
-        `${mapped.width}px`;
-
-
-    outline.style.height =
-        `${mapped.height}px`;
-
-
-    attendanceOverlay.appendChild(
-        outline
-    );
-
-}
-
-
-/* =========================================================
-   VIDEO BOX MAPPING
-========================================================= */
-
-function mapVideoBox(
-    box,
-    video,
-    mirrored
-) {
-
-    const videoWidth =
-        video.videoWidth;
-
-    const videoHeight =
-        video.videoHeight;
-
-
-    const containerWidth =
-        video.clientWidth;
-
-    const containerHeight =
-        video.clientHeight;
-
-
-    /*
-     * object-fit: cover
-     */
-
-    const scale =
-        Math.max(
-            containerWidth /
-                videoWidth,
-
-            containerHeight /
-                videoHeight
-        );
-
-
-    const renderedWidth =
-        videoWidth *
-        scale;
-
-
-    const renderedHeight =
-        videoHeight *
-        scale;
-
-
-    const offsetX =
-        (
-            containerWidth -
-            renderedWidth
-        ) / 2;
-
-
-    const offsetY =
-        (
-            containerHeight -
-            renderedHeight
-        ) / 2;
-
-
-    let x =
-        offsetX +
-        box.x *
-        scale;
-
-
-    if (
-        mirrored
-    ) {
-
-        x =
-            containerWidth -
-            (
-                offsetX +
-                (
-                    box.x +
-                    box.width
-                ) *
-                scale
-            );
-
-    }
-
-
-    const y =
-        offsetY +
-        box.y *
-        scale;
-
-
-    return {
-
-        x,
-
-        y,
-
-        width:
-            box.width *
-            scale,
-
-        height:
-            box.height *
-            scale
-
-    };
-
-}
-
-
-/* =========================================================
-   MATCHING
-========================================================= */
-
-function findBestMatch(
-    descriptor,
-    students
-) {
-
-    let bestStudent =
-        null;
-
-
-    let bestDistance =
-        Infinity;
-
-
-    for (
-        const student
-        of students
-    ) {
-
-        if (
-            !Array.isArray(
-                student.descriptor
-            )
-        ) {
-
-            continue;
-
+        if (detections.length === 0) {
+            attendanceStatus.textContent = "Mencari wajah...";
+            welcomeMessage.classList.remove("show");
+            attendanceMatchStudentId = null;
+            attendanceMatchFrames = 0;
+            return;
         }
 
+        const students = getStudents();
+        const faceResults = detections.map(detection => ({
+            detection,
+            match: findBestMatch(detection.descriptor, students)
+        }));
 
-        if (
-            student.descriptor.length !==
-            descriptor.length
-        ) {
-
-            continue;
-
+        for (const result of faceResults) {
+            const recognized = Boolean(result.match && result.match.distance <= FACE_MATCH_THRESHOLD);
+            createFaceOutline(result.detection.detection.box, recognized);
         }
 
+        const recognizedFaces = faceResults.filter(result =>
+            result.match && result.match.distance <= FACE_MATCH_THRESHOLD
+        );
 
-        const distance =
-            faceapi.euclideanDistance(
-                descriptor,
-                new Float32Array(
-                    student.descriptor
-                )
-            );
-
-
-        if (
-            distance <
-            bestDistance
-        ) {
-
-            bestDistance =
-                distance;
-
-            bestStudent =
-                student;
-
+        if (recognizedFaces.length === 0) {
+            attendanceStatus.textContent = detections.length === 1
+                ? "Wajah terdeteksi • identitas belum cocok"
+                : `${detections.length} wajah • tidak ada identitas cocok`;
+            welcomeMessage.classList.remove("show");
+            attendanceMatchStudentId = null;
+            attendanceMatchFrames = 0;
+            return;
         }
 
+        recognizedFaces.sort((a, b) => a.match.distance - b.match.distance);
+        const best = recognizedFaces[0];
+        const student = best.match.student;
+
+        if (attendanceMatchStudentId === student.id) {
+            attendanceMatchFrames += 1;
+        } else {
+            attendanceMatchStudentId = student.id;
+            attendanceMatchFrames = 1;
+        }
+
+        attendanceStatus.textContent = `${student.name} terdeteksi`;
+
+        if (attendanceMatchFrames >= REQUIRED_MATCH_FRAMES) {
+            welcomeMessage.textContent = `Selamat datang, ${student.name}!`;
+            welcomeMessage.classList.add("show");
+            registerAttendance(student, best.match.distance);
+        } else {
+            welcomeMessage.classList.remove("show");
+        }
+    } catch (error) {
+        console.error("[Attendance Detection]", error);
+    } finally {
+        attendanceProcessing = false;
     }
-
-
-    if (
-        !bestStudent
-    ) {
-
-        return null;
-
-    }
-
-
-    return {
-
-        student:
-            bestStudent,
-
-        distance:
-            bestDistance
-
-    };
-
 }
 
+// =========================================================
+// FACE OUTLINE
+// =========================================================
 
-/* =========================================================
-   ATTENDANCE REGISTER
-========================================================= */
+function createFaceOutline(box, recognized) {
+    if (!attendanceVideo.videoWidth || !attendanceVideo.videoHeight) return;
+    const outline = document.createElement("div");
+    outline.className = recognized ? "face-outline recognized" : "face-outline";
+    const mapped = mapVideoBox(box, attendanceVideo, true);
+    outline.style.cssText = `left:${mapped.x}px;top:${mapped.y}px;width:${mapped.width}px;height:${mapped.height}px;`;
+    attendanceOverlay.appendChild(outline);
+}
 
-function registerAttendance(
-    student,
-    distance
-) {
+function mapVideoBox(box, video, mirrored) {
+    const videoWidth = video.videoWidth;
+    const videoHeight = video.videoHeight;
+    const containerWidth = video.clientWidth;
+    const containerHeight = video.clientHeight;
+    const scale = Math.max(containerWidth / videoWidth, containerHeight / videoHeight);
+    const renderedWidth = videoWidth * scale;
+    const renderedHeight = videoHeight * scale;
+    const offsetX = (containerWidth - renderedWidth) / 2;
+    const offsetY = (containerHeight - renderedHeight) / 2;
+    let x = offsetX + box.x * scale;
+    if (mirrored) {
+        x = containerWidth - (offsetX + (box.x + box.width) * scale);
+    }
+    return { x, y: offsetY + box.y * scale, width: box.width * scale, height: box.height * scale };
+}
 
-    const attendance =
-        getAttendance();
+// =========================================================
+// MATCHING - LEBIH AKURAT
+// =========================================================
 
+function findBestMatch(descriptor, students) {
+    let bestStudent = null;
+    let bestDistance = Infinity;
 
-    const today =
-        getLocalDate();
-
-
-    /*
-     * No duplicate attendance
-     * on the same day.
-     */
-
-    const existing =
-        attendance.find(
-            item =>
-                item.nisn ===
-                student.nisn &&
-                item.date ===
-                today
-        );
-
-
-    if (
-        existing
-    ) {
-
-        return;
-
+    for (const student of students) {
+        if (!Array.isArray(student.descriptor) || student.descriptor.length !== descriptor.length) continue;
+        const distance = faceapi.euclideanDistance(descriptor, new Float32Array(student.descriptor));
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            bestStudent = student;
+        }
     }
 
+    if (!bestStudent) return null;
+    return { student: bestStudent, distance: bestDistance };
+}
 
-    /*
-     * Short cooldown.
-     */
+// =========================================================
+// ATTENDANCE REGISTER
+// =========================================================
 
-    const currentTime =
-        Date.now();
+function registerAttendance(student, distance) {
+    const attendance = getAttendance();
+    const today = getLocalDate();
+    const existing = attendance.find(item => item.nisn === student.nisn && item.date === today);
+    if (existing) return;
 
+    const currentTime = Date.now();
+    const previous = attendanceCooldown.get(student.id);
+    if (previous && currentTime - previous < 5000) return;
+    attendanceCooldown.set(student.id, currentTime);
 
-    const previous =
-        attendanceCooldown.get(
-            student.id
-        );
-
-
-    if (
-        previous &&
-        currentTime -
-        previous <
-        5000
-    ) {
-
-        return;
-
-    }
-
-
-    attendanceCooldown.set(
-        student.id,
-        currentTime
-    );
-
-
-    /*
-     * Confidence here is only a
-     * normalized prototype indicator.
-     *
-     * It is NOT a statistical probability.
-     */
-
-    const confidence =
-        Math.max(
-            0,
-            Math.min(
-                100,
-                (
-                    1 -
-                    distance
-                ) *
-                100
-            )
-        );
-
-
+    const confidence = Math.max(0, Math.min(100, (1 - distance) * 100));
     const record = {
-
-        id:
-            createId(),
-
-        nisn:
-            student.nisn,
-
-        name:
-            student.name,
-
-        className:
-            student.className,
-
-        status:
-            "Hadir",
-
-        date:
-            today,
-
-        timestamp:
-            new Date()
-                .toISOString(),
-
-        method:
-            "Face Recognition",
-
-        confidence:
-            confidence
-
+        id: createId(),
+        nisn: student.nisn,
+        name: student.name,
+        className: student.className,
+        status: "Hadir",
+        date: today,
+        timestamp: new Date().toISOString(),
+        method: "Face Recognition",
+        confidence: confidence
     };
 
-
-    attendance.unshift(
-        record
-    );
-
-
-    saveAttendance(
-        attendance
-    );
-
-
+    attendance.unshift(record);
+    saveAttendance(attendance);
     renderDatabase();
-
-
-    showToast(
-        `${student.name} berhasil melakukan presensi.`
-    );
-
+    showToast(`${student.name} berhasil melakukan presensi.`);
 }
 
-
-/* =========================================================
-   FORM CAMERA
-========================================================= */
+// =========================================================
+// ENROLLMENT - SUPER FAST & AKURAT
+// =========================================================
 
 async function startEnrollmentCamera() {
-
-    if (
-        !modelsReady
-    ) {
-
-        showToast(
-            "Sistem AI belum siap."
-        );
-
-        return;
-
-    }
-
-
+    if (!modelsReady) { showToast("Sistem AI belum siap."); return; }
     try {
-
         stopEnrollmentCamera();
-
-
         resetEnrollmentState();
-
-
-        /*
-         * Remove current image.
-         */
-
         clearEnrollmentImage();
-
-
-        /*
-         * Request camera.
-         */
-
-        enrollmentStream =
-            await requestCamera();
-
-
-        /*
-         * Attach immediately.
-         */
-
-        enrollmentVideo.srcObject =
-            enrollmentStream;
-
-
-        enrollmentVideo.classList.add(
-            "active"
-        );
-
-
-        previewPlaceholder.style.display =
-            "none";
-
-
-        await waitForVideoReady(
-            enrollmentVideo
-        );
-
-
-        setValidation(
-            "Kamera aktif. Posisikan satu wajah di tengah.",
-            true
-        );
-
-
+        enrollmentStream = await requestCamera();
+        enrollmentVideo.srcObject = enrollmentStream;
+        enrollmentVideo.classList.add("active");
+        previewPlaceholder.style.display = "none";
+        await waitForVideoReady(enrollmentVideo);
+        setValidation("Kamera aktif. Posisikan satu wajah di tengah.", true);
         startEnrollmentLoop();
-
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            "[Enrollment Camera]",
-            error
-        );
-
-
-        setValidation(
-            getCameraErrorMessage(
-                error
-            ),
-            false
-        );
-
-
-        showToast(
-            "Kamera formulir gagal dibuka."
-        );
-
+    } catch (error) {
+        console.error("[Enrollment Camera]", error);
+        setValidation(getCameraErrorMessage(error), false);
+        showToast("Kamera formulir gagal dibuka.");
     }
-
 }
-
 
 function stopEnrollmentCamera() {
-
-    if (
-        enrollmentTimer
-    ) {
-
-        clearInterval(
-            enrollmentTimer
-        );
-
-        enrollmentTimer =
-            null;
-
+    if (enrollmentTimer) { clearInterval(enrollmentTimer); enrollmentTimer = null; }
+    if (enrollmentStream) {
+        enrollmentStream.getTracks().forEach(track => track.stop());
+        enrollmentStream = null;
     }
-
-
-    if (
-        enrollmentStream
-    ) {
-
-        enrollmentStream
-            .getTracks()
-            .forEach(
-                track => {
-
-                    track.stop();
-
-                }
-            );
-
-        enrollmentStream =
-            null;
-
-    }
-
-
     enrollmentVideo.pause();
-
-
-    enrollmentVideo.srcObject =
-        null;
-
-
-    enrollmentVideo.classList.remove(
-        "active"
-    );
-
-
-    enrollmentProcessing =
-        false;
-
-
-    stabilityHistory =
-        [];
-
-
-    enrollmentReadyFrames =
-        0;
-        
+    enrollmentVideo.srcObject = null;
+    enrollmentVideo.classList.remove("active");
+    enrollmentProcessing = false;
+    stabilityHistory = [];
+    enrollmentReadyFrames = 0;
     lastEnrollmentDetection = null;
     detectionCounter = 0;
-
 }
-
-
-/* =========================================================
-   CLEAR ENROLLMENT IMAGE
-========================================================= */
 
 function clearEnrollmentImage() {
     currentEnrollmentDescriptor = null;
     currentEnrollmentImage = null;
-    
     enrollmentImage.src = "";
-    enrollmentImage.classList.remove("active");
-    enrollmentImage.classList.remove("has-image");
-    
-    // Hapus tombol ganti jika ada
+    enrollmentImage.classList.remove("active", "has-image");
     const replaceBtn = document.getElementById('replaceImageBtn');
-    if (replaceBtn) {
-        replaceBtn.remove();
-    }
-    
+    if (replaceBtn) replaceBtn.remove();
     previewPlaceholder.style.display = "flex";
-    
     resetEnrollmentState();
     updateSaveButton();
 }
 
-
-/* =========================================================
-   WAIT FOR VIDEO
-========================================================= */
-
-function waitForVideoReady(
-    video
-) {
-
-    return new Promise(
-        resolve => {
-
-            if (
-                video.readyState >=
-                2
-            ) {
-
-                resolve();
-
-                return;
-
-            }
-
-
-            const handler =
-                () => {
-
-                    video.removeEventListener(
-                        "loadedmetadata",
-                        handler
-                    );
-
-                    resolve();
-
-                };
-
-
-            video.addEventListener(
-                "loadedmetadata",
-                handler
-            );
-
-        }
-    );
-
+function waitForVideoReady(video) {
+    return new Promise(resolve => {
+        if (video.readyState >= 2) { resolve(); return; }
+        const handler = () => {
+            video.removeEventListener("loadedmetadata", handler);
+            resolve();
+        };
+        video.addEventListener("loadedmetadata", handler);
+    });
 }
-
-
-/* =========================================================
-   ENROLLMENT LOOP
-========================================================= */
 
 function startEnrollmentLoop() {
-
-    if (
-        enrollmentTimer
-    ) {
-
-        clearInterval(
-            enrollmentTimer
-        );
-
-    }
-
-
-    enrollmentTimer =
-        setInterval(
-            processEnrollmentFrame,
-            ENROLLMENT_INTERVAL
-        );
-
+    if (enrollmentTimer) clearInterval(enrollmentTimer);
+    enrollmentTimer = setInterval(processEnrollmentFrame, ENROLLMENT_INTERVAL);
 }
 
-
-/* =========================================================
-   ENROLLMENT AI - SUPER FAST DETECTION
-========================================================= */
-
 async function processEnrollmentFrame() {
-
-    if (
-        enrollmentProcessing ||
-        !enrollmentStream ||
-        enrollmentVideo.readyState < 2    ) {
-
-        return;
-
-    }
-
-
-    enrollmentProcessing =
-        true;
-        
+    if (enrollmentProcessing || !enrollmentStream || enrollmentVideo.readyState < 2) return;
+    enrollmentProcessing = true;
     detectionCounter++;
 
-
     try {
+        // LEBIH AKURAT: InputSize 256 untuk balance speed vs accuracy
+        const detections = await faceapi.detectAllFaces(
+            enrollmentVideo,
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 256, scoreThreshold: 0.45 })
+        ).withFaceLandmarks().withFaceDescriptors();
 
-        // PERCEPAT: Gunakan inputSize lebih kecil untuk kecepatan
-        const detections =
-            await faceapi
-                .detectAllFaces(
-                    enrollmentVideo,
-                    new faceapi.TinyFaceDetectorOptions({
-
-                        inputSize:
-                            160, // PERCEPAT: Lebih kecil untuk kecepatan ekstrim
-
-                        scoreThreshold:
-                            0.45 // PERCEPAT: Threshold lebih rendah
-
-                    })
-                )
-                .withFaceLandmarks()
-                .withFaceDescriptors();
-
-
-        /*
-         * NO FACE
-         */
-
-        if (
-            detections.length === 0
-        ) {
-
-            enrollmentReadyFrames =
-                0;
-                
+        if (detections.length === 0) {
+            enrollmentReadyFrames = 0;
             lastEnrollmentDetection = null;
-
-
-            updateEnrollmentProgress(
-                0
-            );
-
-
-            setValidation(
-                "Wajah belum terdeteksi.",
-                false
-            );
-
-
+            updateEnrollmentProgress(0);
+            setValidation("Wajah belum terdeteksi.", false);
             return;
-
         }
 
-
-        /*
-         * MULTIPLE FACES
-         */
-
-        if (
-            detections.length > 1
-        ) {
-
-            enrollmentReadyFrames =
-                0;
-                
+        if (detections.length > 1) {
+            enrollmentReadyFrames = 0;
             lastEnrollmentDetection = null;
-
-
-            updateEnrollmentProgress(
-                5
-            );
-
-
-            setValidation(
-                "Hanya satu wajah yang boleh berada di kamera.",
-                false
-            );
-
-
+            updateEnrollmentProgress(5);
+            setValidation("Hanya satu wajah yang boleh berada di kamera.", false);
             return;
-
         }
 
-
-        const detection =
-            detections[0];
-
-
-        const box =
-            detection.detection.box;
-
-
-        const width =
-            enrollmentVideo.videoWidth;
-
-
-        const height =
-            enrollmentVideo.videoHeight;
-
-
-        /*
-         * OPTIMASI: Cache detection untuk frame berikutnya
-         */
+        const detection = detections[0];
+        const box = detection.detection.box;
+        const width = enrollmentVideo.videoWidth;
+        const height = enrollmentVideo.videoHeight;
         lastEnrollmentDetection = detection;
 
-
-        /*
-         * ==============================================
-         * 1. FACE SIZE - PERCEPAT
-         * ==============================================
-         */
-
-        const faceArea =
-            (
-                box.width *
-                box.height
-            ) /
-            (
-                width *
-                height
-            );
-
-
-        // PERCEPAT: Range lebih luas
+        // FACE SIZE - Range lebih luas untuk akurasi
+        const faceArea = (box.width * box.height) / (width * height);
         let sizeScore = 0;
-        if (faceArea >= 0.05 && faceArea <= 0.50) {
-            sizeScore = 90 + (1 - Math.abs(faceArea - 0.20) * 100);
-        } else if (faceArea > 0.50 && faceArea <= 0.70) {
-            sizeScore = 65 - (faceArea - 0.50) * 120;
-        } else if (faceArea >= 0.025 && faceArea < 0.05) {
-            sizeScore = 45 + (faceArea - 0.025) * 600;
+        if (faceArea >= 0.06 && faceArea <= 0.45) {
+            sizeScore = 95 + (1 - Math.abs(faceArea - 0.22) * 120);
+        } else if (faceArea > 0.45 && faceArea <= 0.65) {
+            sizeScore = 70 - (faceArea - 0.45) * 150;
+        } else if (faceArea >= 0.03 && faceArea < 0.06) {
+            sizeScore = 50 + (faceArea - 0.03) * 500;
         } else {
-            sizeScore = Math.max(0, 100 - Math.abs(faceArea - 0.20) * 200);
+            sizeScore = Math.max(0, 100 - Math.abs(faceArea - 0.22) * 250);
         }
         sizeScore = clamp(sizeScore, 0, 100);
 
+        // CENTER
+        const faceCenterX = box.x + box.width / 2;
+        const faceCenterY = box.y + box.height / 2;
+        const frameCenterX = width / 2;
+        const frameCenterY = height / 2;
+        const dist = Math.hypot((faceCenterX - frameCenterX) / width, (faceCenterY - frameCenterY) / height);
+        const centerScore = clamp(100 - (dist * 280), 0, 100);
 
-        /*
-         * ==============================================
-         * 2. CENTER - PERCEPAT
-         * ==============================================
-         */
-
-        const faceCenterX =
-            box.x + box.width / 2;
-        const faceCenterY =
-            box.y + box.height / 2;
-        const frameCenterX =
-            width / 2;
-        const frameCenterY =
-            height / 2;
-
-        const distance = Math.hypot(
-            (faceCenterX - frameCenterX) / width,
-            (faceCenterY - frameCenterY) / height
-        );
-
-        const centerScore = clamp(100 - (distance * 250), 0, 100);
-
-
-        /*
-         * ==============================================
-         * 3. BRIGHTNESS - SKIP LEBIH BANYAK
-         * ==============================================
-         */
-
+        // BRIGHTNESS - Skip lebih sering
         let lightScore = 80;
-        if (detectionCounter % 5 === 0) { // Kurangi frekuensi
+        if (detectionCounter % 4 === 0) {
             const brightness = calculateBrightness(enrollmentVideo);
             lightScore = calculateLightScore(brightness);
         }
 
-
-        /*
-         * ==============================================
-         * 4. STABILITY - PERCEPAT
-         * ==============================================
-         */
-
-        stabilityHistory.push({
-            x: faceCenterX,
-            y: faceCenterY,
-            width: box.width,
-            height: box.height
-        });
-
-        if (stabilityHistory.length > STABILITY_HISTORY) {
-            stabilityHistory.shift();
-        }
+        // STABILITY - Lebih responsif
+        stabilityHistory.push({ x: faceCenterX, y: faceCenterY, width: box.width, height: box.height });
+        if (stabilityHistory.length > STABILITY_HISTORY) stabilityHistory.shift();
 
         let stabilityScore = 50;
         if (stabilityHistory.length >= STABILITY_HISTORY) {
             const first = stabilityHistory[0];
             const last = stabilityHistory[stabilityHistory.length - 1];
-            
             const movement = Math.hypot(last.x - first.x, last.y - first.y);
             const sizeMovement = Math.abs(last.width - first.width);
-            
-            stabilityScore = clamp(100 - (movement * 0.5) - (sizeMovement * 0.4), 0, 100);
+            stabilityScore = clamp(100 - (movement * 0.6) - (sizeMovement * 0.5), 0, 100);
         }
 
+        // FINAL SCORE - Bobot dioptimasi
+        const finalScore = (sizeScore * 0.30 + centerScore * 0.30 + lightScore * 0.15 + stabilityScore * 0.25);
 
-        /*
-         * ==============================================
-         * FINAL SCORE
-         * ==============================================
-         */
-
-        const finalScore = (
-            sizeScore * 0.30 +
-            centerScore * 0.30 +
-            lightScore * 0.15 +
-            stabilityScore * 0.25
-        );
-
-
-        /*
-         * Progress lebih agresif
-         */
+        // Progress agresif
         if (finalScore > enrollmentProgress) {
             enrollmentProgress = enrollmentProgress * 0.30 + finalScore * 0.70;
         } else {
             enrollmentProgress = enrollmentProgress * 0.50 + finalScore * 0.50;
         }
 
-        // Boost besar jika kondisi baik
-        if (finalScore >= 80 && sizeScore >= 70 && centerScore >= 75) {
-            enrollmentProgress = Math.min(100, enrollmentProgress + 20);
+        if (finalScore >= 82 && sizeScore >= 72 && centerScore >= 75) {
+            enrollmentProgress = Math.min(100, enrollmentProgress + 18);
         }
 
         enrollmentProgress = clamp(enrollmentProgress, 0, 100);
+        updateEnrollmentProgress(enrollmentProgress);
 
+        const ready = finalScore >= 78 && faceArea >= 0.04 && faceArea <= 0.60 && centerScore >= 72 && stabilityScore >= 62;
 
-        updateEnrollmentProgress(
-            enrollmentProgress
-        );
-
-
-        /*
-         * Ready threshold - Lebih permisif
-         */
-
-        const ready =
-            finalScore >= 75 &&
-            faceArea >= 0.04 &&
-            faceArea <= 0.65 &&
-            centerScore >= 70 &&
-            stabilityScore >= 60;
-
-
-        if (
-            ready &&
-            enrollmentProgress >= 80
-        ) {
-
-            enrollmentReadyFrames +=
-                1;
-
+        if (ready && enrollmentProgress >= 82) {
+            enrollmentReadyFrames += 1;
         } else {
-
-            enrollmentReadyFrames =
-                0;
-
+            enrollmentReadyFrames = 0;
         }
 
+        // Status messages
+        if (enrollmentProgress < 25) setValidation("Mendeteksi wajah...", true);
+        else if (enrollmentProgress < 50) setValidation("Analisis kualitas wajah...", true);
+        else if (enrollmentProgress < 75) setValidation("Pertahankan posisi...", true);
+        else if (enrollmentProgress < 100) setValidation("Hampir selesai...", true);
+        else setValidation("Siap!", true);
 
-        /*
-         * Status message
-         */
-
-        if (enrollmentProgress < 25) {
-            setValidation("Mendeteksi wajah...", true);
-        } else if (enrollmentProgress < 50) {
-            setValidation("Analisis kualitas...", true);
-        } else if (enrollmentProgress < 75) {
-            setValidation("Pertahankan posisi...", true);
-        } else if (enrollmentProgress < 100) {
-            setValidation("Hampir selesai...", true);
-        } else {
-            setValidation("Siap!", true);
+        if (enrollmentProgress >= 100 && enrollmentReadyFrames >= REQUIRED_CAPTURE_FRAMES) {
+            await captureEnrollment(detection);
         }
-
-
-        /*
-         * 100% - Capture
-         */
-
-        if (
-            enrollmentProgress >= 100 &&
-            enrollmentReadyFrames >=
-            REQUIRED_CAPTURE_FRAMES
-        ) {
-
-            await captureEnrollment(
-                detection
-            );
-
-        }
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            "[Enrollment Detection]",
-            error
-        );
-
+    } catch (error) {
+        console.error("[Enrollment Detection]", error);
     } finally {
-
-        enrollmentProcessing =
-            false;
-
+        enrollmentProcessing = false;
     }
-
 }
 
+// =========================================================
+// ENROLLMENT HELPERS
+// =========================================================
 
-/* =========================================================
-   ENROLLMENT SCORING - OPTIMASI CEPAT
-========================================================= */
-
-function calculateSizeScore(
-    ratio
-) {
-
-    // PERCEPAT: Perhitungan lebih sederhana
-    if (ratio >= 0.06 && ratio <= 0.40) {
-        return 90 + (1 - Math.abs(ratio - 0.18) * 120);
-    } else if (ratio > 0.40 && ratio <= 0.60) {
-        return 65 - (ratio - 0.40) * 120;
-    } else if (ratio >= 0.03 && ratio < 0.06) {
-        return 45 + (ratio - 0.03) * 600;
-    } else {
-        return Math.max(0, 100 - Math.abs(ratio - 0.18) * 180);
-    }
-
-}
-
-
-function calculateCenterScore(
-    box,
-    width,
-    height
-) {
-
-    const faceCenterX =
-        box.x + box.width / 2;
-    const faceCenterY =
-        box.y + box.height / 2;
-    const frameCenterX =
-        width / 2;
-    const frameCenterY =
-        height / 2;
-
-    const distance = Math.hypot(
-        (faceCenterX - frameCenterX) / width,
-        (faceCenterY - frameCenterY) / height
-    );
-
-    return clamp(100 - (distance * 250), 0, 100);
-
-}
-
-
-function calculateBrightness(
-    video
-) {
-
-    const canvas =
-        document.createElement(
-            "canvas"
-        );
-
-    canvas.width = 8; // PERCEPAT: Resolusi lebih rendah
+function calculateBrightness(video) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 8;
     canvas.height = 6;
-
-    const context =
-        canvas.getContext(
-            "2d",
-            { willReadFrequently: true }
-        );
-
-    if (!context) {
-        return 128;
-    }
-
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) return 128;
     context.drawImage(video, 0, 0, 8, 6);
-
     const image = context.getImageData(0, 0, 8, 6);
     let sum = 0;
-
     for (let i = 0; i < image.data.length; i += 4) {
-        const r = image.data[i];
-        const g = image.data[i + 1];
-        const b = image.data[i + 2];
-        sum += (0.299 * r) + (0.587 * g) + (0.114 * b);
+        sum += (0.299 * image.data[i]) + (0.587 * image.data[i + 1]) + (0.114 * image.data[i + 2]);
     }
-
     return sum / (image.data.length / 4);
-
 }
 
-
-function calculateLightScore(
-    brightness
-) {
-
-    if (brightness >= 50 && brightness <= 220) {
-        return 100 - Math.abs(brightness - 130) * 0.3;
-    } else if (brightness < 50) {
-        return clamp(brightness / 50 * 100, 0, 100);
+function calculateLightScore(brightness) {
+    if (brightness >= 55 && brightness <= 215) {
+        return 100 - Math.abs(brightness - 135) * 0.35;
+    } else if (brightness < 55) {
+        return clamp(brightness / 55 * 100, 0, 100);
     } else {
-        return clamp(100 - (brightness - 220) / 40 * 100, 0, 100);
+        return clamp(100 - (brightness - 215) / 45 * 100, 0, 100);
     }
-
 }
 
-
-function calculateStabilityScore(
-    box
-) {
-
-    const centerX = box.x + box.width / 2;
-    const centerY = box.y + box.height / 2;
-
-    stabilityHistory.push({
-        x: centerX,
-        y: centerY,
-        width: box.width,
-        height: box.height
-    });
-
-    if (stabilityHistory.length > STABILITY_HISTORY) {
-        stabilityHistory.shift();
-    }
-
-    if (stabilityHistory.length < STABILITY_HISTORY) {
-        return 50;
-    }
-
-    const first = stabilityHistory[0];
-    const last = stabilityHistory[stabilityHistory.length - 1];
-
-    const movement = Math.hypot(last.x - first.x, last.y - first.y);
-    const sizeMovement = Math.abs(last.width - first.width);
-
-    return clamp(100 - (movement * 0.5) - (sizeMovement * 0.4), 0, 100);
-
+function updateEnrollmentProgress(value) {
+    enrollmentProgress = clamp(value, 0, 100);
+    const percentage = Math.round(enrollmentProgress);
+    aiProgress.style.width = `${percentage}%`;
+    aiPercent.textContent = `${percentage}%`;
 }
 
-
-/* =========================================================
-   ENROLLMENT PROGRESS
-========================================================= */
-
-function updateEnrollmentProgress(
-    value
-) {
-
-    enrollmentProgress =
-        clamp(
-            value,
-            0,
-            100
-        );
-
-
-    const percentage =
-        Math.round(
-            enrollmentProgress
-        );
-
-
-    aiProgress.style.width =
-        `${percentage}%`;
-
-
-    aiPercent.textContent =
-        `${percentage}%`;
-
+function setValidation(message, success) {
+    faceValidation.textContent = message;
+    faceValidation.className = "validation-message";
+    if (message) {
+        faceValidation.classList.add(success ? "success" : "error");
+    }
 }
 
+function resetEnrollmentState() {
+    enrollmentProgress = 0;
+    enrollmentReadyFrames = 0;
+    stabilityHistory = [];
+    lastEnrollmentDetection = null;
+    detectionCounter = 0;
+    updateEnrollmentProgress(0);
+    setValidation("", true);
+}
 
-/* =========================================================
-   CAPTURE ENROLLMENT
-========================================================= */
+// =========================================================
+// CAPTURE ENROLLMENT
+// =========================================================
 
-async function captureEnrollment(
-    detection
-) {
-
-    /*
-     * Prevent another interval
-     * from firing.
-     */
-
+async function captureEnrollment(detection) {
     stopEnrollmentCamera();
+    const canvas = document.createElement("canvas");
+    canvas.width = enrollmentVideo.videoWidth;
+    canvas.height = enrollmentVideo.videoHeight;
+    const context = canvas.getContext("2d");
+    if (!context) { setValidation("Gagal memproses gambar.", false); return; }
+    context.translate(canvas.width, 0);
+    context.scale(-1, 1);
+    context.drawImage(enrollmentVideo, 0, 0, canvas.width, canvas.height);
+    const imageData = canvas.toDataURL("image/jpeg", 0.90);
 
+    currentEnrollmentDescriptor = Array.from(detection.descriptor);
+    currentEnrollmentImage = imageData;
 
-    /*
-     * Create image.
-     */
-
-    const canvas =
-        document.createElement(
-            "canvas"
-        );
-
-
-    canvas.width =
-        enrollmentVideo.videoWidth;
-
-
-    canvas.height =
-        enrollmentVideo.videoHeight;
-
-
-    const context =
-        canvas.getContext(
-            "2d"
-        );
-
-
-    if (!context) {
-
-        setValidation(
-            "Gagal memproses gambar.",
-            false
-        );
-
-        return;
-
-    }
-
-
-    /*
-     * Mirror image to match
-     * the preview.
-     */
-
-    context.translate(
-        canvas.width,
-        0
-    );
-
-
-    context.scale(
-        -1,
-        1
-    );
-
-
-    context.drawImage(
-        enrollmentVideo,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-
-    const imageData =
-        canvas.toDataURL(
-            "image/jpeg",
-            0.90
-        );
-
-
-    /*
-     * Save descriptor.
-     */
-
-    currentEnrollmentDescriptor =
-        Array.from(
-            detection.descriptor
-        );
-
-
-    currentEnrollmentImage =
-        imageData;
-
-
-    /*
-     * Display captured image.
-     */
-
-    enrollmentImage.src =
-        imageData;
-
-
-    enrollmentImage.classList.add(
-        "active"
-    );
-    
-    enrollmentImage.classList.add(
-        "has-image"
-    );
-
-
-    enrollmentVideo.classList.remove(
-        "active"
-    );
-
-
-    previewPlaceholder.style.display =
-        "none";
-
-
-    /*
-     * Tambahkan tombol ganti
-     */
+    enrollmentImage.src = imageData;
+    enrollmentImage.classList.add("active", "has-image");
+    enrollmentVideo.classList.remove("active");
+    previewPlaceholder.style.display = "none";
     addReplaceButton();
 
-
-    /*
-     * Final bar.
-     */
-
-    updateEnrollmentProgress(
-        100
-    );
-
-
-    setValidation(
-        "Foto wajah berhasil diverifikasi dan siap disimpan.",
-        true
-    );
-
-
+    updateEnrollmentProgress(100);
+    setValidation("Foto wajah berhasil diverifikasi dan siap disimpan.", true);
     updateSaveButton();
-
-
-    showToast(
-        "Wajah berhasil ditangkap."
-    );
-
+    showToast("Wajah berhasil ditangkap.");
 }
 
-
-/* =========================================================
-   ADD REPLACE BUTTON
-========================================================= */
-
 function addReplaceButton() {
-    // Hapus tombol lama jika ada
     const oldBtn = document.getElementById('replaceImageBtn');
-    if (oldBtn) {
-        oldBtn.remove();
-    }
-    
-    // Buat tombol baru
+    if (oldBtn) oldBtn.remove();
     const replaceBtn = document.createElement('button');
     replaceBtn.id = 'replaceImageBtn';
     replaceBtn.className = 'replace-image-btn';
     replaceBtn.innerHTML = '🔄 Ganti Foto';
-    replaceBtn.title = 'Ganti foto wajah';
-    replaceBtn.type = 'button';
-    
     replaceBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         clearEnrollmentImage();
         showToast('Foto dihapus. Silakan ambil foto baru.');
     });
-    
-    // Tambahkan ke preview
     const preview = document.getElementById('enrollmentPreview');
-    if (preview) {
-        preview.style.position = 'relative';
-        preview.appendChild(replaceBtn);
-    }
+    if (preview) { preview.style.position = 'relative'; preview.appendChild(replaceBtn); }
 }
 
+// =========================================================
+// UPLOAD IMAGE
+// =========================================================
 
-/* =========================================================
-   UPLOAD IMAGE - FIXED
-========================================================= */
+uploadButton.addEventListener("click", () => photoInput.click());
 
-uploadButton.addEventListener(
-    "click",
-    () => {
-
-        photoInput.click();
-
+photoInput.addEventListener("change", async event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+        setValidation("File bukan gambar.", false);
+        return;
     }
-);
 
-
-photoInput.addEventListener(
-    "change",
-    async event => {
-
-        const file =
-            event.target.files?.[0];
-
-
-        if (!file) {
-
-            return;
-
-        }
-
-
-        if (
-            !file.type.startsWith(
-                "image/"
-            )
-        ) {
-
-            setValidation(
-                "File bukan gambar.",
-                false
-            );
-
-            return;
-
-        }
-
-
-        try {
-
-            stopEnrollmentCamera();
-
-
-            resetEnrollmentState();
-
-
-            const image =
-                await faceapi.bufferToImage(
-                    file
-                );
-
-
-            enrollmentImage.src =
-                image.src;
-
-
-            enrollmentImage.classList.add(
-                "active"
-            );
-            
-            enrollmentImage.classList.add(
-                "has-image"
-            );
-
-
-            previewPlaceholder.style.display =
-                "none";
-
-
-            // PERCEPAT: InputSize lebih kecil
-            const detections =
-                await faceapi
-                    .detectAllFaces(
-                        image,
-                        new faceapi.TinyFaceDetectorOptions({
-
-                            inputSize:
-                                224, // PERCEPAT
-
-                            scoreThreshold:
-                                0.48
-
-                        })
-                    )
-                    .withFaceLandmarks()
-                    .withFaceDescriptors();
-
-
-            /*
-             * Must be exactly one face.
-             */
-
-            if (
-                detections.length === 0
-            ) {
-
-                setValidation(
-                    "Foto ditolak: wajah tidak ditemukan.",
-                    false
-                );
-                
-                // Hapus gambar yang gagal
-                clearEnrollmentImage();
-                
-                showToast(
-                    "Wajah tidak terdeteksi di foto."
-                );
-
-                return;
-
-            }
-
-
-            if (
-                detections.length > 1
-            ) {
-
-                setValidation(
-                    "Foto ditolak: lebih dari satu wajah terdeteksi.",
-                    false
-                );
-                
-                // Hapus gambar yang gagal
-                clearEnrollmentImage();
-                
-                showToast(
-                    "Deteksi lebih dari satu wajah."
-                );
-
-                return;
-
-            }
-
-
-            const detection =
-                detections[0];
-
-
-            const box =
-                detection.detection.box;
-
-
-            const areaRatio =
-                (
-                    box.width *
-                    box.height
-                ) /
-                (
-                    image.width *
-                    image.height
-                );
-
-
-            /*
-             * Basic quality filter.
-             */
-
-            if (
-                areaRatio <
-                0.025
-            ) {
-
-                setValidation(
-                    "Wajah terlalu kecil dalam foto.",
-                    false
-                );
-                
-                clearEnrollmentImage();
-
-                return;
-
-            }
-
-
-            currentEnrollmentDescriptor =
-                Array.from(
-                    detection.descriptor
-                );
-
-
-            currentEnrollmentImage =
-                image.src;
-
-
-            updateEnrollmentProgress(
-                100
-            );
-
-
-            setValidation(
-                "Foto diterima. Wajah berhasil dianalisis.",
-                true
-            );
-            
-            // Tambahkan tombol ganti
-            addReplaceButton();
-
-
-            updateSaveButton();
-
-
-        } catch (
-            error
-        ) {
-
-            console.error(
-                "[Upload Image]",
-                error
-            );
-
-
-            setValidation(
-                "Foto gagal dianalisis.",
-                false
-            );
-            
+    try {
+        stopEnrollmentCamera();
+        resetEnrollmentState();
+        const image = await faceapi.bufferToImage(file);
+        enrollmentImage.src = image.src;
+        enrollmentImage.classList.add("active", "has-image");
+        previewPlaceholder.style.display = "none";
+
+        const detections = await faceapi.detectAllFaces(
+            image,
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.45 })
+        ).withFaceLandmarks().withFaceDescriptors();
+
+        if (detections.length === 0) {
+            setValidation("Foto ditolak: wajah tidak ditemukan.", false);
             clearEnrollmentImage();
-
-        } finally {
-
-            /*
-             * Reset file input so the same
-             * image can be selected again.
-             */
-
-            photoInput.value =
-                "";
-
+            showToast("Wajah tidak terdeteksi di foto.");
+            return;
         }
 
+        if (detections.length > 1) {
+            setValidation("Foto ditolak: lebih dari satu wajah.", false);
+            clearEnrollmentImage();
+            showToast("Deteksi lebih dari satu wajah.");
+            return;
+        }
+
+        const detection = detections[0];
+        const box = detection.detection.box;
+        const areaRatio = (box.width * box.height) / (image.width * image.height);
+
+        if (areaRatio < 0.025) {
+            setValidation("Wajah terlalu kecil dalam foto.", false);
+            clearEnrollmentImage();
+            return;
+        }
+
+        currentEnrollmentDescriptor = Array.from(detection.descriptor);
+        currentEnrollmentImage = image.src;
+        updateEnrollmentProgress(100);
+        setValidation("Foto diterima. Wajah berhasil dianalisis.", true);
+        addReplaceButton();
+        updateSaveButton();
+    } catch (error) {
+        console.error("[Upload Image]", error);
+        setValidation("Foto gagal dianalisis.", false);
+        clearEnrollmentImage();
+    } finally {
+        photoInput.value = "";
     }
-);
+});
 
+// =========================================================
+// FORM VALIDATION
+// =========================================================
 
-/* =========================================================
-   FORM VALIDATION
-========================================================= */
-
-[
-    nisnInput,
-    studentNameInput,
-    studentClassInput
-].forEach(
-    input => {
-
-        input.addEventListener(
-            "input",
-            updateSaveButton
-        );
-
-    }
-);
-
+[nisnInput, studentNameInput, studentClassInput].forEach(input => {
+    input.addEventListener("input", updateSaveButton);
+});
 
 function updateSaveButton() {
-
-    const nisn =
-        nisnInput.value.trim();
-
-
-    const name =
-        studentNameInput.value.trim();
-
-
-    const className =
-        studentClassInput.value.trim();
-
-
-    saveStudentButton.disabled =
-        !(
-            modelsReady &&
-            /^\d+$/.test(
-                nisn
-            ) &&
-            nisn.length >= 4 &&
-            name.length >= 2 &&
-            className.length >= 1 &&
-            Array.isArray(
-                currentEnrollmentDescriptor
-            ) &&
-            currentEnrollmentDescriptor.length > 0
-        );
-
-}
-
-
-/* =========================================================
-   SAVE STUDENT
-========================================================= */
-
-saveStudentButton.addEventListener(
-    "click",
-    () => {
-
-        const nisn =
-            nisnInput.value.trim();
-
-
-        const name =
-            studentNameInput.value.trim();
-
-
-        const className =
-            studentClassInput.value.trim();
-
-
-        if (
-            !/^\d+$/.test(
-                nisn
-            )
-        ) {
-
-            showToast(
-                "NISN hanya boleh berisi angka."
-            );
-
-            return;
-
-        }
-
-
-        if (
-            name.length < 2
-        ) {
-
-            showToast(
-                "Nama siswa belum valid."
-            );
-
-            return;
-
-        }
-
-
-        if (
-            !className
-        ) {
-
-            showToast(
-                "Kelas belum diisi."
-            );
-
-            return;
-
-        }
-
-
-        if (
-            !currentEnrollmentDescriptor
-        ) {
-
-            showToast(
-                "Wajah belum diverifikasi."
-            );
-
-            return;
-
-        }
-
-
-        const students =
-            getStudents();
-
-
-        const duplicate =
-            students.find(
-                student =>
-                    student.nisn ===
-                    nisn
-            );
-
-
-        if (
-            duplicate
-        ) {
-
-            showToast(
-                "NISN tersebut sudah terdaftar."
-            );
-
-            return;
-
-        }
-
-
-        const student = {
-
-            id:
-                createId(),
-
-            nisn:
-                nisn,
-
-            name:
-                name,
-
-            className:
-                className,
-
-            descriptor:
-                currentEnrollmentDescriptor,
-
-            registeredAt:
-                new Date()
-                    .toISOString()
-
-        };
-
-
-        students.push(
-            student
-        );
-
-
-        saveStudents(
-            students
-        );
-
-
-        /*
-         * Reset form.
-         */
-
-        nisnInput.value =
-            "";
-
-        studentNameInput.value =
-            "";
-
-        studentClassInput.value =
-            "";
-
-
-        currentEnrollmentDescriptor =
-            null;
-
-
-        currentEnrollmentImage =
-            null;
-
-
-        enrollmentImage.src =
-            "";
-
-
-        enrollmentImage.classList.remove(
-            "active"
-        );
-        
-        enrollmentImage.classList.remove(
-            "has-image"
-        );
-
-
-        // Hapus tombol ganti
-        const replaceBtn = document.getElementById('replaceImageBtn');
-        if (replaceBtn) {
-            replaceBtn.remove();
-        }
-
-
-        previewPlaceholder.style.display =
-            "flex";
-
-
-        resetEnrollmentState();
-
-
-        updateSaveButton();
-
-
-        renderDatabase();
-
-
-        showToast(
-            `${name} berhasil didaftarkan.`
-        );
-
-    }
-);
-
-
-/* =========================================================
-   RESET ENROLLMENT
-========================================================= */
-
-function resetEnrollmentState() {
-
-    enrollmentProgress =
-        0;
-
-
-    enrollmentReadyFrames =
-        0;
-
-
-    stabilityHistory =
-        [];
-        
-    lastEnrollmentDetection = null;
-    detectionCounter = 0;
-
-
-    updateEnrollmentProgress(
-        0
+    const nisn = nisnInput.value.trim();
+    const name = studentNameInput.value.trim();
+    const className = studentClassInput.value.trim();
+    saveStudentButton.disabled = !(
+        modelsReady &&
+        /^\d+$/.test(nisn) &&
+        nisn.length >= 4 &&
+        name.length >= 2 &&
+        className.length >= 1 &&
+        Array.isArray(currentEnrollmentDescriptor) &&
+        currentEnrollmentDescriptor.length > 0
     );
-
-
-    setValidation(
-        "",
-        true
-    );
-
 }
 
+// =========================================================
+// SAVE STUDENT
+// =========================================================
 
-/* =========================================================
-   VALIDATION MESSAGE
-========================================================= */
+saveStudentButton.addEventListener("click", () => {
+    const nisn = nisnInput.value.trim();
+    const name = studentNameInput.value.trim();
+    const className = studentClassInput.value.trim();
 
-function setValidation(
-    message,
-    success
-) {
+    if (!/^\d+$/.test(nisn)) { showToast("NISN hanya boleh berisi angka."); return; }
+    if (name.length < 2) { showToast("Nama siswa belum valid."); return; }
+    if (!className) { showToast("Kelas belum diisi."); return; }
+    if (!currentEnrollmentDescriptor) { showToast("Wajah belum diverifikasi."); return; }
 
-    faceValidation.textContent =
-        message;
-
-
-    faceValidation.className =
-        "validation-message";
-
-
-    if (
-        message
-    ) {
-
-        faceValidation.classList.add(
-            success
-                ? "success"
-                : "error"
-        );
-
+    const students = getStudents();
+    if (students.find(s => s.nisn === nisn)) {
+        showToast("NISN tersebut sudah terdaftar.");
+        return;
     }
 
-}
+    const student = {
+        id: createId(),
+        nisn: nisn,
+        name: name,
+        className: className,
+        descriptor: currentEnrollmentDescriptor,
+        registeredAt: new Date().toISOString()
+    };
 
+    students.push(student);
+    saveStudents(students);
 
-/* =========================================================
-   CAMERA ERROR MESSAGE
-========================================================= */
+    nisnInput.value = "";
+    studentNameInput.value = "";
+    studentClassInput.value = "";
+    currentEnrollmentDescriptor = null;
+    currentEnrollmentImage = null;
+    enrollmentImage.src = "";
+    enrollmentImage.classList.remove("active", "has-image");
+    const replaceBtn = document.getElementById('replaceImageBtn');
+    if (replaceBtn) replaceBtn.remove();
+    previewPlaceholder.style.display = "flex";
+    resetEnrollmentState();
+    updateSaveButton();
+    renderDatabase();
+    showToast(`${name} berhasil didaftarkan.`);
+});
 
-function getCameraErrorMessage(
-    error
-) {
+// =========================================================
+// DATABASE RENDER - DENGAN FILTER & SEARCH
+// =========================================================
 
-    if (
-        error?.name ===
-        "NotAllowedError"
-    ) {
-
-        return (
-            "Izin kamera ditolak. Izinkan akses kamera pada browser."
-        );
-
-    }
-
-
-    if (
-        error?.name ===
-        "NotFoundError"
-    ) {
-
-        return (
-            "Tidak ada kamera yang ditemukan."
-        );
-
-    }
-
-
-    if (
-        error?.name ===
-        "NotReadableError"
-    ) {
-
-        return (
-            "Kamera sedang digunakan aplikasi lain."
-        );
-
-    }
-
-
-    if (
-        error?.name ===
-        "SecurityError"
-    ) {
-
-        return (
-            "Kamera membutuhkan HTTPS atau localhost."
-        );
-
-    }
-
-
-    return (
-        "Kamera tidak dapat digunakan pada perangkat ini."
-    );
-
-}
-
-
-/* =========================================================
-   DATABASE RENDER - WITH EXPORT FUNCTIONS
-========================================================= */
+let filteredData = [];
 
 function renderDatabase() {
+    const students = getStudents();
+    const attendance = getAttendance();
+    const today = getLocalDate();
+    const todayAttendance = attendance.filter(item => item.date === today);
 
-    const students =
-        getStudents();
+    totalStudents.textContent = students.length;
+    totalPresent.textContent = todayAttendance.length;
+    totalHistory.textContent = attendance.length;
 
+    const percentage = students.length > 0 ? Math.round((todayAttendance.length / students.length) * 100) : 0;
+    attendancePercentage.textContent = `${Math.min(percentage, 100)}%`;
 
-    const attendance =
-        getAttendance();
+    // Filter data
+    const searchTerm = dbSearch.value.toLowerCase().trim();
+    const startDate = dbDateStart.value;
+    const endDate = dbDateEnd.value;
 
+    filteredData = attendance.filter(item => {
+        let match = true;
+        if (searchTerm) {
+            match = match && (
+                item.nisn.toLowerCase().includes(searchTerm) ||
+                item.name.toLowerCase().includes(searchTerm) ||
+                item.className.toLowerCase().includes(searchTerm)
+            );
+        }
+        if (startDate && endDate) {
+            match = match && item.date >= startDate && item.date <= endDate;
+        } else if (startDate) {
+            match = match && item.date >= startDate;
+        } else if (endDate) {
+            match = match && item.date <= endDate;
+        }
+        return match;
+    });
 
-    const today =
-        getLocalDate();
+    attendanceTableBody.innerHTML = "";
 
-
-    const todayAttendance =
-        attendance.filter(
-            item =>
-                item.date ===
-                today
-        );
-
-
-    totalStudents.textContent =
-        students.length;
-
-
-    totalPresent.textContent =
-        todayAttendance.length;
-
-
-    const percentage =
-        students.length > 0
-            ? Math.round(
-                (
-                    todayAttendance.length /
-                    students.length
-                ) * 100
-            )
-            : 0;
-
-
-    attendancePercentage.textContent =
-        `${Math.min(
-            percentage,
-            100
-        )}%`;
-
-
-    attendanceTableBody.innerHTML =
-        "";
-
-
-    if (
-        attendance.length === 0
-    ) {
-
-        emptyDatabase.style.display =
-            "block";
-
+    if (filteredData.length === 0) {
+        emptyDatabase.style.display = "block";
         return;
-
     }
 
+    emptyDatabase.style.display = "none";
 
-    emptyDatabase.style.display =
-        "none";
+    filteredData.forEach((item, index) => {
+        const date = new Date(item.timestamp);
+        const dateText = date.toLocaleDateString("id-ID");
+        const timeText = date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
-
-    attendance.forEach(
-        (
-            item,
-            index
-        ) => {
-
-            const date =
-                new Date(
-                    item.timestamp
-                );
-
-
-            const dateText =
-                date.toLocaleDateString(
-                    "id-ID"
-                );
-
-
-            const timeText =
-                date.toLocaleTimeString(
-                    "id-ID",
-                    {
-                        hour:
-                            "2-digit",
-
-                        minute:
-                            "2-digit",
-
-                        second:
-                            "2-digit"
-                    }
-                );
-
-
-            const row =
-                document.createElement(
-                    "tr"
-                );
-
-
-            row.innerHTML = `
-
-                <td>
-                    ${index + 1}
-                </td>
-
-                <td>
-                    <strong>
-                        ${escapeHTML(
-                            item.nisn
-                        )}
-                    </strong>
-                </td>
-
-                <td>
-                    ${escapeHTML(
-                        item.name
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHTML(
-                        item.className
-                    )}
-                </td>
-
-                <td>
-
-                    <span class="status-pill">
-
-                        <span class="status-dot"></span>
-
-                        ${escapeHTML(
-                            item.status
-                        )}
-
-                    </span>
-
-                </td>
-
-                <td>
-                    ${dateText}
-                </td>
-
-                <td>
-                    ${timeText}
-                </td>
-
-                <td>
-                    ${escapeHTML(
-                        item.method
-                    )}
-                </td>
-
-                <td>
-                    ${Number(
-                        item.confidence
-                    ).toFixed(1)}%
-                </td>
-
-            `;
-
-
-            attendanceTableBody.appendChild(
-                row
-            );
-
-        }
-    );
-
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td><strong>${escapeHTML(item.nisn)}</strong></td>
+            <td>${escapeHTML(item.name)}</td>
+            <td>${escapeHTML(item.className)}</td>
+            <td><span class="status-pill"><span class="status-dot"></span>${escapeHTML(item.status)}</span></td>
+            <td>${dateText}</td>
+            <td>${timeText}</td>
+            <td>${escapeHTML(item.method)}</td>
+            <td>${Number(item.confidence).toFixed(1)}%</td>
+        `;
+        attendanceTableBody.appendChild(row);
+    });
 }
 
+// Database Filter
+dbFilterBtn.addEventListener("click", renderDatabase);
+dbSearch.addEventListener("input", renderDatabase);
+dbDateStart.addEventListener("change", renderDatabase);
+dbDateEnd.addEventListener("change", renderDatabase);
 
-/* =========================================================
-   EXPORT DATABASE FUNCTIONALITY
-========================================================= */
+// =========================================================
+// EXPORT DATABASE
+// =========================================================
+
+dbExportBtn.addEventListener("click", showExportDialog);
 
 function showExportDialog() {
-    // Hapus dialog yang sudah ada
     const existingDialog = document.getElementById('exportDialog');
-    if (existingDialog) {
-        existingDialog.remove();
-    }
+    if (existingDialog) existingDialog.remove();
 
-    // Buat dialog container
     const dialog = document.createElement('div');
     dialog.id = 'exportDialog';
     dialog.className = 'export-dialog-overlay';
-
     dialog.innerHTML = `
         <div class="export-dialog">
             <div class="export-dialog-header">
                 <h3>📊 Export Data Presensi</h3>
                 <button class="export-dialog-close" onclick="this.closest('#exportDialog').remove()">✕</button>
             </div>
-            
             <div class="export-dialog-body">
                 <div class="export-date-range">
                     <div class="export-date-group">
@@ -3525,60 +1148,33 @@ function showExportDialog() {
                         <input type="date" id="exportEndDate" value="${getLocalDate()}">
                     </div>
                 </div>
-                
                 <div class="export-format-options">
-                    <button class="export-format-btn" data-format="xlsx">
-                        <span>📊</span> XLSX
-                    </button>
-                    <button class="export-format-btn" data-format="csv">
-                        <span>📄</span> CSV
-                    </button>
-                    <button class="export-format-btn" data-format="image">
-                        <span>🖼️</span> Gambar
-                    </button>
+                    <button class="export-format-btn" data-format="xlsx"><span>📊</span> XLSX</button>
+                    <button class="export-format-btn" data-format="csv"><span>📄</span> CSV</button>
+                    <button class="export-format-btn" data-format="image"><span>🖼️</span> Gambar</button>
                 </div>
-                
                 <div class="export-preview">
                     <p>Data akan diekspor berdasarkan rentang tanggal yang dipilih.</p>
                 </div>
             </div>
-            
             <div class="export-dialog-footer">
                 <button class="export-cancel-btn" onclick="this.closest('#exportDialog').remove()">Batal</button>
                 <button class="export-confirm-btn" id="exportConfirmBtn">Export Data</button>
             </div>
         </div>
     `;
-
     document.body.appendChild(dialog);
 
-    // Event listener untuk tombol export
     document.getElementById('exportConfirmBtn').addEventListener('click', () => {
         const startDate = document.getElementById('exportStartDate').value;
         const endDate = document.getElementById('exportEndDate').value;
-        
-        if (!startDate || !endDate) {
-            showToast('Pilih rentang tanggal terlebih dahulu.');
-            return;
-        }
-        
-        if (startDate > endDate) {
-            showToast('Tanggal mulai harus sebelum tanggal akhir.');
-            return;
-        }
-        
-        // Ambil format yang dipilih
+        if (!startDate || !endDate) { showToast('Pilih rentang tanggal.'); return; }
+        if (startDate > endDate) { showToast('Tanggal mulai harus sebelum akhir.'); return; }
         const selectedBtn = document.querySelector('.export-format-btn.active');
-        if (!selectedBtn) {
-            showToast('Pilih format export terlebih dahulu.');
-            return;
-        }
-        
-        const format = selectedBtn.dataset.format;
-        exportAttendanceData(startDate, endDate, format);
+        if (!selectedBtn) { showToast('Pilih format export.'); return; }
+        exportAttendanceData(startDate, endDate, selectedBtn.dataset.format);
     });
 
-    // Event listener untuk pilihan format
     document.querySelectorAll('.export-format-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.export-format-btn').forEach(b => b.classList.remove('active'));
@@ -3595,18 +1191,10 @@ function getDefaultStartDate() {
 
 function exportAttendanceData(startDate, endDate, format) {
     const attendance = getAttendance();
-    
-    // Filter berdasarkan rentang tanggal
-    const filtered = attendance.filter(item => {
-        return item.date >= startDate && item.date <= endDate;
-    });
+    const filtered = attendance.filter(item => item.date >= startDate && item.date <= endDate);
 
-    if (filtered.length === 0) {
-        showToast('Tidak ada data dalam rentang tanggal tersebut.');
-        return;
-    }
+    if (filtered.length === 0) { showToast('Tidak ada data dalam rentang tersebut.'); return; }
 
-    // Siapkan data untuk export
     const exportData = filtered.map((item, index) => ({
         'No': index + 1,
         'NISN': item.nisn,
@@ -3619,35 +1207,22 @@ function exportAttendanceData(startDate, endDate, format) {
         'Confidence': `${Number(item.confidence).toFixed(1)}%`
     }));
 
-    // Export berdasarkan format
     switch(format) {
-        case 'xlsx':
-            exportToXLSX(exportData);
-            break;
-        case 'csv':
-            exportToCSV(exportData);
-            break;
-        case 'image':
-            exportToImage(exportData);
-            break;
-        default:
-            showToast('Format tidak didukung.');
+        case 'xlsx': exportToXLSX(exportData); break;
+        case 'csv': exportToCSV(exportData); break;
+        case 'image': exportToImage(exportData); break;
+        default: showToast('Format tidak didukung.');
     }
 
-    // Tutup dialog
     const dialog = document.getElementById('exportDialog');
     if (dialog) dialog.remove();
 }
 
 function exportToXLSX(data) {
-    // Pastikan library tersedia
     if (typeof XLSX === 'undefined') {
-        // Load library jika belum ada
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
-        script.onload = () => {
-            createXLSX(data);
-        };
+        script.onload = () => createXLSX(data);
         document.head.appendChild(script);
         showToast('Memuat library XLSX...');
         return;
@@ -3659,27 +1234,13 @@ function createXLSX(data) {
     try {
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.json_to_sheet(data);
-        
-        // Atur lebar kolom
         ws['!cols'] = [
-            { wch: 5 },   // No
-            { wch: 15 },  // NISN
-            { wch: 25 },  // Nama
-            { wch: 15 },  // Kelas
-            { wch: 12 },  // Status
-            { wch: 15 },  // Tanggal
-            { wch: 12 },  // Waktu
-            { wch: 18 },  // Metode
-            { wch: 12 }   // Confidence
+            { wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 15 },
+            { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 12 }
         ];
-        
         XLSX.utils.book_append_sheet(wb, ws, 'Presensi');
-        
-        // Generate file
-        const fileName = `presensi_${getLocalDate()}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-        
-        showToast(`Berhasil export ${data.length} data ke ${fileName}`);
+        XLSX.writeFile(wb, `presensi_${getLocalDate()}.xlsx`);
+        showToast(`Berhasil export ${data.length} data.`);
     } catch (error) {
         console.error('[Export XLSX]', error);
         showToast('Gagal export ke XLSX.');
@@ -3688,18 +1249,11 @@ function createXLSX(data) {
 
 function exportToCSV(data) {
     try {
-        // Buat header
         const headers = Object.keys(data[0]);
-        const csvRows = [];
-        
-        // Header
-        csvRows.push(headers.join(','));
-        
-        // Data
+        const csvRows = [headers.join(',')];
         for (const row of data) {
             const values = headers.map(header => {
                 const val = row[header] || '';
-                // Escape jika ada koma atau quote
                 if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
                     return `"${val.replace(/"/g, '""')}"`;
                 }
@@ -3707,7 +1261,6 @@ function exportToCSV(data) {
             });
             csvRows.push(values.join(','));
         }
-        
         const csvString = csvRows.join('\n');
         const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -3715,8 +1268,7 @@ function exportToCSV(data) {
         link.download = `presensi_${getLocalDate()}.csv`;
         link.click();
         URL.revokeObjectURL(link.href);
-        
-        showToast(`Berhasil export ${data.length} data ke CSV.`);
+        showToast(`Berhasil export ${data.length} data.`);
     } catch (error) {
         console.error('[Export CSV]', error);
         showToast('Gagal export ke CSV.');
@@ -3725,408 +1277,166 @@ function exportToCSV(data) {
 
 function exportToImage(data) {
     try {
-        // Buat canvas untuk gambar
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        
-        // Hitung dimensi
         const cellPadding = 12;
         const headerHeight = 40;
         const rowHeight = 35;
         const colWidths = [60, 120, 180, 120, 90, 120, 100, 140, 100];
         const headers = ['No', 'NISN', 'Nama', 'Kelas', 'Status', 'Tanggal', 'Waktu', 'Metode', 'Confidence'];
-        
         const totalWidth = colWidths.reduce((a, b) => a + b, 0) + cellPadding * 2;
-        const totalHeight = headerHeight + (data.length + 1) * rowHeight + cellPadding * 2;
-        
+        const totalHeight = headerHeight + (data.length + 1) * rowHeight + cellPadding * 2 + 50;
         canvas.width = totalWidth;
         canvas.height = totalHeight;
-        
-        // Background
+
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, totalWidth, totalHeight);
-        
-        // Title
-        ctx.fillStyle = '#111827';
-        ctx.font = 'bold 16px Poppins, sans-serif';
+
+        ctx.fillStyle = '#1a2e1a';
+        ctx.font = 'bold 18px Montserrat, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`📊 Laporan Presensi ${getLocalDate()}`, totalWidth / 2, 30);
-        
-        let y = headerHeight + cellPadding;
-        
-        // Header row
-        ctx.fillStyle = '#f3f4f6';
+        ctx.fillText(`📊 Laporan Presensi ${getLocalDate()}`, totalWidth / 2, 35);
+
+        let y = headerHeight + cellPadding + 15;
+        ctx.fillStyle = '#e8f5e8';
         ctx.fillRect(cellPadding, y, totalWidth - cellPadding * 2, rowHeight);
-        
-        ctx.fillStyle = '#111827';
+        ctx.fillStyle = '#1a2e1a';
         ctx.font = 'bold 11px Poppins, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        
         let x = cellPadding;
         headers.forEach((header, i) => {
             ctx.fillText(header, x + colWidths[i] / 2, y + rowHeight / 2);
             x += colWidths[i];
         });
-        
         y += rowHeight;
-        
-        // Data rows
+
         ctx.font = '10px Poppins, sans-serif';
-        ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        
         data.forEach((row, rowIndex) => {
-            const isEven = rowIndex % 2 === 0;
-            if (isEven) {
-                ctx.fillStyle = '#fafafa';
+            if (rowIndex % 2 === 0) {
+                ctx.fillStyle = '#f5f8f5';
                 ctx.fillRect(cellPadding, y, totalWidth - cellPadding * 2, rowHeight);
             }
-            
-            ctx.fillStyle = '#111827';
+            ctx.fillStyle = '#1a2e1a';
             x = cellPadding;
             const values = Object.values(row);
             values.forEach((val, i) => {
-                let displayVal = String(val);
-                if (i === 8) {
-                    displayVal = String(val);
-                }
-                ctx.fillText(displayVal, x + colWidths[i] / 2, y + rowHeight / 2);
+                ctx.fillText(String(val), x + colWidths[i] / 2, y + rowHeight / 2);
                 x += colWidths[i];
             });
-            
             y += rowHeight;
         });
-        
-        // Border
-        ctx.strokeStyle = '#e5e7eb';
+
+        ctx.strokeStyle = '#d4e2d4';
         ctx.lineWidth = 1;
-        ctx.strokeRect(cellPadding, headerHeight + cellPadding, totalWidth - cellPadding * 2, (data.length + 1) * rowHeight);
-        
-        // Convert to image
+        ctx.strokeRect(cellPadding, headerHeight + cellPadding + 15, totalWidth - cellPadding * 2, (data.length + 1) * rowHeight);
+
         const link = document.createElement('a');
         link.download = `presensi_${getLocalDate()}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
-        
-        showToast(`Berhasil export ${data.length} data ke gambar.`);
+        showToast(`Berhasil export ${data.length} data.`);
     } catch (error) {
         console.error('[Export Image]', error);
         showToast('Gagal export ke gambar.');
     }
 }
 
+// =========================================================
+// CAMERA ERROR MESSAGE
+// =========================================================
 
-/* =========================================================
-   FULLSCREEN
-========================================================= */
+function getCameraErrorMessage(error) {
+    if (error?.name === "NotAllowedError") return "Izin kamera ditolak. Izinkan akses kamera.";
+    if (error?.name === "NotFoundError") return "Tidak ada kamera yang ditemukan.";
+    if (error?.name === "NotReadableError") return "Kamera sedang digunakan aplikasi lain.";
+    if (error?.name === "SecurityError") return "Kamera membutuhkan HTTPS atau localhost.";
+    return "Kamera tidak dapat digunakan pada perangkat ini.";
+}
 
-fullscreenButton.addEventListener(
-    "click",
-    async () => {
+// =========================================================
+// FULLSCREEN
+// =========================================================
 
-        const stage =
-            document.querySelector(
-                ".attendance-stage"
-            );
-
-
-        try {
-
-            if (
-                !document.fullscreenElement
-            ) {
-
-                await stage.requestFullscreen();
-
-            } else {
-
-                await document.exitFullscreen();
-
-            }
-
-        } catch (
-            error
-        ) {
-
-            console.error(
-                "[Fullscreen]",
-                error
-            );
-
-            showToast(
-                "Fullscreen tidak tersedia."
-            );
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   ATTENDANCE CAMERA BUTTON
-========================================================= */
-
-attendanceCameraButton.addEventListener(
-    "click",
-    () => {
-
-        if (
-            attendanceStream
-        ) {
-
-            stopAttendanceCamera();
-
+fullscreenButton.addEventListener("click", async () => {
+    const stage = document.querySelector(".attendance-stage");
+    try {
+        if (!document.fullscreenElement) {
+            await stage.requestFullscreen();
         } else {
-
-            startAttendanceCamera();
-
+            await document.exitFullscreen();
         }
-
-    }
-);
-
-
-/* =========================================================
-   ENROLLMENT CAMERA BUTTON
-========================================================= */
-
-cameraEnrollmentButton.addEventListener(
-    "click",
-    () => {
-
-        if (
-            enrollmentStream
-        ) {
-
-            stopEnrollmentCamera();
-
-
-            setValidation(
-                "Kamera dimatikan.",
-                true
-            );
-
-        } else {
-
-            startEnrollmentCamera();
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   VISIBILITY
-========================================================= */
-
-document.addEventListener(
-    "visibilitychange",
-    () => {
-
-        if (
-            document.hidden
-        ) {
-
-            stopAttendanceCamera();
-
-            stopEnrollmentCamera();
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   PAGE UNLOAD
-========================================================= */
-
-window.addEventListener(
-    "beforeunload",
-    () => {
-
-        stopAttendanceCamera();
-
-        stopEnrollmentCamera();
-
-    }
-);
-
-
-/* =========================================================
-   WINDOW RESIZE
-========================================================= */
-
-let resizeTimer =
-    null;
-
-
-window.addEventListener(
-    "resize",
-    () => {
-
-        clearTimeout(
-            resizeTimer
-        );
-
-
-        resizeTimer =
-            setTimeout(
-                () => {
-
-                    /*
-                     * The outlines are recreated
-                     * on the next inference cycle.
-                     */
-
-                },
-                100
-            );
-
-    }
-);
-
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function clamp(
-    value,
-    min,
-    max
-) {
-
-    return Math.max(
-        min,
-        Math.min(
-            max,
-            value
-        )
-    );
-
-}
-
-
-function createId() {
-
-    if (
-        window.crypto &&
-        typeof window.crypto.randomUUID ===
-        "function"
-    ) {
-
-        return window.crypto.randomUUID();
-
-    }
-
-
-    return (
-        Date.now().toString(
-            36
-        ) +
-        Math.random()
-            .toString(
-                36
-            )
-            .slice(2)
-    );
-
-}
-
-
-function getLocalDate() {
-
-    const now =
-        new Date();
-
-
-    const year =
-        now.getFullYear();
-
-
-    const month =
-        String(
-            now.getMonth() + 1
-        )
-        .padStart(
-            2,
-            "0"
-        );
-
-
-    const day =
-        String(
-            now.getDate()
-        )
-        .padStart(
-            2,
-            "0"
-        );
-
-
-    return (
-        `${year}-${month}-${day}`
-    );
-
-}
-
-
-/* =========================================================
-   INITIALIZATION
-========================================================= */
-
-renderDatabase();
-
-
-// PERBAIKAN: Tunggu face-api.js siap sebelum load models
-if (typeof faceapi !== 'undefined') {
-    // Tunggu sebentar untuk memastikan face-api.js fully loaded
-    setTimeout(loadModels, 100);
-} else {
-    // Coba load ulang dengan interval jika face-api.js belum siap
-    let checkInterval = setInterval(() => {
-        if (typeof faceapi !== 'undefined') {
-            clearInterval(checkInterval);
-            setTimeout(loadModels, 100);
-        }
-    }, 500);
-
-    // Timeout jika terlalu lama
-    setTimeout(() => {
-        clearInterval(checkInterval);
-        if (!modelsReady) {
-            showModelError(
-                "Library face-api.js tidak ditemukan",
-                "Pastikan koneksi internet aktif dan refresh halaman."
-            );
-        }
-    }, 10000);
-}
-
-/* =========================================================
-   EXPORT BUTTON
-========================================================= */
-
-document.addEventListener('DOMContentLoaded', () => {
-    const exportButton = document.getElementById('exportButton');
-    if (exportButton) {
-        exportButton.addEventListener('click', showExportDialog);
+    } catch (error) {
+        console.error("[Fullscreen]", error);
+        showToast("Fullscreen tidak tersedia.");
     }
 });
 
-// Tambahkan juga jika tombol dibuat dinamis
-// Cek setiap render database
-const originalRenderDatabase = renderDatabase;
-renderDatabase = function() {
-    originalRenderDatabase();
-    // Cek jika tombol export ada
-    const exportButton = document.getElementById('exportButton');
-    if (exportButton && !exportButton._listenerAdded) {
-        exportButton.addEventListener('click', showExportDialog);
-        exportButton._listenerAdded = true;
+// =========================================================
+// BUTTON EVENTS
+// =========================================================
+
+attendanceCameraButton.addEventListener("click", () => {
+    if (attendanceStream) {
+        stopAttendanceCamera();
+    } else {
+        startAttendanceCamera();
     }
-};
+});
+
+cameraEnrollmentButton.addEventListener("click", () => {
+    if (enrollmentStream) {
+        stopEnrollmentCamera();
+        setValidation("Kamera dimatikan.", true);
+    } else {
+        startEnrollmentCamera();
+    }
+});
+
+// =========================================================
+// VISIBILITY & UNLOAD
+// =========================================================
+
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        stopAttendanceCamera();
+        stopEnrollmentCamera();
+    }
+});
+
+window.addEventListener("beforeunload", () => {
+    stopAttendanceCamera();
+    stopEnrollmentCamera();
+});
+
+// =========================================================
+// INITIALIZATION
+// =========================================================
+
+function initApp() {
+    renderDatabase();
+    // Load models after a short delay
+    if (typeof faceapi !== 'undefined') {
+        setTimeout(loadModels, 200);
+    } else {
+        let checkInterval = setInterval(() => {
+            if (typeof faceapi !== 'undefined') {
+                clearInterval(checkInterval);
+                setTimeout(loadModels, 200);
+            }
+        }, 500);
+        setTimeout(() => {
+            clearInterval(checkInterval);
+            if (!modelsReady) {
+                showModelError("Library face-api.js tidak ditemukan", "Pastikan koneksi internet aktif.");
+            }
+        }, 10000);
+    }
+}
+
+// Init default admin user
+initDefaultAdmin();
+
+// Handle authentication
+handleAuth();
