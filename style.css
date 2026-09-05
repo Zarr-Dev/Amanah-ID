@@ -40,9 +40,6 @@ html, body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* =========================================================
-   GRID BACKGROUND
-========================================================= */
 .app {
     min-height: 100vh;
     position: relative;
@@ -73,9 +70,6 @@ img, video {
     max-width: 100%;
 }
 
-/* =========================================================
-   SCROLLBAR
-========================================================= */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -271,10 +265,6 @@ img, video {
     transform: none;
 }
 
-.auth-button:active:not(:disabled) {
-    transform: translateY(0);
-}
-
 .auth-hint {
     text-align: center;
     font-size: 11px;
@@ -286,7 +276,7 @@ img, video {
 }
 
 /* =========================================================
-   CHECKBOX CUSTOM - SYARAT & KETENTUAN
+   CHECKBOX
 ========================================================= */
 .auth-checkbox-group {
     margin: 6px 0 12px;
@@ -343,23 +333,10 @@ img, video {
     line-height: 1;
 }
 
-.checkbox-container input:focus ~ .checkmark {
-    box-shadow: 0 0 0 3px var(--green-soft);
-}
-
-.checkbox-text {
-    line-height: 1.5;
-    font-size: 12px;
-}
-
 .checkbox-text a {
     color: var(--green);
     text-decoration: underline;
     font-weight: 600;
-}
-
-.checkbox-text a:hover {
-    color: var(--green-dark);
 }
 
 /* =========================================================
@@ -375,6 +352,11 @@ img, video {
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(6px);
     animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
 }
 
 .terms-modal-content {
@@ -488,7 +470,6 @@ img, video {
     padding: 0 28px;
     background: rgba(255,255,255,0.92);
     backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
     border-bottom: 1px solid var(--border);
 }
 
@@ -595,35 +576,6 @@ main {
 }
 
 /* =========================================================
-   SECTION HEADER
-========================================================= */
-.section-heading {
-    margin-bottom: 28px;
-}
-
-.eyebrow {
-    margin-bottom: 6px;
-    color: var(--green-dark);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-}
-
-.section-heading h1 {
-    font-family: "Montserrat", sans-serif;
-    font-size: clamp(26px, 4vw, 36px);
-    font-weight: 900;
-    letter-spacing: -1px;
-}
-
-.section-heading p {
-    margin-top: 6px;
-    color: var(--muted);
-    font-size: 13px;
-}
-
-/* =========================================================
    ATTENDANCE STAGE
 ========================================================= */
 #attendancePage {
@@ -712,10 +664,6 @@ main {
     transform: scale(1.05);
 }
 
-.camera-button:active {
-    transform: scale(0.95);
-}
-
 .camera-button svg {
     width: 20px;
     height: 20px;
@@ -733,7 +681,6 @@ main {
     font-family: "Montserrat", sans-serif;
     font-size: clamp(20px, 3vw, 34px);
     font-weight: 800;
-    letter-spacing: -0.5px;
     text-shadow: 0 4px 30px rgba(0,0,0,0.6);
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
@@ -920,7 +867,7 @@ main {
     font-weight: 600;
 }
 
-.db-filter-btn, .db-export-btn {
+.db-filter-btn, .db-export-btn, .db-delete-all-btn {
     height: 44px;
     padding: 0 20px;
     border-radius: var(--radius-sm);
@@ -951,12 +898,6 @@ main {
 }
 
 .db-delete-all-btn {
-    height: 44px;
-    padding: 0 18px;
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    font-weight: 600;
-    transition: var(--transition);
     background: var(--surface-soft);
     color: var(--red);
     border: 1.5px solid var(--border);
@@ -1003,10 +944,6 @@ th {
     text-transform: uppercase;
 }
 
-tbody tr {
-    transition: var(--transition);
-}
-
 tbody tr:hover {
     background: var(--green-light);
 }
@@ -1048,9 +985,6 @@ tbody tr:hover {
     font-size: 12px;
 }
 
-/* =========================================================
-   ROW ACTIONS
-========================================================= */
 .row-actions {
     display: flex;
     align-items: center;
@@ -1331,18 +1265,11 @@ tbody tr:hover {
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
-    display: flex;
-    align-items: center;
-    gap: 6px;
 }
 
 .replace-image-btn:hover {
     background: rgba(192,57,43,0.85);
     transform: scale(1.05);
-}
-
-.replace-image-btn:active {
-    transform: scale(0.95);
 }
 
 .enrollment-preview img.has-image {
@@ -1400,237 +1327,6 @@ tbody tr:hover {
 .toast.show {
     opacity: 1;
     transform: translate(-50%, 0);
-}
-
-/* =========================================================
-   MODEL LOADING
-========================================================= */
-.loading-screen {
-    position: fixed;
-    inset: 0;
-    z-index: 9000;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255,255,255,0.97);
-}
-
-.loading-screen.hidden {
-    display: none !important;
-}
-
-.loading-screen strong {
-    font-family: "Montserrat", sans-serif;
-    font-size: 18px;
-    margin-top: 8px;
-}
-
-.loading-screen span {
-    margin-top: 6px;
-    color: var(--muted);
-    font-size: 13px;
-}
-
-.loading-spinner {
-    width: 44px;
-    height: 44px;
-    border: 3.5px solid #e5e7eb;
-    border-top-color: var(--green);
-    border-radius: 50%;
-    animation: spinner 0.8s linear infinite;
-}
-
-@keyframes spinner {
-    to { transform: rotate(360deg); }
-}
-
-/* =========================================================
-   EXPORT DIALOG
-========================================================= */
-.export-dialog-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 8000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0,0,0,0.4);
-    backdrop-filter: blur(4px);
-    animation: fadeIn 0.25s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-.export-dialog {
-    width: min(480px, 92%);
-    max-height: 90vh;
-    background: var(--surface);
-    border-radius: var(--radius);
-    box-shadow: 0 24px 60px rgba(0,0,0,0.2);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-.export-dialog-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border);
-}
-
-.export-dialog-header h3 {
-    font-family: "Montserrat", sans-serif;
-    font-size: 17px;
-    font-weight: 800;
-}
-
-.export-dialog-close {
-    width: 34px;
-    height: 34px;
-    display: grid;
-    place-items: center;
-    border-radius: 8px;
-    background: transparent;
-    color: var(--muted);
-    font-size: 20px;
-    transition: var(--transition);
-}
-
-.export-dialog-close:hover {
-    background: var(--surface-soft);
-    color: var(--text);
-}
-
-.export-dialog-body {
-    padding: 24px;
-    flex: 1;
-    overflow-y: auto;
-}
-
-.export-date-range {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 20px;
-}
-
-.export-date-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.export-date-group label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--muted);
-}
-
-.export-date-group input[type="date"] {
-    padding: 10px 12px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    font-family: "Poppins", sans-serif;
-    background: var(--surface);
-    color: var(--text);
-    outline: none;
-    transition: var(--transition);
-}
-
-.export-date-group input[type="date"]:focus {
-    border-color: var(--green);
-    box-shadow: 0 0 0 4px var(--green-soft);
-}
-
-.export-format-options {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 16px;
-}
-
-.export-format-btn {
-    padding: 12px 8px;
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    background: var(--surface);
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 600;
-    transition: var(--transition);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-
-.export-format-btn span {
-    font-size: 20px;
-}
-
-.export-format-btn:hover {
-    border-color: var(--muted);
-    background: var(--surface-soft);
-}
-
-.export-format-btn.active {
-    border-color: var(--green);
-    background: var(--green-soft);
-    color: var(--green-dark);
-}
-
-.export-preview {
-    padding: 14px 16px;
-    border-radius: var(--radius-sm);
-    background: var(--surface-soft);
-    font-size: 11px;
-    color: var(--muted);
-    text-align: center;
-}
-
-.export-dialog-footer {
-    display: flex;
-    gap: 10px;
-    padding: 16px 24px;
-    border-top: 1px solid var(--border);
-    justify-content: flex-end;
-}
-
-.export-cancel-btn,
-.export-confirm-btn {
-    padding: 10px 24px;
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    font-weight: 600;
-    transition: var(--transition);
-}
-
-.export-cancel-btn {
-    background: var(--surface-soft);
-    color: var(--text);
-    border: 1px solid var(--border);
-}
-
-.export-cancel-btn:hover {
-    background: var(--border);
-}
-
-.export-confirm-btn {
-    background: var(--green);
-    color: white;
-}
-
-.export-confirm-btn:hover {
-    background: var(--green-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px var(--green-glow);
 }
 
 /* =========================================================
@@ -1720,10 +1416,6 @@ tbody tr:hover {
 
 .delete-all-btn {
     background: #c0392b;
-}
-
-.delete-all-dialog .delete-dialog-icon {
-    font-size: 52px;
 }
 
 /* =========================================================
@@ -1860,14 +1552,6 @@ tbody tr:hover {
         grid-template-columns: 1fr;
     }
     
-    .export-date-range {
-        grid-template-columns: 1fr;
-    }
-    
-    .export-format-options {
-        grid-template-columns: 1fr;
-    }
-    
     .brand-text {
         font-size: 16px;
     }
@@ -1896,7 +1580,7 @@ tbody tr:hover {
 }
 
 /* =========================================================
-   FIX: PASTIKAN AUTH PAGE DAN MAIN APP TERLIHAT DENGAN BENAR
+   FIX: PASTIKAN AUTH PAGE DAN MAIN APP TERLIHAT
 ========================================================= */
 #authPage {
     display: flex !important;
