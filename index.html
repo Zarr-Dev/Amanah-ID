@@ -560,6 +560,7 @@
 
     function goToDashboard() {
         if (!DOM.authPage || !DOM.mainApp) return;
+        DOM.authPage.classList.add('is-hidden');
         DOM.authPage.style.display = 'none';
         DOM.mainApp.style.display = 'flex';
         DOM.mainApp.classList.add('active');
@@ -589,7 +590,10 @@
             }
         }
         
-        if (DOM.authPage) DOM.authPage.style.display = 'flex';
+        if (DOM.authPage) {
+            DOM.authPage.classList.remove('is-hidden');
+            DOM.authPage.style.display = 'flex';
+        }
         if (DOM.mainApp) {
             DOM.mainApp.style.display = 'none';
             DOM.mainApp.classList.remove('active');
@@ -866,7 +870,9 @@
             video: {
                 facingMode: 'user',
                 width: { ideal: 480 },
-                height: { ideal: 360 }
+                height: { ideal: 360 },
+                frameRate: { ideal: 24, max: 30 },
+                resizeMode: 'crop-and-scale'
             },
             audio: false
         });

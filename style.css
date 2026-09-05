@@ -3,18 +3,18 @@
 ========================================================= */
 
 :root {
-    --background: #f0f6f0;
-    --surface: #ffffff;
-    --surface-soft: #f5faf5;
-    --text: #1a2e1a;
-    --text-light: #4a6b4a;
-    --muted: #6b8f6b;
-    --border: #d4e6d4;
-    --green: #2d7d2d;
-    --green-dark: #1a5c1a;
-    --green-light: #e8f5e8;
-    --green-soft: rgba(45, 125, 45, 0.10);
-    --green-glow: rgba(45, 125, 45, 0.15);
+    --background: #eef4f5;
+    --surface: rgba(255, 255, 255, 0.88);
+    --surface-soft: rgba(241, 249, 249, 0.92);
+    --text: #102b35;
+    --text-light: #41606a;
+    --muted: #66848d;
+    --border: #cce0e3;
+    --green: #0b9f9a;
+    --green-dark: #08716f;
+    --green-light: #e3f7f5;
+    --green-soft: rgba(11, 159, 154, 0.10);
+    --green-glow: rgba(11, 159, 154, 0.24);
     --red: #c0392b;
     --red-soft: rgba(192, 57, 43, 0.10);
     --shadow: 0 8px 32px rgba(26, 46, 26, 0.08);
@@ -50,9 +50,11 @@ html, body {
     position: fixed;
     inset: 0;
     z-index: -1;
-    background-image: 
-        linear-gradient(rgba(45, 125, 45, 0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(45, 125, 45, 0.04) 1px, transparent 1px);
+    background-image:
+        radial-gradient(circle at 15% 15%, rgba(11, 159, 154, 0.14), transparent 34%),
+        radial-gradient(circle at 85% 80%, rgba(78, 108, 255, 0.10), transparent 30%),
+        linear-gradient(rgba(11, 159, 154, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(11, 159, 154, 0.04) 1px, transparent 1px);
     background-size: 48px 48px;
     pointer-events: none;
 }
@@ -98,6 +100,7 @@ img, video {
     justify-content: center;
     padding: 20px;
     position: relative;
+    isolation: isolate;
 }
 
 .auth-page::before {
@@ -105,9 +108,11 @@ img, video {
     position: fixed;
     inset: 0;
     z-index: -1;
-    background-image: 
-        linear-gradient(rgba(45, 125, 45, 0.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(45, 125, 45, 0.06) 1px, transparent 1px);
+    background-image:
+        radial-gradient(circle at 25% 20%, rgba(11, 159, 154, 0.20), transparent 34%),
+        radial-gradient(circle at 80% 75%, rgba(78, 108, 255, 0.13), transparent 30%),
+        linear-gradient(rgba(11, 159, 154, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(11, 159, 154, 0.06) 1px, transparent 1px);
     background-size: 48px 48px;
 }
 
@@ -115,9 +120,10 @@ img, video {
     width: 100%;
     max-width: 420px;
     background: var(--surface);
+    backdrop-filter: blur(22px);
     border-radius: var(--radius);
     padding: 40px 32px;
-    box-shadow: var(--shadow);
+    box-shadow: 0 24px 70px rgba(16, 43, 53, 0.14), 0 0 0 1px rgba(255,255,255,0.55) inset;
     border: 1px solid var(--border);
     position: relative;
     overflow: hidden;
@@ -551,7 +557,7 @@ img, video {
 }
 
 .main-app.active {
-    display: flex !important;
+    display: flex;
 }
 
 main {
@@ -597,7 +603,10 @@ main {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
     transform: scaleX(-1);
+    backface-visibility: hidden;
+    will-change: transform;
     background: #0a1a0a;
 }
 
@@ -1129,6 +1138,7 @@ tbody tr:hover {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
     display: none;
 }
 
@@ -1580,19 +1590,19 @@ tbody tr:hover {
 }
 
 /* =========================================================
-   FIX: PASTIKAN AUTH PAGE DAN MAIN APP TERLIHAT
+   AUTH / APP VISIBILITY
 ========================================================= */
 #authPage {
-    display: flex !important;
+    display: flex;
     min-height: 100vh;
 }
 
 #mainApp {
-    display: none !important;
+    display: none;
     min-height: 100vh;
     flex-direction: column;
 }
 
 #mainApp.active {
-    display: flex !important;
+    display: flex;
 }

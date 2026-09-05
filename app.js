@@ -163,6 +163,7 @@ function initDefaultAdmin() {
 
 function goToDashboard() {
     if (!DOM.authPage || !DOM.mainApp) return;
+    DOM.authPage.classList.add('is-hidden');
     DOM.authPage.style.display = 'none';
     DOM.mainApp.classList.add('active');
     DOM.mainApp.style.display = 'flex';
@@ -184,14 +185,20 @@ function handleAuth() {
             isAuthenticated = true;
             goToDashboard();
         } catch {
-            if (DOM.authPage) DOM.authPage.style.display = 'flex';
+            if (DOM.authPage) {
+                DOM.authPage.classList.remove('is-hidden');
+                DOM.authPage.style.display = 'flex';
+            }
             if (DOM.mainApp) {
                 DOM.mainApp.classList.remove('active');
                 DOM.mainApp.style.display = 'none';
             }
         }
     } else {
-        if (DOM.authPage) DOM.authPage.style.display = 'flex';
+        if (DOM.authPage) {
+            DOM.authPage.classList.remove('is-hidden');
+            DOM.authPage.style.display = 'flex';
+        }
         if (DOM.mainApp) {
             DOM.mainApp.classList.remove('active');
             DOM.mainApp.style.display = 'none';
@@ -589,7 +596,8 @@ async function requestCamera() {
             facingMode: "user",
             width: { ideal: 480 },
             height: { ideal: 360 },
-            frameRate: { ideal: 24, max: 30 }
+            frameRate: { ideal: 24, max: 30 },
+            resizeMode: "crop-and-scale"
         },
         audio: false
     });
