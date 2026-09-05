@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Face API - LOAD LEBIH CEPAT -->
+    <!-- Face API -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js">
     </script>
 
@@ -76,7 +76,17 @@
                     <label>Konfirmasi Sandi</label>
                     <input type="password" id="signupConfirm" placeholder="Ulangi kata sandi">
                 </div>
-                <button type="submit" class="auth-button">Daftar</button>
+
+                <!-- Checkbox Syarat & Ketentuan -->
+                <div class="auth-checkbox-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="signupAgree">
+                        <span class="checkmark"></span>
+                        <span class="checkbox-text">Saya setuju dengan <a href="#" id="termsLink">Syarat & Ketentuan</a> yang berlaku</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="auth-button" id="signupButton" disabled>Daftar</button>
             </form>
         </div>
     </div>
@@ -189,6 +199,7 @@
                             </div>
                             <button id="dbFilterBtn" class="db-filter-btn">📅 Filter</button>
                             <button id="dbExportBtn" class="db-export-btn">📊 Export</button>
+                            <button id="dbDeleteAllBtn" class="db-delete-all-btn">🗑️ Hapus Semua</button>
                         </div>
                     </div>
 
@@ -320,7 +331,38 @@
 <div id="toast" class="toast" aria-live="polite"></div>
 
 <!-- =====================================================
-     MODEL LOADING - HANYA TAMPIL JIKA PERLU
+     TERMS MODAL
+====================================================== -->
+<div id="termsModal" class="terms-modal" style="display:none;">
+    <div class="terms-modal-content">
+        <div class="terms-modal-header">
+            <h2>📋 Syarat & Ketentuan</h2>
+            <button class="terms-modal-close" id="termsModalClose">✕</button>
+        </div>
+        <div class="terms-modal-body">
+            <h3>1. Penggunaan Layanan</h3>
+            <p>Dengan menggunakan layanan Amanah ID, Anda setuju untuk menggunakan sistem presensi wajah sesuai dengan ketentuan yang berlaku.</p>
+            
+            <h3>2. Privasi Data</h3>
+            <p>Data wajah dan identitas Anda akan disimpan secara aman dan hanya digunakan untuk keperluan presensi di lingkungan sekolah.</p>
+            
+            <h3>3. Keamanan</h3>
+            <p>Anda bertanggung jawab atas keamanan akun Anda. Jangan membagikan kredensial login kepada pihak lain.</p>
+            
+            <h3>4. Larangan</h3>
+            <p>Dilarang menggunakan sistem ini untuk tujuan yang melanggar hukum atau menyalahgunakan fitur yang tersedia.</p>
+            
+            <h3>5. Perubahan Ketentuan</h3>
+            <p>Kami berhak mengubah syarat dan ketentuan ini sewaktu-waktu dengan pemberitahuan terlebih dahulu.</p>
+        </div>
+        <div class="terms-modal-footer">
+            <button class="terms-modal-btn" id="termsModalAgree">Saya Setuju</button>
+        </div>
+    </div>
+</div>
+
+<!-- =====================================================
+     MODEL LOADING
 ====================================================== -->
 <div id="modelLoading" class="loading-screen" style="display:none;">
     <div class="loading-spinner"></div>

@@ -2,7 +2,7 @@
 
 /* =========================================================
    AMANAH ID v3.0 - OPTIMIZED VERSION
-   Loading cepat, tanpa blocking UI
+   FIX: Login berfungsi, checkbox syarat & ketentuan
 ========================================================= */
 
 // =========================================================
@@ -68,6 +68,12 @@ function cacheDomRefs() {
     DOM.signupEmail = document.getElementById('signupEmail');
     DOM.signupPassword = document.getElementById('signupPassword');
     DOM.signupConfirm = document.getElementById('signupConfirm');
+    DOM.signupAgree = document.getElementById('signupAgree');
+    DOM.signupButton = document.getElementById('signupButton');
+    DOM.termsLink = document.getElementById('termsLink');
+    DOM.termsModal = document.getElementById('termsModal');
+    DOM.termsModalClose = document.getElementById('termsModalClose');
+    DOM.termsModalAgree = document.getElementById('termsModalAgree');
     DOM.logoutButton = document.getElementById('logoutButton');
     DOM.modelLoading = document.getElementById('modelLoading');
     DOM.toast = document.getElementById('toast');
@@ -109,6 +115,7 @@ function cacheDomRefs() {
     DOM.dbDateEnd = document.getElementById("dbDateEnd");
     DOM.dbFilterBtn = document.getElementById("dbFilterBtn");
     DOM.dbExportBtn = document.getElementById("dbExportBtn");
+    DOM.dbDeleteAllBtn = document.getElementById("dbDeleteAllBtn");
 }
 
 // =========================================================
@@ -144,6 +151,19 @@ function initDefaultAdmin() {
     }
 }
 
+function goToDashboard() {
+    DOM.authPage.style.display = 'none';
+    DOM.mainApp.style.display = 'flex';
+    renderDatabase();
+    
+    // Load models di background setelah UI muncul
+    setTimeout(() => {
+        if (!modelsReady && !modelLoadingStarted) {
+            loadModelsBackground();
+        }
+    }, 500);
+}
+
 function handleAuth() {
     const savedUser = localStorage.getItem('amanah_session');
 
@@ -151,17 +171,7 @@ function handleAuth() {
         try {
             currentUser = JSON.parse(savedUser);
             isAuthenticated = true;
-            DOM.authPage.style.display = 'none';
-            DOM.mainApp.style.display = 'flex';
-            
-            // Load models di background setelah UI muncul
-            setTimeout(() => {
-                if (!modelsReady && !modelLoadingStarted) {
-                    loadModelsBackground();
-                }
-            }, 500);
-            
-            renderDatabase();
+            goToDashboard();
         } catch {
             DOM.authPage.style.display = 'flex';
             DOM.mainApp.style.display = 'none';
@@ -180,12 +190,55 @@ document.querySelectorAll('.auth-tab').forEach(function(tab) {
         document.querySelectorAll('.auth-form').forEach(function(f) { f.classList.remove('active'); });
         var formId = this.dataset.tab === 'login' ? 'loginForm' : 'signupForm';
         document.getElementById(formId).classList.add('active');
+        // Reset checkbox saat pindah tab
+        if (this.dataset.tab === 'signup') {
+            DOM.signupAgree.checked = false;
+            DOM.signupButton.disabled = true;
+        }
     });
 });
 
-// Login - INSTANT
+// =========================================================
+// CHECKBOX SYARAT & KETENTUAN
+// =========================================================
+
+// Toggle button signup berdasarkan checkbox
+DOM.signupAgree.addEventListener('change', function() {
+    DOM.signupButton.disabled = !this.checked;
+});
+
+// Buka modal terms
+DOM.termsLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    DOM.termsModal.style.display = 'flex';
+});
+
+// Tutup modal terms
+DOM.termsModalClose.addEventListener('click', function() {
+    DOM.termsModal.style.display = 'none';
+});
+
+DOM.termsModalAgree.addEventListener('click', function() {
+    DOM.termsModal.style.display = 'none';
+    DOM.signupAgree.checked = true;
+    DOM.signupButton.disabled = false;
+    showToast('Terima kasih telah menyetujui syarat & ketentuan.');
+});
+
+// Tutup modal dengan klik di luar
+DOM.termsModal.addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.style.display = 'none';
+    }
+});
+
+// =========================================================
+// LOGIN - FIXED
+// =========================================================
+
 DOM.loginForm.addEventListener('submit', function(e) {
     e.preventDefault();
+    
     var email = DOM.loginEmail.value.trim();
     var password = DOM.loginPassword.value.trim();
 
@@ -202,31 +255,28 @@ DOM.loginForm.addEventListener('submit', function(e) {
         return;
     }
 
+    // Login berhasil
     currentUser = user;
     isAuthenticated = true;
     localStorage.setItem('amanah_session', JSON.stringify(user));
-    DOM.authPage.style.display = 'none';
-    DOM.mainApp.style.display = 'flex';
+    
     showToast('Selamat datang, ' + user.name + '!');
-    
-    // Load models di background
-    setTimeout(() => {
-        if (!modelsReady && !modelLoadingStarted) {
-            loadModelsBackground();
-        }
-    }, 500);
-    
-    renderDatabase();
+    goToDashboard();
 });
 
-// Signup - INSTANT
+// =========================================================
+// SIGNUP - FIXED
+// =========================================================
+
 DOM.signupForm.addEventListener('submit', function(e) {
     e.preventDefault();
+    
     var name = DOM.signupName.value.trim();
     var email = DOM.signupEmail.value.trim();
     var password = DOM.signupPassword.value.trim();
     var confirm = DOM.signupConfirm.value.trim();
 
+    // Validasi
     if (!name || !email || !password || !confirm) {
         showToast('Harap isi semua field.');
         return;
@@ -239,6 +289,11 @@ DOM.signupForm.addEventListener('submit', function(e) {
 
     if (password !== confirm) {
         showToast('Password tidak cocok.');
+        return;
+    }
+
+    if (!DOM.signupAgree.checked) {
+        showToast('Harap setujui syarat & ketentuan.');
         return;
     }
 
@@ -259,14 +314,27 @@ DOM.signupForm.addEventListener('submit', function(e) {
 
     users.push(newUser);
     saveUsers(users);
+    
     showToast('Akun berhasil dibuat! Silakan login.');
     
+    // Reset form
+    DOM.signupName.value = '';
+    DOM.signupEmail.value = '';
+    DOM.signupPassword.value = '';
+    DOM.signupConfirm.value = '';
+    DOM.signupAgree.checked = false;
+    DOM.signupButton.disabled = true;
+    
+    // Pindah ke tab login
     document.querySelector('.auth-tab[data-tab="login"]').click();
     DOM.loginEmail.value = email;
     DOM.loginPassword.value = '';
 });
 
-// Logout
+// =========================================================
+// LOGOUT
+// =========================================================
+
 DOM.logoutButton.addEventListener('click', function() {
     localStorage.removeItem('amanah_session');
     isAuthenticated = false;
@@ -1337,27 +1405,17 @@ function deleteAllAttendance() {
 }
 
 // =========================================================
-// DATABASE TOOLBAR
+// DATABASE EVENTS
 // =========================================================
-
-var dbToolbar = document.querySelector('.db-toolbar');
-if (dbToolbar) {
-    var deleteAllBtn = document.createElement('button');
-    deleteAllBtn.id = 'dbDeleteAllBtn';
-    deleteAllBtn.className = 'db-delete-all-btn';
-    deleteAllBtn.innerHTML = 'Hapus Semua';
-    deleteAllBtn.addEventListener('click', deleteAllAttendance);
-    
-    var filters = dbToolbar.querySelector('.db-filters');
-    if (filters) {
-        filters.appendChild(deleteAllBtn);
-    }
-}
 
 DOM.dbFilterBtn.addEventListener("click", renderDatabase);
 DOM.dbSearch.addEventListener("input", renderDatabase);
 DOM.dbDateStart.addEventListener("change", renderDatabase);
 DOM.dbDateEnd.addEventListener("change", renderDatabase);
+
+if (DOM.dbDeleteAllBtn) {
+    DOM.dbDeleteAllBtn.addEventListener("click", deleteAllAttendance);
+}
 
 // =========================================================
 // EXPORT DATABASE

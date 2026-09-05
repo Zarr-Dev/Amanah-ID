@@ -259,13 +259,19 @@ img, video {
     margin-top: 8px;
 }
 
-.auth-button:hover {
+.auth-button:hover:not(:disabled) {
     background: var(--green-dark);
     transform: translateY(-1px);
     box-shadow: 0 4px 16px var(--green-glow);
 }
 
-.auth-button:active {
+.auth-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.auth-button:active:not(:disabled) {
     transform: translateY(0);
 }
 
@@ -277,6 +283,193 @@ img, video {
     padding: 8px;
     background: var(--surface-soft);
     border-radius: var(--radius-sm);
+}
+
+/* =========================================================
+   CHECKBOX CUSTOM - SYARAT & KETENTUAN
+========================================================= */
+.auth-checkbox-group {
+    margin: 6px 0 12px;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-light);
+    position: relative;
+    padding-left: 0;
+    user-select: none;
+}
+
+.checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    min-width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.checkbox-container:hover input ~ .checkmark {
+    border-color: var(--green);
+}
+
+.checkbox-container input:checked ~ .checkmark {
+    background: var(--green);
+    border-color: var(--green);
+}
+
+.checkbox-container input:checked ~ .checkmark::after {
+    content: "✓";
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.checkbox-container input:focus ~ .checkmark {
+    box-shadow: 0 0 0 3px var(--green-soft);
+}
+
+.checkbox-text {
+    line-height: 1.5;
+    font-size: 12px;
+}
+
+.checkbox-text a {
+    color: var(--green);
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+.checkbox-text a:hover {
+    color: var(--green-dark);
+}
+
+/* =========================================================
+   TERMS MODAL
+========================================================= */
+.terms-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(6px);
+    animation: fadeIn 0.3s ease;
+}
+
+.terms-modal-content {
+    width: min(520px, 92%);
+    max-height: 85vh;
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: fadeUp 0.3s ease;
+}
+
+.terms-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-soft);
+}
+
+.terms-modal-header h2 {
+    font-family: "Montserrat", sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.terms-modal-close {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 20px;
+    transition: var(--transition);
+}
+
+.terms-modal-close:hover {
+    background: var(--red-soft);
+    color: var(--red);
+}
+
+.terms-modal-body {
+    padding: 24px 28px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.terms-modal-body h3 {
+    font-family: "Montserrat", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-top: 16px;
+    margin-bottom: 6px;
+}
+
+.terms-modal-body h3:first-child {
+    margin-top: 0;
+}
+
+.terms-modal-body p {
+    font-size: 13px;
+    color: var(--text-light);
+    line-height: 1.7;
+    margin-bottom: 4px;
+}
+
+.terms-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: var(--surface-soft);
+}
+
+.terms-modal-btn {
+    padding: 10px 32px;
+    border-radius: var(--radius-sm);
+    background: var(--green);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.terms-modal-btn:hover {
+    background: var(--green-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px var(--green-glow);
 }
 
 /* =========================================================
@@ -753,6 +946,23 @@ main {
     box-shadow: 0 4px 16px var(--green-glow);
 }
 
+.db-delete-all-btn {
+    height: 44px;
+    padding: 0 18px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    transition: var(--transition);
+    background: var(--surface-soft);
+    color: var(--red);
+    border: 1.5px solid var(--border);
+}
+
+.db-delete-all-btn:hover {
+    background: var(--red-soft);
+    border-color: var(--red);
+}
+
 .db-card {
     overflow: hidden;
     background: var(--surface);
@@ -858,26 +1068,6 @@ tbody tr:hover {
 .row-action-btn:hover {
     background: var(--red-soft);
     color: var(--red);
-}
-
-/* =========================================================
-   DELETE ALL BUTTON
-========================================================= */
-.db-delete-all-btn {
-    height: 44px;
-    padding: 0 18px;
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    font-weight: 600;
-    transition: var(--transition);
-    background: var(--surface-soft);
-    color: var(--red);
-    border: 1.5px solid var(--border);
-}
-
-.db-delete-all-btn:hover {
-    background: var(--red-soft);
-    border-color: var(--red);
 }
 
 /* =========================================================
