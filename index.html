@@ -39,6 +39,12 @@
                 <button class="auth-tab active" data-tab="login">Masuk</button>
                 <button class="auth-tab" data-tab="signup">Daftar</button>
             </div>
+            <div class="language-switcher" role="group" aria-label="Pilihan bahasa">
+                <span>🌐</span>
+                <button class="language-option active" data-language="id">ID</button>
+                <button class="language-option" data-language="en">EN</button>
+                <button class="language-option" data-language="ar">العربية</button>
+            </div>
 
             <!-- Login Form -->
             <form class="auth-form active" id="loginForm">
@@ -107,7 +113,7 @@
                 <button class="nav-item active" data-page="attendancePage">📷 Presensi</button>
                 <button class="nav-item" data-page="databasePage">📊 Database</button>
                 <button class="nav-item" data-page="formPage">✏️ Formulir</button>
-                <button class="nav-item" id="logoutButton" style="color:#dc2626;">🚪 Keluar</button>
+                <button class="nav-item profile-nav" id="profileButton"><img id="navAvatar" class="nav-avatar" alt=""> <span data-i18n="profile">Profil</span></button>
             </nav>
         </header>
 
@@ -304,10 +310,43 @@
     </div>
 </div>
 
+<div id="profileModal" class="profile-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+    <div class="profile-card">
+        <div class="profile-header">
+            <div>
+                <span class="eyebrow">AMANAH ID</span>
+                <h2 id="profileTitle" data-i18n="profile">Profil</h2>
+            </div>
+            <button class="profile-close" id="profileClose" aria-label="Tutup">✕</button>
+        </div>
+        <div class="profile-avatar-wrap">
+            <img id="profileAvatar" class="profile-avatar" alt="Foto profil">
+            <label class="profile-photo-button" for="profilePhotoInput">📷 <span data-i18n="changePhoto">Ganti foto</span></label>
+            <input id="profilePhotoInput" type="file" accept="image/*" hidden>
+        </div>
+        <div class="profile-fields">
+            <label><span data-i18n="fullName">Nama Lengkap</span><input id="profileName" type="text"></label>
+            <label><span>Email</span><input id="profileEmail" type="email" readonly></label>
+            <label><span data-i18n="password">Kata Sandi</span><input id="profilePassword" type="password" readonly></label>
+        </div>
+        <div class="profile-language language-switcher" role="group" aria-label="Pilihan bahasa">
+            <span>🌐</span>
+            <button class="language-option active" data-language="id">ID</button>
+            <button class="language-option" data-language="en">EN</button>
+            <button class="language-option" data-language="ar">العربية</button>
+        </div>
+        <div class="profile-actions">
+            <button id="profileSaveButton" class="primary-button" type="button" data-i18n="saveProfile">Simpan Profil</button>
+            <button id="logoutButton" class="profile-logout" type="button" data-i18n="logout">Keluar</button>
+        </div>
+    </div>
+</div>
+
 <!-- =====================================================
      TOAST
 ====================================================== -->
 <div id="toast" class="toast" aria-live="polite"></div>
+<span id="modelLoading" hidden></span>
 
 <!-- =====================================================
      TERMS MODAL
@@ -387,6 +426,16 @@
         termsModal: getEl('termsModal'),
         termsModalClose: getEl('termsModalClose'),
         termsModalAgree: getEl('termsModalAgree'),
+        profileButton: getEl('profileButton'),
+        navAvatar: getEl('navAvatar'),
+        profileModal: getEl('profileModal'),
+        profileClose: getEl('profileClose'),
+        profileAvatar: getEl('profileAvatar'),
+        profilePhotoInput: getEl('profilePhotoInput'),
+        profileName: getEl('profileName'),
+        profileEmail: getEl('profileEmail'),
+        profilePassword: getEl('profilePassword'),
+        profileSaveButton: getEl('profileSaveButton'),
         logoutButton: getEl('logoutButton'),
         toast: getEl('toast'),
         navItems: getAll('.nav-item'),
@@ -459,6 +508,55 @@
         ATTENDANCE: 'amanah_attendance_v3',
         SESSION: 'amanah_session'
     };
+
+    var LANGUAGE_KEY = 'amanah_language';
+    var translations = {
+        id: {
+            profile: 'Profil', changePhoto: 'Ganti foto', fullName: 'Nama Lengkap',
+            password: 'Kata Sandi', saveProfile: 'Simpan Profil', logout: 'Keluar',
+            login: 'Masuk', signup: 'Daftar', attendance: 'Presensi', database: 'Database',
+            form: 'Formulir', cameraOff: 'Kamera belum aktif', cameraOn: 'Mencari wajah...'
+        },
+        en: {
+            profile: 'Profile', changePhoto: 'Change photo', fullName: 'Full name',
+            password: 'Password', saveProfile: 'Save profile', logout: 'Log out',
+            login: 'Log in', signup: 'Sign up', attendance: 'Attendance', database: 'Database',
+            form: 'Registration', cameraOff: 'Camera is off', cameraOn: 'Looking for a face...'
+        },
+        ar: {
+            profile: 'الملف الشخصي', changePhoto: 'تغيير الصورة', fullName: 'الاسم الكامل',
+            password: 'كلمة المرور', saveProfile: 'حفظ الملف', logout: 'تسجيل الخروج',
+            login: 'دخول', signup: 'تسجيل', attendance: 'الحضور', database: 'قاعدة البيانات',
+            form: 'التسجيل', cameraOff: 'الكاميرا غير مفعلة', cameraOn: 'جارٍ البحث عن وجه...'
+        }
+    };
+    var language = localStorage.getItem(LANGUAGE_KEY) || 'id';
+
+    function translate(key) {
+        return (translations[language] && translations[language][key]) || translations.id[key] || key;
+    }
+
+    function applyLanguage(nextLanguage) {
+        if (!translations[nextLanguage]) return;
+        language = nextLanguage;
+        localStorage.setItem(LANGUAGE_KEY, language);
+        document.documentElement.lang = language === 'ar' ? 'ar-KW' : language;
+        document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+        document.querySelectorAll('[data-i18n]').forEach(function(el) {
+            el.textContent = translate(el.dataset.i18n);
+        });
+        document.querySelectorAll('.language-option').forEach(function(option) {
+            option.classList.toggle('active', option.dataset.language === language);
+        });
+        var loginTab = document.querySelector('.auth-tab[data-tab="login"]');
+        var signupTab = document.querySelector('.auth-tab[data-tab="signup"]');
+        if (loginTab) loginTab.textContent = translate('login');
+        if (signupTab) signupTab.textContent = translate('signup');
+        var navItems = document.querySelectorAll('.nav-item');
+        if (navItems[0]) navItems[0].lastChild.textContent = ' ' + translate('attendance');
+        if (navItems[1]) navItems[1].lastChild.textContent = ' ' + translate('database');
+        if (navItems[2]) navItems[2].lastChild.textContent = ' ' + translate('form');
+    }
 
     // =========================================================
     // STORAGE HELPERS
@@ -564,6 +662,7 @@
         DOM.authPage.style.display = 'none';
         DOM.mainApp.style.display = 'flex';
         DOM.mainApp.classList.add('active');
+        renderProfile();
         renderDatabase();
         
         setTimeout(function() {
@@ -786,6 +885,85 @@
         });
     }
 
+    document.querySelectorAll('.language-option').forEach(function(option) {
+        option.addEventListener('click', function() {
+            applyLanguage(this.dataset.language);
+        });
+    });
+
+    function getProfileFallback(name) {
+        var initials = String(name || 'A').trim().split(/\s+/).slice(0, 2)
+            .map(function(part) { return part.charAt(0).toUpperCase(); }).join('');
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160">' +
+            '<defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#0b9f9a"/>' +
+            '<stop offset="1" stop-color="#08716f"/></linearGradient></defs>' +
+            '<rect width="160" height="160" rx="80" fill="url(#g)"/>' +
+            '<text x="80" y="94" text-anchor="middle" font-family="Arial" font-size="54" font-weight="700" fill="white">' +
+            escapeHTML(initials || 'A') + '</text></svg>';
+        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+    }
+
+    function renderProfile() {
+        if (!currentUser) return;
+        if (DOM.profileName) DOM.profileName.value = currentUser.name || '';
+        if (DOM.profileEmail) DOM.profileEmail.value = currentUser.email || '';
+        if (DOM.profilePassword) DOM.profilePassword.value = currentUser.password || '';
+        if (DOM.profileAvatar) {
+            DOM.profileAvatar.src = currentUser.profilePhoto || getProfileFallback(currentUser.name);
+        }
+        if (DOM.navAvatar) {
+            DOM.navAvatar.src = currentUser.profilePhoto || getProfileFallback(currentUser.name);
+        }
+    }
+
+    if (DOM.profileButton) {
+        DOM.profileButton.addEventListener('click', function() {
+            renderProfile();
+            if (DOM.profileModal) DOM.profileModal.style.display = 'flex';
+        });
+    }
+    if (DOM.profileClose) {
+        DOM.profileClose.addEventListener('click', function() {
+            if (DOM.profileModal) DOM.profileModal.style.display = 'none';
+        });
+    }
+    if (DOM.profileModal) {
+        DOM.profileModal.addEventListener('click', function(event) {
+            if (event.target === this) this.style.display = 'none';
+        });
+    }
+    if (DOM.profilePhotoInput) {
+        DOM.profilePhotoInput.addEventListener('change', function(event) {
+            var file = event.target.files && event.target.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+            var reader = new FileReader();
+            reader.onload = function() {
+                if (DOM.profileAvatar) DOM.profileAvatar.src = reader.result;
+                if (currentUser) currentUser.profilePhoto = reader.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+    if (DOM.profileSaveButton) {
+        DOM.profileSaveButton.addEventListener('click', function() {
+            if (!currentUser) return;
+            var name = DOM.profileName ? DOM.profileName.value.trim() : '';
+            if (name.length < 2) {
+                showToast(language === 'en' ? 'Name is not valid.' : language === 'ar' ? 'الاسم غير صالح.' : 'Nama belum valid.');
+                return;
+            }
+            currentUser.name = name;
+            var users = getUsers();
+            var userIndex = users.findIndex(function(user) { return user.id === currentUser.id; });
+            if (userIndex >= 0) users[userIndex] = currentUser;
+            saveUsers(users);
+            localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(currentUser));
+            if (DOM.welcomeMessage) DOM.welcomeMessage.textContent = '👋 ' + currentUser.name + '!';
+            if (DOM.profileModal) DOM.profileModal.style.display = 'none';
+            showToast(language === 'en' ? 'Profile saved.' : language === 'ar' ? 'تم حفظ الملف الشخصي.' : 'Profil disimpan.');
+        });
+    }
+
     // =========================================================
     // NAVIGATION
     // =========================================================
@@ -838,11 +1016,18 @@
             showToast('AI loading timeout, silakan refresh.');
         }, TIMEOUT_MS);
 
-        Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models'),
-            faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models'),
-            faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models')
-        ]).then(function() {
+        function loadModelSet(url) {
+            return Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(url),
+                faceapi.nets.faceLandmark68Net.loadFromUri(url),
+                faceapi.nets.faceRecognitionNet.loadFromUri(url)
+            ]);
+        }
+        loadModelSet('https://justadudewhohacks.github.io/face-api.js/models')
+        .catch(function() {
+            return loadModelSet('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models');
+        })
+        .then(function() {
             clearTimeout(loadTimeout);
             modelsReady = true;
             modelLoadingComplete = true;
@@ -866,15 +1051,20 @@
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             throw new Error('Browser tidak mendukung getUserMedia.');
         }
-        return navigator.mediaDevices.getUserMedia({
+        var constraints = {
             video: {
-                facingMode: 'user',
-                width: { ideal: 480 },
-                height: { ideal: 360 },
-                frameRate: { ideal: 24, max: 30 },
-                resizeMode: 'crop-and-scale'
+                facingMode: { ideal: 'user' },
+                width: { ideal: 640, min: 320 },
+                height: { ideal: 480, min: 240 },
+                frameRate: { ideal: 30, max: 30 }
             },
             audio: false
+        };
+        return navigator.mediaDevices.getUserMedia(constraints).catch(function(error) {
+            if (error && (error.name === 'OverconstrainedError' || error.name === 'NotReadableError')) {
+                return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            }
+            throw error;
         });
     }
 
@@ -991,13 +1181,13 @@
 
             for (var j = 0; j < faceResults.length; j++) {
                 var result = faceResults[j];
-                var recognized = result.match && result.match.distance <= 0.45;
+                var recognized = result.match && result.match.distance <= 0.42;
                 createFaceOutline(result.detection.detection.box, recognized);
             }
 
             var recognizedFaces = [];
             for (var k = 0; k < faceResults.length; k++) {
-                if (faceResults[k].match && faceResults[k].match.distance <= 0.45) {
+                if (faceResults[k].match && faceResults[k].match.distance <= 0.42) {
                     recognizedFaces.push(faceResults[k]);
                 }
             }
@@ -1981,6 +2171,7 @@
         
         // Setup admin
         initDefaultAdmin();
+        applyLanguage(language);
         
         // Handle auth
         handleAuth();
