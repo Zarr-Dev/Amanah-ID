@@ -6,6 +6,16 @@
     <meta name="theme-color" content="#ffffff">
     <title>Amanah ID</title>
 
+    <!-- Tambahkan ini untuk debugging -->
+<script>
+    console.log('Amanah ID v3.0 - Loading...');
+    window.onerror = function(msg, url, line, col, error) {
+        console.error('Global Error:', msg, error);
+        alert('Terjadi error: ' + msg + '\nLihat console untuk detail.');
+        return true;
+    };
+</script>
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

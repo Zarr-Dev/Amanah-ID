@@ -233,11 +233,12 @@ DOM.termsModal.addEventListener('click', function(e) {
 });
 
 // =========================================================
-// LOGIN - FIXED
+// LOGIN - FIXED VERSION
 // =========================================================
 
 DOM.loginForm.addEventListener('submit', function(e) {
     e.preventDefault();
+    console.log('Login form submitted'); // Debug
     
     var email = DOM.loginEmail.value.trim();
     var password = DOM.loginPassword.value.trim();
@@ -248,103 +249,130 @@ DOM.loginForm.addEventListener('submit', function(e) {
     }
 
     var users = getUsers();
-    var user = users.find(function(u) { return u.email === email && u.password === password; });
+    console.log('Users found:', users.length); // Debug
+    
+    var user = users.find(function(u) { 
+        return u.email === email && u.password === password; 
+    });
 
     if (!user) {
         showToast('Email atau password salah.');
+        console.log('User not found for email:', email); // Debug
         return;
     }
 
-    // Login berhasil
-    currentUser = user;
-    isAuthenticated = true;
-    localStorage.setItem('amanah_session', JSON.stringify(user));
+    console.log('Login success for:', user.name); // Debug
     
-    showToast('Selamat datang, ' + user.name + '!');
-    goToDashboard();
+    // SIMPAN SESSION
+    try {
+        localStorage.setItem('amanah_session', JSON.stringify(user));
+        currentUser = user;
+        isAuthenticated = true;
+    } catch (err) {
+        console.error('Failed to save session:', err);
+        showToast('Gagal menyimpan session.');
+        return;
+    }
+    
+    // PINDAH KE DASHBOARD
+    try {
+        DOM.authPage.style.display = 'none';
+        DOM.mainApp.style.display = 'flex';
+        showToast('Selamat datang, ' + user.name + '!');
+        renderDatabase();
+        
+        // Load models di background
+        setTimeout(function() {
+            if (!modelsReady && !modelLoadingStarted) {
+                loadModelsBackground();
+            }
+        }, 500);
+    } catch (err) {
+        console.error('Failed to switch to dashboard:', err);
+        showToast('Gagal masuk ke dashboard.');
+    }
 });
 
 // =========================================================
-// SIGNUP - FIXED
+// HANDLE AUTH - FIXED
 // =========================================================
 
-DOM.signupForm.addEventListener('submit', function(e) {
-    e.preventDefault();
+function handleAuth() {
+    console.log('handleAuth() called'); // Debug
     
-    var name = DOM.signupName.value.trim();
-    var email = DOM.signupEmail.value.trim();
-    var password = DOM.signupPassword.value.trim();
-    var confirm = DOM.signupConfirm.value.trim();
-
-    // Validasi
-    if (!name || !email || !password || !confirm) {
-        showToast('Harap isi semua field.');
+    // Pastikan DOM sudah siap
+    if (!DOM.authPage || !DOM.mainApp) {
+        console.error('DOM elements not ready');
         return;
     }
-
-    if (password.length < 6) {
-        showToast('Password minimal 6 karakter.');
-        return;
-    }
-
-    if (password !== confirm) {
-        showToast('Password tidak cocok.');
-        return;
-    }
-
-    if (!DOM.signupAgree.checked) {
-        showToast('Harap setujui syarat & ketentuan.');
-        return;
-    }
-
-    var users = getUsers();
-    if (users.some(function(u) { return u.email === email; })) {
-        showToast('Email sudah terdaftar.');
-        return;
-    }
-
-    var newUser = {
-        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36),
-        name: name,
-        email: email,
-        password: password,
-        role: 'user',
-        createdAt: new Date().toISOString()
-    };
-
-    users.push(newUser);
-    saveUsers(users);
     
-    showToast('Akun berhasil dibuat! Silakan login.');
-    
-    // Reset form
-    DOM.signupName.value = '';
-    DOM.signupEmail.value = '';
-    DOM.signupPassword.value = '';
-    DOM.signupConfirm.value = '';
-    DOM.signupAgree.checked = false;
-    DOM.signupButton.disabled = true;
-    
-    // Pindah ke tab login
-    document.querySelector('.auth-tab[data-tab="login"]').click();
-    DOM.loginEmail.value = email;
-    DOM.loginPassword.value = '';
-});
+    var savedUser = localStorage.getItem('amanah_session');
+    console.log('Saved session:', savedUser ? 'YES' : 'NO'); // Debug
 
-// =========================================================
-// LOGOUT
-// =========================================================
-
-DOM.logoutButton.addEventListener('click', function() {
-    localStorage.removeItem('amanah_session');
-    isAuthenticated = false;
-    currentUser = null;
-    DOM.mainApp.style.display = 'none';
+    if (savedUser) {
+        try {
+            var user = JSON.parse(savedUser);
+            if (user && user.email) {
+                currentUser = user;
+                isAuthenticated = true;
+                console.log('Session restored for:', user.name);
+                
+                // TAMPILKAN DASHBOARD
+                DOM.authPage.style.display = 'none';
+                DOM.mainApp.style.display = 'flex';
+                renderDatabase();
+                
+                // Load models
+                setTimeout(function() {
+                    if (!modelsReady && !modelLoadingStarted) {
+                        loadModelsBackground();
+                    }
+                }, 500);
+                return;
+            }
+        } catch (e) {
+            console.error('Session parse error:', e);
+            localStorage.removeItem('amanah_session');
+        }
+    }
+    
+    // TAMPILKAN LOGIN
     DOM.authPage.style.display = 'flex';
-    stopAttendanceCamera();
-    stopEnrollmentCamera();
-    showToast('Berhasil keluar.');
-});
+    DOM.mainApp.style.display = 'none';
+}
+
+// =========================================================
+// INIT - PASTIKAN DIPANGGIL
+// =========================================================
+
+function initApp() {
+    console.log('initApp() called'); // Debug
+    
+    cacheDomRefs();
+    initDefaultAdmin();
+    handleAuth();
+    
+    // Set default dates
+    if (DOM.dbDateStart) {
+        var defaultStart = new Date();
+        defaultStart.setDate(defaultStart.getDate() - 7);
+        DOM.dbDateStart.value = defaultStart.toISOString().split('T')[0];
+    }
+    if (DOM.dbDateEnd) {
+        DOM.dbDateEnd.value = getLocalDate();
+    }
+    
+    console.log('App initialized successfully'); // Debug
+}
+
+// PASTIKAN INIT DIPANGGIL
+document.addEventListener('DOMContentLoaded', initApp);
+
+// FALLBACK: Jika DOMContentLoaded sudah terlewat
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    console.log('DOM already loaded, calling init directly');
+    initApp();
+}
 
 // =========================================================
 // STORAGE

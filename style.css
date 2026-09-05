@@ -1890,3 +1890,24 @@ tbody tr:hover {
         width: 100%;
     }
 }
+
+/* Pastikan auth page dan main app terlihat dengan benar */
+#authPage {
+    display: flex !important;
+    min-height: 100vh;
+}
+
+#mainApp {
+    display: none !important;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+#mainApp.active {
+    display: flex !important;
+}
+
+/* Debug helper - hapus setelah selesai */
+.debug-border {
+    border: 2px solid red !important;
+}
