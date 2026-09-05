@@ -1,5 +1,5 @@
 /* =========================================================
-   AMANAH ID v3.0 - MODERN GREEN THEME (OPTIMIZED)
+   AMANAH ID v3.0 - MODERN GREEN THEME
 ========================================================= */
 
 :root {
@@ -565,8 +565,12 @@ img, video {
 ========================================================= */
 .main-app {
     min-height: 100vh;
-    display: flex;
+    display: none;
     flex-direction: column;
+}
+
+.main-app.active {
+    display: flex !important;
 }
 
 main {
@@ -1891,7 +1895,9 @@ tbody tr:hover {
     }
 }
 
-/* Pastikan auth page dan main app terlihat dengan benar */
+/* =========================================================
+   FIX: PASTIKAN AUTH PAGE DAN MAIN APP TERLIHAT DENGAN BENAR
+========================================================= */
 #authPage {
     display: flex !important;
     min-height: 100vh;
@@ -1905,9 +1911,4 @@ tbody tr:hover {
 
 #mainApp.active {
     display: flex !important;
-}
-
-/* Debug helper - hapus setelah selesai */
-.debug-border {
-    border: 2px solid red !important;
 }
