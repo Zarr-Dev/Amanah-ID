@@ -1,14 +1,13 @@
 "use strict";
 
 /* =========================================================
-   AMANAH ID v3.0 - SUPER ULTRA FAST
+   AMANAH ID v3.0 - INSTANT LOADING
 ========================================================= */
 
 // =========================================================
 // CONFIGURATION
 // =========================================================
 
-// GANTI KE CDN YANG LEBIH CEPAT (jsdelivr sudah di-cache)
 const MODEL_URL = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models";
 const MODEL_URL_BACKUP = "https://unpkg.com/face-api.js@0.22.2/models";
 
@@ -28,6 +27,8 @@ let isAuthenticated = false;
 let currentUser = null;
 let modelLoadingStarted = false;
 let modelLoadingComplete = false;
+let modelLoadingRetryCount = 0;
+const MAX_RETRY = 5;
 
 let attendanceStream = null;
 let enrollmentStream = null;
@@ -94,12 +95,12 @@ function handleAuth() {
             authPage.style.display = 'none';
             mainApp.style.display = 'flex';
             
-            // LOAD MODELS DI BACKGROUND - TANPA LOADING SCREEN
+            // LOAD MODELS DI BACKGROUND - SANGAT LAMBAT, TAPI TIDAK MENGHALANGI
             setTimeout(function() {
                 if (!modelsReady && !modelLoadingStarted) {
-                    loadModelsSilent();
+                    loadModelsBackground();
                 }
-            }, 100);
+            }, 1000);
             
             initApp();
         } catch {
@@ -123,7 +124,7 @@ document.querySelectorAll('.auth-tab').forEach(function(tab) {
     });
 });
 
-// Login
+// Login - INSTANT, TANPA LOADING
 document.getElementById('loginForm').addEventListener('submit', function(e) {
     e.preventDefault();
     var email = document.getElementById('loginEmail').value.trim();
@@ -149,17 +150,17 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     document.getElementById('mainApp').style.display = 'flex';
     showToast('Selamat datang, ' + user.name + '!');
     
-    // LOAD MODELS DI BACKGROUND - SANGAT CEPAT
+    // LOAD MODELS DI BACKGROUND - TANPA MENGHALANGI
     setTimeout(function() {
         if (!modelsReady && !modelLoadingStarted) {
-            loadModelsSilent();
+            loadModelsBackground();
         }
-    }, 100);
+    }, 500);
     
     initApp();
 });
 
-// Signup
+// Signup - INSTANT, TANPA LOADING
 document.getElementById('signupForm').addEventListener('submit', function(e) {
     e.preventDefault();
     var name = document.getElementById('signupName').value.trim();
@@ -345,38 +346,46 @@ navItems.forEach(function(button) {
 });
 
 // =========================================================
-// LOAD MODELS - SILENT (TANPA LOADING SCREEN)
+// LOAD MODELS - BACKGROUND (TANPA LOADING SCREEN)
 // =========================================================
 
-function loadModelsSilent() {
+function loadModelsBackground() {
     if (modelLoadingStarted || modelLoadingComplete) return;
     modelLoadingStarted = true;
     
     if (typeof faceapi === 'undefined') {
         console.error("[Amanah ID] face-api.js not loaded");
         modelLoadingStarted = false;
+        // Coba lagi dalam 3 detik
+        setTimeout(function() {
+            if (!modelsReady && !modelLoadingComplete) {
+                loadModelsBackground();
+            }
+        }, 3000);
         return;
     }
 
-    console.log("[Amanah ID] Loading models silently in background...");
+    console.log("[Amanah ID] Loading models in background...");
     
-    // Load dengan timeout agresif 8 detik
+    // Timeout 10 detik
     var loadTimeout = setTimeout(function() {
-        console.log("[Amanah ID] Model loading timeout, continuing without AI");
+        console.log("[Amanah ID] Model loading timeout");
         modelLoadingStarted = false;
-        // Coba lagi nanti
-        setTimeout(function() {
-            if (!modelsReady && !modelLoadingComplete) {
-                loadModelsSilent();
-            }
-        }, 5000);
-    }, 8000);
+        modelLoadingRetryCount++;
+        if (modelLoadingRetryCount < MAX_RETRY) {
+            setTimeout(function() {
+                if (!modelsReady && !modelLoadingComplete) {
+                    loadModelsBackground();
+                }
+            }, 5000);
+        }
+    }, 10000);
 
     // Jalankan loading
-    loadModelsAsyncSilent(loadTimeout);
+    loadModelsAsync(loadTimeout);
 }
 
-async function loadModelsAsyncSilent(loadTimeout) {
+async function loadModelsAsync(loadTimeout) {
     try {
         await Promise.race([
             Promise.all([
@@ -385,7 +394,7 @@ async function loadModelsAsyncSilent(loadTimeout) {
                 faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
             ]),
             new Promise(function(_, reject) {
-                setTimeout(function() { reject(new Error('Timeout')); }, 8000);
+                setTimeout(function() { reject(new Error('Timeout')); }, 10000);
             })
         ]);
         
@@ -394,7 +403,6 @@ async function loadModelsAsyncSilent(loadTimeout) {
         clearTimeout(loadTimeout);
         console.log("[Amanah ID] AI models ready!");
         updateSaveButton();
-        showToast("Sistem AI siap digunakan.");
     } catch (error) {
         console.error("[Amanah ID] Model load error:", error);
         try {
@@ -405,7 +413,7 @@ async function loadModelsAsyncSilent(loadTimeout) {
                     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL_BACKUP)
                 ]),
                 new Promise(function(_, reject) {
-                    setTimeout(function() { reject(new Error('Timeout')); }, 8000);
+                    setTimeout(function() { reject(new Error('Timeout')); }, 10000);
                 })
             ]);
             
@@ -414,17 +422,18 @@ async function loadModelsAsyncSilent(loadTimeout) {
             clearTimeout(loadTimeout);
             console.log("[Amanah ID] AI models ready from backup!");
             updateSaveButton();
-            showToast("Sistem AI siap (server cadangan).");
         } catch (backupError) {
             console.error("[Amanah ID] Backup also failed:", backupError);
             clearTimeout(loadTimeout);
             modelLoadingStarted = false;
-            // Coba lagi dalam 10 detik
-            setTimeout(function() {
-                if (!modelsReady && !modelLoadingComplete) {
-                    loadModelsSilent();
-                }
-            }, 10000);
+            modelLoadingRetryCount++;
+            if (modelLoadingRetryCount < MAX_RETRY) {
+                setTimeout(function() {
+                    if (!modelsReady && !modelLoadingComplete) {
+                        loadModelsBackground();
+                    }
+                }, 8000);
+            }
         }
     }
 }
@@ -453,21 +462,23 @@ async function requestCamera() {
 // =========================================================
 
 async function startAttendanceCamera() {
+    // CEK MODELS - Jika belum siap, load dan beri tahu user
     if (!modelsReady) {
-        showToast("AI sedang disiapkan...");
+        showToast("AI sedang disiapkan, sebentar...");
         if (!modelLoadingStarted) {
-            loadModelsSilent();
+            loadModelsBackground();
         }
-        // Tunggu 1.5 detik lalu coba lagi
+        // Coba lagi dalam 2 detik
         setTimeout(function() {
             if (modelsReady) {
                 startAttendanceCamera();
             } else {
-                showToast("AI masih disiapkan, tunggu sebentar...");
+                showToast("AI masih disiapkan, coba lagi nanti.");
             }
-        }, 1500);
+        }, 2000);
         return;
     }
+    
     try {
         stopAttendanceCamera();
         attendanceError.classList.remove("show");
@@ -669,24 +680,25 @@ function registerAttendance(student, distance) {
 }
 
 // =========================================================
-// ENROLLMENT
+// ENROLLMENT CAMERA
 // =========================================================
 
 async function startEnrollmentCamera() {
     if (!modelsReady) {
-        showToast("AI sedang disiapkan...");
+        showToast("AI sedang disiapkan, sebentar...");
         if (!modelLoadingStarted) {
-            loadModelsSilent();
+            loadModelsBackground();
         }
         setTimeout(function() {
             if (modelsReady) {
                 startEnrollmentCamera();
             } else {
-                showToast("AI masih disiapkan...");
+                showToast("AI masih disiapkan, coba lagi nanti.");
             }
-        }, 1500);
+        }, 2000);
         return;
     }
+    
     try {
         stopEnrollmentCamera();
         resetEnrollmentState();
@@ -975,6 +987,22 @@ photoInput.addEventListener("change", async function(event) {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
         setValidation("File bukan gambar.", false);
+        return;
+    }
+
+    // Jika models belum siap, beri tahu user
+    if (!modelsReady) {
+        setValidation("AI sedang disiapkan, tunggu sebentar...", false);
+        if (!modelLoadingStarted) {
+            loadModelsBackground();
+        }
+        setTimeout(function() {
+            if (modelsReady) {
+                showToast("AI siap, upload ulang foto.");
+            } else {
+                showToast("AI masih disiapkan, coba lagi nanti.");
+            }
+        }, 3000);
         return;
     }
 
