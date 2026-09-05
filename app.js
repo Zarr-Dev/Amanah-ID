@@ -1,7 +1,8 @@
 "use strict";
 
 /* =========================================================
-   AMANAH ID v3.0 - INSTANT LOADING
+   AMANAH ID v3.0 - OPTIMIZED VERSION
+   Loading cepat, tanpa blocking UI
 ========================================================= */
 
 // =========================================================
@@ -11,9 +12,9 @@
 const MODEL_URL = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models";
 const MODEL_URL_BACKUP = "https://unpkg.com/face-api.js@0.22.2/models";
 
-const FACE_MATCH_THRESHOLD = 0.42;
-const ATTENDANCE_INTERVAL = 350;
-const ENROLLMENT_INTERVAL = 100;
+const FACE_MATCH_THRESHOLD = 0.45;
+const ATTENDANCE_INTERVAL = 400;
+const ENROLLMENT_INTERVAL = 120;
 const REQUIRED_MATCH_FRAMES = 2;
 const REQUIRED_CAPTURE_FRAMES = 1;
 const STABILITY_HISTORY = 3;
@@ -28,7 +29,7 @@ let currentUser = null;
 let modelLoadingStarted = false;
 let modelLoadingComplete = false;
 let modelLoadingRetryCount = 0;
-const MAX_RETRY = 5;
+const MAX_RETRY = 3;
 
 let attendanceStream = null;
 let enrollmentStream = null;
@@ -49,6 +50,66 @@ const attendanceCooldown = new Map();
 
 let lastEnrollmentDetection = null;
 let detectionCounter = 0;
+
+// =========================================================
+// DOM REFS - CACHE
+// =========================================================
+
+const DOM = {};
+
+function cacheDomRefs() {
+    DOM.authPage = document.getElementById('authPage');
+    DOM.mainApp = document.getElementById('mainApp');
+    DOM.loginForm = document.getElementById('loginForm');
+    DOM.signupForm = document.getElementById('signupForm');
+    DOM.loginEmail = document.getElementById('loginEmail');
+    DOM.loginPassword = document.getElementById('loginPassword');
+    DOM.signupName = document.getElementById('signupName');
+    DOM.signupEmail = document.getElementById('signupEmail');
+    DOM.signupPassword = document.getElementById('signupPassword');
+    DOM.signupConfirm = document.getElementById('signupConfirm');
+    DOM.logoutButton = document.getElementById('logoutButton');
+    DOM.modelLoading = document.getElementById('modelLoading');
+    DOM.toast = document.getElementById('toast');
+    
+    DOM.navItems = document.querySelectorAll(".nav-item");
+    DOM.pages = document.querySelectorAll(".page");
+    
+    DOM.attendanceVideo = document.getElementById("attendanceVideo");
+    DOM.attendanceOverlay = document.getElementById("attendanceOverlay");
+    DOM.attendanceStatus = document.getElementById("attendanceStatus");
+    DOM.attendanceError = document.getElementById("attendanceError");
+    DOM.attendanceCameraButton = document.getElementById("attendanceCameraButton");
+    DOM.fullscreenButton = document.getElementById("fullscreenButton");
+    DOM.welcomeMessage = document.getElementById("welcomeMessage");
+    
+    DOM.totalStudents = document.getElementById("totalStudents");
+    DOM.totalPresent = document.getElementById("totalPresent");
+    DOM.attendancePercentage = document.getElementById("attendancePercentage");
+    DOM.totalHistory = document.getElementById("totalHistory");
+    DOM.attendanceTableBody = document.getElementById("attendanceTableBody");
+    DOM.emptyDatabase = document.getElementById("emptyDatabase");
+    
+    DOM.nisnInput = document.getElementById("nisn");
+    DOM.studentNameInput = document.getElementById("studentName");
+    DOM.studentClassInput = document.getElementById("studentClass");
+    DOM.saveStudentButton = document.getElementById("saveStudentButton");
+    DOM.enrollmentVideo = document.getElementById("enrollmentVideo");
+    DOM.enrollmentImage = document.getElementById("enrollmentImage");
+    DOM.previewPlaceholder = document.getElementById("previewPlaceholder");
+    DOM.uploadButton = document.getElementById("uploadButton");
+    DOM.cameraEnrollmentButton = document.getElementById("cameraEnrollmentButton");
+    DOM.photoInput = document.getElementById("photoInput");
+    DOM.faceValidation = document.getElementById("faceValidation");
+    DOM.aiProgress = document.getElementById("aiProgress");
+    DOM.aiPercent = document.getElementById("aiPercent");
+    
+    DOM.dbSearch = document.getElementById("dbSearch");
+    DOM.dbDateStart = document.getElementById("dbDateStart");
+    DOM.dbDateEnd = document.getElementById("dbDateEnd");
+    DOM.dbFilterBtn = document.getElementById("dbFilterBtn");
+    DOM.dbExportBtn = document.getElementById("dbExportBtn");
+}
 
 // =========================================================
 // AUTHENTICATION
@@ -84,32 +145,30 @@ function initDefaultAdmin() {
 }
 
 function handleAuth() {
-    const authPage = document.getElementById('authPage');
-    const mainApp = document.getElementById('mainApp');
     const savedUser = localStorage.getItem('amanah_session');
 
     if (savedUser) {
         try {
             currentUser = JSON.parse(savedUser);
             isAuthenticated = true;
-            authPage.style.display = 'none';
-            mainApp.style.display = 'flex';
+            DOM.authPage.style.display = 'none';
+            DOM.mainApp.style.display = 'flex';
             
-            // LOAD MODELS DI BACKGROUND - SANGAT LAMBAT, TAPI TIDAK MENGHALANGI
-            setTimeout(function() {
+            // Load models di background setelah UI muncul
+            setTimeout(() => {
                 if (!modelsReady && !modelLoadingStarted) {
                     loadModelsBackground();
                 }
-            }, 1000);
+            }, 500);
             
-            initApp();
+            renderDatabase();
         } catch {
-            authPage.style.display = 'flex';
-            mainApp.style.display = 'none';
+            DOM.authPage.style.display = 'flex';
+            DOM.mainApp.style.display = 'none';
         }
     } else {
-        authPage.style.display = 'flex';
-        mainApp.style.display = 'none';
+        DOM.authPage.style.display = 'flex';
+        DOM.mainApp.style.display = 'none';
     }
 }
 
@@ -124,11 +183,11 @@ document.querySelectorAll('.auth-tab').forEach(function(tab) {
     });
 });
 
-// Login - INSTANT, TANPA LOADING
-document.getElementById('loginForm').addEventListener('submit', function(e) {
+// Login - INSTANT
+DOM.loginForm.addEventListener('submit', function(e) {
     e.preventDefault();
-    var email = document.getElementById('loginEmail').value.trim();
-    var password = document.getElementById('loginPassword').value.trim();
+    var email = DOM.loginEmail.value.trim();
+    var password = DOM.loginPassword.value.trim();
 
     if (!email || !password) {
         showToast('Harap isi email dan password.');
@@ -146,27 +205,27 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     currentUser = user;
     isAuthenticated = true;
     localStorage.setItem('amanah_session', JSON.stringify(user));
-    document.getElementById('authPage').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'flex';
+    DOM.authPage.style.display = 'none';
+    DOM.mainApp.style.display = 'flex';
     showToast('Selamat datang, ' + user.name + '!');
     
-    // LOAD MODELS DI BACKGROUND - TANPA MENGHALANGI
-    setTimeout(function() {
+    // Load models di background
+    setTimeout(() => {
         if (!modelsReady && !modelLoadingStarted) {
             loadModelsBackground();
         }
     }, 500);
     
-    initApp();
+    renderDatabase();
 });
 
-// Signup - INSTANT, TANPA LOADING
-document.getElementById('signupForm').addEventListener('submit', function(e) {
+// Signup - INSTANT
+DOM.signupForm.addEventListener('submit', function(e) {
     e.preventDefault();
-    var name = document.getElementById('signupName').value.trim();
-    var email = document.getElementById('signupEmail').value.trim();
-    var password = document.getElementById('signupPassword').value.trim();
-    var confirm = document.getElementById('signupConfirm').value.trim();
+    var name = DOM.signupName.value.trim();
+    var email = DOM.signupEmail.value.trim();
+    var password = DOM.signupPassword.value.trim();
+    var confirm = DOM.signupConfirm.value.trim();
 
     if (!name || !email || !password || !confirm) {
         showToast('Harap isi semua field.');
@@ -203,66 +262,21 @@ document.getElementById('signupForm').addEventListener('submit', function(e) {
     showToast('Akun berhasil dibuat! Silakan login.');
     
     document.querySelector('.auth-tab[data-tab="login"]').click();
-    document.getElementById('loginEmail').value = email;
-    document.getElementById('loginPassword').value = '';
+    DOM.loginEmail.value = email;
+    DOM.loginPassword.value = '';
 });
 
 // Logout
-document.getElementById('logoutButton').addEventListener('click', function() {
+DOM.logoutButton.addEventListener('click', function() {
     localStorage.removeItem('amanah_session');
     isAuthenticated = false;
     currentUser = null;
-    document.getElementById('mainApp').style.display = 'none';
-    document.getElementById('authPage').style.display = 'flex';
+    DOM.mainApp.style.display = 'none';
+    DOM.authPage.style.display = 'flex';
     stopAttendanceCamera();
     stopEnrollmentCamera();
     showToast('Berhasil keluar.');
 });
-
-// =========================================================
-// DOM REFS
-// =========================================================
-
-var navItems = document.querySelectorAll(".nav-item");
-var pages = document.querySelectorAll(".page");
-
-var attendanceVideo = document.getElementById("attendanceVideo");
-var attendanceOverlay = document.getElementById("attendanceOverlay");
-var attendanceStatus = document.getElementById("attendanceStatus");
-var attendanceError = document.getElementById("attendanceError");
-var attendanceCameraButton = document.getElementById("attendanceCameraButton");
-var fullscreenButton = document.getElementById("fullscreenButton");
-var welcomeMessage = document.getElementById("welcomeMessage");
-
-var totalStudents = document.getElementById("totalStudents");
-var totalPresent = document.getElementById("totalPresent");
-var attendancePercentage = document.getElementById("attendancePercentage");
-var totalHistory = document.getElementById("totalHistory");
-var attendanceTableBody = document.getElementById("attendanceTableBody");
-var emptyDatabase = document.getElementById("emptyDatabase");
-
-var nisnInput = document.getElementById("nisn");
-var studentNameInput = document.getElementById("studentName");
-var studentClassInput = document.getElementById("studentClass");
-var saveStudentButton = document.getElementById("saveStudentButton");
-var enrollmentVideo = document.getElementById("enrollmentVideo");
-var enrollmentImage = document.getElementById("enrollmentImage");
-var previewPlaceholder = document.getElementById("previewPlaceholder");
-var uploadButton = document.getElementById("uploadButton");
-var cameraEnrollmentButton = document.getElementById("cameraEnrollmentButton");
-var photoInput = document.getElementById("photoInput");
-var faceValidation = document.getElementById("faceValidation");
-var aiProgress = document.getElementById("aiProgress");
-var aiPercent = document.getElementById("aiPercent");
-
-var toast = document.getElementById("toast");
-var modelLoading = document.getElementById("modelLoading");
-
-var dbSearch = document.getElementById("dbSearch");
-var dbDateStart = document.getElementById("dbDateStart");
-var dbDateEnd = document.getElementById("dbDateEnd");
-var dbFilterBtn = document.getElementById("dbFilterBtn");
-var dbExportBtn = document.getElementById("dbExportBtn");
 
 // =========================================================
 // STORAGE
@@ -300,10 +314,10 @@ function saveAttendance(attendance) {
 var toastTimer = null;
 
 function showToast(message) {
-    toast.textContent = message;
-    toast.classList.add("show");
+    DOM.toast.textContent = message;
+    DOM.toast.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function() { toast.classList.remove("show"); }, 2600);
+    toastTimer = setTimeout(function() { DOM.toast.classList.remove("show"); }, 2600);
 }
 
 function escapeHTML(value) {
@@ -330,13 +344,13 @@ function getLocalDate() {
 // NAVIGATION
 // =========================================================
 
-navItems.forEach(function(button) {
+DOM.navItems.forEach(function(button) {
     button.addEventListener("click", function() {
         if (button.id === 'logoutButton') return;
         var pageId = button.dataset.page;
-        navItems.forEach(function(item) { item.classList.remove("active"); });
+        DOM.navItems.forEach(function(item) { item.classList.remove("active"); });
         button.classList.add("active");
-        pages.forEach(function(page) { page.classList.remove("active"); });
+        DOM.pages.forEach(function(page) { page.classList.remove("active"); });
         var targetPage = document.getElementById(pageId);
         if (targetPage) targetPage.classList.add("active");
         if (pageId !== "attendancePage") stopAttendanceCamera();
@@ -346,46 +360,57 @@ navItems.forEach(function(button) {
 });
 
 // =========================================================
-// LOAD MODELS - BACKGROUND (TANPA LOADING SCREEN)
+// LOAD MODELS - CEPAT DAN TIDAK MENGHALANGI UI
 // =========================================================
 
 function loadModelsBackground() {
     if (modelLoadingStarted || modelLoadingComplete) return;
     modelLoadingStarted = true;
     
+    // Tampilkan loading jika belum selesai dalam 2 detik
+    let loadingTimeout = setTimeout(() => {
+        if (!modelsReady && !modelLoadingComplete) {
+            DOM.modelLoading.style.display = 'flex';
+        }
+    }, 2000);
+    
     if (typeof faceapi === 'undefined') {
         console.error("[Amanah ID] face-api.js not loaded");
         modelLoadingStarted = false;
-        // Coba lagi dalam 3 detik
-        setTimeout(function() {
+        clearTimeout(loadingTimeout);
+        setTimeout(() => {
             if (!modelsReady && !modelLoadingComplete) {
                 loadModelsBackground();
             }
-        }, 3000);
+        }, 2000);
         return;
     }
 
-    console.log("[Amanah ID] Loading models in background...");
+    console.log("[Amanah ID] Loading models...");
     
-    // Timeout 10 detik
-    var loadTimeout = setTimeout(function() {
+    // Timeout 8 detik
+    var loadTimeout = setTimeout(() => {
         console.log("[Amanah ID] Model loading timeout");
         modelLoadingStarted = false;
+        clearTimeout(loadingTimeout);
+        DOM.modelLoading.style.display = 'none';
         modelLoadingRetryCount++;
         if (modelLoadingRetryCount < MAX_RETRY) {
-            setTimeout(function() {
+            setTimeout(() => {
                 if (!modelsReady && !modelLoadingComplete) {
                     loadModelsBackground();
                 }
-            }, 5000);
+            }, 3000);
+        } else {
+            showToast('AI gagal dimuat, gunakan fitur offline.');
         }
-    }, 10000);
+    }, 8000);
 
     // Jalankan loading
-    loadModelsAsync(loadTimeout);
+    loadModelsAsync(loadTimeout, loadingTimeout);
 }
 
-async function loadModelsAsync(loadTimeout) {
+async function loadModelsAsync(loadTimeout, loadingTimeout) {
     try {
         await Promise.race([
             Promise.all([
@@ -394,15 +419,18 @@ async function loadModelsAsync(loadTimeout) {
                 faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
             ]),
             new Promise(function(_, reject) {
-                setTimeout(function() { reject(new Error('Timeout')); }, 10000);
+                setTimeout(function() { reject(new Error('Timeout')); }, 8000);
             })
         ]);
         
         modelsReady = true;
         modelLoadingComplete = true;
         clearTimeout(loadTimeout);
+        clearTimeout(loadingTimeout);
+        DOM.modelLoading.style.display = 'none';
         console.log("[Amanah ID] AI models ready!");
         updateSaveButton();
+        showToast('AI siap digunakan!');
     } catch (error) {
         console.error("[Amanah ID] Model load error:", error);
         try {
@@ -413,26 +441,31 @@ async function loadModelsAsync(loadTimeout) {
                     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL_BACKUP)
                 ]),
                 new Promise(function(_, reject) {
-                    setTimeout(function() { reject(new Error('Timeout')); }, 10000);
+                    setTimeout(function() { reject(new Error('Timeout')); }, 8000);
                 })
             ]);
             
             modelsReady = true;
             modelLoadingComplete = true;
             clearTimeout(loadTimeout);
+            clearTimeout(loadingTimeout);
+            DOM.modelLoading.style.display = 'none';
             console.log("[Amanah ID] AI models ready from backup!");
             updateSaveButton();
+            showToast('AI siap digunakan!');
         } catch (backupError) {
             console.error("[Amanah ID] Backup also failed:", backupError);
             clearTimeout(loadTimeout);
+            clearTimeout(loadingTimeout);
+            DOM.modelLoading.style.display = 'none';
             modelLoadingStarted = false;
             modelLoadingRetryCount++;
             if (modelLoadingRetryCount < MAX_RETRY) {
-                setTimeout(function() {
+                setTimeout(() => {
                     if (!modelsReady && !modelLoadingComplete) {
                         loadModelsBackground();
                     }
-                }, 8000);
+                }, 5000);
             }
         }
     }
@@ -462,18 +495,16 @@ async function requestCamera() {
 // =========================================================
 
 async function startAttendanceCamera() {
-    // CEK MODELS - Jika belum siap, load dan beri tahu user
     if (!modelsReady) {
-        showToast("AI sedang disiapkan, sebentar...");
+        showToast("AI sedang disiapkan...");
         if (!modelLoadingStarted) {
             loadModelsBackground();
         }
-        // Coba lagi dalam 2 detik
-        setTimeout(function() {
+        setTimeout(() => {
             if (modelsReady) {
                 startAttendanceCamera();
             } else {
-                showToast("AI masih disiapkan, coba lagi nanti.");
+                showToast("AI masih disiapkan, coba lagi.");
             }
         }, 2000);
         return;
@@ -481,18 +512,18 @@ async function startAttendanceCamera() {
     
     try {
         stopAttendanceCamera();
-        attendanceError.classList.remove("show");
-        attendanceStatus.textContent = "Mengaktifkan kamera...";
+        DOM.attendanceError.classList.remove("show");
+        DOM.attendanceStatus.textContent = "Mengaktifkan kamera...";
         attendanceStream = await requestCamera();
-        attendanceVideo.srcObject = attendanceStream;
-        await attendanceVideo.play();
-        attendanceStatus.textContent = "Mencari wajah...";
-        attendanceCameraButton.title = "Matikan kamera";
+        DOM.attendanceVideo.srcObject = attendanceStream;
+        await DOM.attendanceVideo.play();
+        DOM.attendanceStatus.textContent = "Mencari wajah...";
+        DOM.attendanceCameraButton.title = "Matikan kamera";
         startAttendanceLoop();
     } catch (error) {
         console.error("[Attendance Camera]", error);
-        attendanceStatus.textContent = "Kamera tidak tersedia";
-        attendanceError.classList.add("show");
+        DOM.attendanceStatus.textContent = "Kamera tidak tersedia";
+        DOM.attendanceError.classList.add("show");
         showToast("Kamera gagal diakses.");
     }
 }
@@ -503,11 +534,11 @@ function stopAttendanceCamera() {
         attendanceStream.getTracks().forEach(function(track) { track.stop(); });
         attendanceStream = null;
     }
-    attendanceVideo.srcObject = null;
-    attendanceOverlay.innerHTML = "";
-    welcomeMessage.classList.remove("show");
-    attendanceStatus.textContent = "Kamera belum aktif";
-    attendanceCameraButton.title = "Aktifkan kamera";
+    DOM.attendanceVideo.srcObject = null;
+    DOM.attendanceOverlay.innerHTML = "";
+    DOM.welcomeMessage.classList.remove("show");
+    DOM.attendanceStatus.textContent = "Kamera belum aktif";
+    DOM.attendanceCameraButton.title = "Aktifkan kamera";
     attendanceProcessing = false;
     attendanceMatchStudentId = null;
     attendanceMatchFrames = 0;
@@ -519,24 +550,24 @@ function startAttendanceLoop() {
 }
 
 // =========================================================
-// ATTENDANCE PROCESSING
+// ATTENDANCE PROCESSING - OPTIMIZED
 // =========================================================
 
 async function processAttendanceFrame() {
-    if (attendanceProcessing || !modelsReady || !attendanceStream || attendanceVideo.readyState < 2) return;
+    if (attendanceProcessing || !modelsReady || !attendanceStream || DOM.attendanceVideo.readyState < 2) return;
     attendanceProcessing = true;
 
     try {
-        var detections = await faceapi.detectAllFaces(
-            attendanceVideo,
-            new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.50 })
+        const detections = await faceapi.detectAllFaces(
+            DOM.attendanceVideo,
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.50 })
         ).withFaceLandmarks().withFaceDescriptors();
 
-        attendanceOverlay.innerHTML = "";
+        DOM.attendanceOverlay.innerHTML = "";
 
         if (detections.length === 0) {
-            attendanceStatus.textContent = "Mencari wajah...";
-            welcomeMessage.classList.remove("show");
+            DOM.attendanceStatus.textContent = "Mencari wajah...";
+            DOM.welcomeMessage.classList.remove("show");
             attendanceMatchStudentId = null;
             attendanceMatchFrames = 0;
             return;
@@ -559,8 +590,8 @@ async function processAttendanceFrame() {
         });
 
         if (recognizedFaces.length === 0) {
-            attendanceStatus.textContent = detections.length === 1 ? "Wajah terdeteksi, belum cocok" : detections.length + " wajah, tidak ada identitas cocok";
-            welcomeMessage.classList.remove("show");
+            DOM.attendanceStatus.textContent = detections.length === 1 ? "Wajah terdeteksi, belum cocok" : detections.length + " wajah, tidak ada identitas cocok";
+            DOM.welcomeMessage.classList.remove("show");
             attendanceMatchStudentId = null;
             attendanceMatchFrames = 0;
             return;
@@ -577,14 +608,14 @@ async function processAttendanceFrame() {
             attendanceMatchFrames = 1;
         }
 
-        attendanceStatus.textContent = student.name + " terdeteksi";
+        DOM.attendanceStatus.textContent = student.name + " terdeteksi";
 
         if (attendanceMatchFrames >= REQUIRED_MATCH_FRAMES) {
-            welcomeMessage.textContent = "Selamat datang, " + student.name + "!";
-            welcomeMessage.classList.add("show");
+            DOM.welcomeMessage.textContent = "Selamat datang, " + student.name + "!";
+            DOM.welcomeMessage.classList.add("show");
             registerAttendance(student, best.match.distance);
         } else {
-            welcomeMessage.classList.remove("show");
+            DOM.welcomeMessage.classList.remove("show");
         }
     } catch (error) {
         console.error("[Attendance Detection]", error);
@@ -598,12 +629,12 @@ async function processAttendanceFrame() {
 // =========================================================
 
 function createFaceOutline(box, recognized) {
-    if (!attendanceVideo.videoWidth || !attendanceVideo.videoHeight) return;
+    if (!DOM.attendanceVideo.videoWidth || !DOM.attendanceVideo.videoHeight) return;
     var outline = document.createElement("div");
     outline.className = recognized ? "face-outline recognized" : "face-outline";
-    var mapped = mapVideoBox(box, attendanceVideo, true);
+    var mapped = mapVideoBox(box, DOM.attendanceVideo, true);
     outline.style.cssText = 'left:' + mapped.x + 'px;top:' + mapped.y + 'px;width:' + mapped.width + 'px;height:' + mapped.height + 'px;';
-    attendanceOverlay.appendChild(outline);
+    DOM.attendanceOverlay.appendChild(outline);
 }
 
 function mapVideoBox(box, video, mirrored) {
@@ -624,7 +655,7 @@ function mapVideoBox(box, video, mirrored) {
 }
 
 // =========================================================
-// MATCHING
+// MATCHING - OPTIMIZED
 // =========================================================
 
 function findBestMatch(descriptor, students) {
@@ -685,15 +716,15 @@ function registerAttendance(student, distance) {
 
 async function startEnrollmentCamera() {
     if (!modelsReady) {
-        showToast("AI sedang disiapkan, sebentar...");
+        showToast("AI sedang disiapkan...");
         if (!modelLoadingStarted) {
             loadModelsBackground();
         }
-        setTimeout(function() {
+        setTimeout(() => {
             if (modelsReady) {
                 startEnrollmentCamera();
             } else {
-                showToast("AI masih disiapkan, coba lagi nanti.");
+                showToast("AI masih disiapkan, coba lagi.");
             }
         }, 2000);
         return;
@@ -704,10 +735,10 @@ async function startEnrollmentCamera() {
         resetEnrollmentState();
         clearEnrollmentImage();
         enrollmentStream = await requestCamera();
-        enrollmentVideo.srcObject = enrollmentStream;
-        enrollmentVideo.classList.add("active");
-        previewPlaceholder.style.display = "none";
-        await waitForVideoReady(enrollmentVideo);
+        DOM.enrollmentVideo.srcObject = enrollmentStream;
+        DOM.enrollmentVideo.classList.add("active");
+        DOM.previewPlaceholder.style.display = "none";
+        await waitForVideoReady(DOM.enrollmentVideo);
         setValidation("Kamera aktif. Posisikan wajah di tengah.", true);
         startEnrollmentLoop();
     } catch (error) {
@@ -723,9 +754,9 @@ function stopEnrollmentCamera() {
         enrollmentStream.getTracks().forEach(function(track) { track.stop(); });
         enrollmentStream = null;
     }
-    enrollmentVideo.pause();
-    enrollmentVideo.srcObject = null;
-    enrollmentVideo.classList.remove("active");
+    DOM.enrollmentVideo.pause();
+    DOM.enrollmentVideo.srcObject = null;
+    DOM.enrollmentVideo.classList.remove("active");
     enrollmentProcessing = false;
     stabilityHistory = [];
     enrollmentReadyFrames = 0;
@@ -736,11 +767,11 @@ function stopEnrollmentCamera() {
 function clearEnrollmentImage() {
     currentEnrollmentDescriptor = null;
     currentEnrollmentImage = null;
-    enrollmentImage.src = "";
-    enrollmentImage.classList.remove("active", "has-image");
+    DOM.enrollmentImage.src = "";
+    DOM.enrollmentImage.classList.remove("active", "has-image");
     var replaceBtn = document.getElementById('replaceImageBtn');
     if (replaceBtn) replaceBtn.remove();
-    previewPlaceholder.style.display = "flex";
+    DOM.previewPlaceholder.style.display = "flex";
     resetEnrollmentState();
     updateSaveButton();
 }
@@ -762,18 +793,18 @@ function startEnrollmentLoop() {
 }
 
 // =========================================================
-// ENROLLMENT PROCESSING
+// ENROLLMENT PROCESSING - OPTIMIZED
 // =========================================================
 
 async function processEnrollmentFrame() {
-    if (enrollmentProcessing || !enrollmentStream || enrollmentVideo.readyState < 2) return;
+    if (enrollmentProcessing || !enrollmentStream || DOM.enrollmentVideo.readyState < 2) return;
     enrollmentProcessing = true;
     detectionCounter++;
 
     try {
         var detections = await faceapi.detectAllFaces(
-            enrollmentVideo,
-            new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.42 })
+            DOM.enrollmentVideo,
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.45 })
         ).withFaceLandmarks().withFaceDescriptors();
 
         if (detections.length === 0) {
@@ -794,8 +825,8 @@ async function processEnrollmentFrame() {
 
         var detection = detections[0];
         var box = detection.detection.box;
-        var width = enrollmentVideo.videoWidth;
-        var height = enrollmentVideo.videoHeight;
+        var width = DOM.enrollmentVideo.videoWidth;
+        var height = DOM.enrollmentVideo.videoHeight;
         lastEnrollmentDetection = detection;
 
         var faceArea = (box.width * box.height) / (width * height);
@@ -819,8 +850,8 @@ async function processEnrollmentFrame() {
         var centerScore = clamp(100 - (dist * 250), 0, 100);
 
         var lightScore = 80;
-        if (detectionCounter % 4 === 0) {
-            var brightness = calculateBrightness(enrollmentVideo);
+        if (detectionCounter % 3 === 0) {
+            var brightness = calculateBrightness(DOM.enrollmentVideo);
             lightScore = calculateLightScore(brightness);
         }
 
@@ -907,15 +938,15 @@ function calculateLightScore(brightness) {
 function updateEnrollmentProgress(value) {
     enrollmentProgress = clamp(value, 0, 100);
     var percentage = Math.round(enrollmentProgress);
-    aiProgress.style.width = percentage + '%';
-    aiPercent.textContent = percentage + '%';
+    DOM.aiProgress.style.width = percentage + '%';
+    DOM.aiPercent.textContent = percentage + '%';
 }
 
 function setValidation(message, success) {
-    faceValidation.textContent = message;
-    faceValidation.className = "validation-message";
+    DOM.faceValidation.textContent = message;
+    DOM.faceValidation.className = "validation-message";
     if (message) {
-        faceValidation.classList.add(success ? "success" : "error");
+        DOM.faceValidation.classList.add(success ? "success" : "error");
     }
 }
 
@@ -936,22 +967,22 @@ function resetEnrollmentState() {
 async function captureEnrollment(detection) {
     stopEnrollmentCamera();
     var canvas = document.createElement("canvas");
-    canvas.width = enrollmentVideo.videoWidth;
-    canvas.height = enrollmentVideo.videoHeight;
+    canvas.width = DOM.enrollmentVideo.videoWidth;
+    canvas.height = DOM.enrollmentVideo.videoHeight;
     var context = canvas.getContext("2d");
     if (!context) { setValidation("Gagal memproses gambar.", false); return; }
     context.translate(canvas.width, 0);
     context.scale(-1, 1);
-    context.drawImage(enrollmentVideo, 0, 0, canvas.width, canvas.height);
+    context.drawImage(DOM.enrollmentVideo, 0, 0, canvas.width, canvas.height);
     var imageData = canvas.toDataURL("image/jpeg", 0.90);
 
     currentEnrollmentDescriptor = Array.from(detection.descriptor);
     currentEnrollmentImage = imageData;
 
-    enrollmentImage.src = imageData;
-    enrollmentImage.classList.add("active", "has-image");
-    enrollmentVideo.classList.remove("active");
-    previewPlaceholder.style.display = "none";
+    DOM.enrollmentImage.src = imageData;
+    DOM.enrollmentImage.classList.add("active", "has-image");
+    DOM.enrollmentVideo.classList.remove("active");
+    DOM.previewPlaceholder.style.display = "none";
     addReplaceButton();
 
     updateEnrollmentProgress(100);
@@ -977,12 +1008,12 @@ function addReplaceButton() {
 }
 
 // =========================================================
-// UPLOAD IMAGE
+// UPLOAD IMAGE - OPTIMIZED
 // =========================================================
 
-uploadButton.addEventListener("click", function() { photoInput.click(); });
+DOM.uploadButton.addEventListener("click", function() { DOM.photoInput.click(); });
 
-photoInput.addEventListener("change", async function(event) {
+DOM.photoInput.addEventListener("change", async function(event) {
     var file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
@@ -990,17 +1021,14 @@ photoInput.addEventListener("change", async function(event) {
         return;
     }
 
-    // Jika models belum siap, beri tahu user
     if (!modelsReady) {
         setValidation("AI sedang disiapkan, tunggu sebentar...", false);
         if (!modelLoadingStarted) {
             loadModelsBackground();
         }
-        setTimeout(function() {
+        setTimeout(() => {
             if (modelsReady) {
                 showToast("AI siap, upload ulang foto.");
-            } else {
-                showToast("AI masih disiapkan, coba lagi nanti.");
             }
         }, 3000);
         return;
@@ -1010,13 +1038,13 @@ photoInput.addEventListener("change", async function(event) {
         stopEnrollmentCamera();
         resetEnrollmentState();
         var image = await faceapi.bufferToImage(file);
-        enrollmentImage.src = image.src;
-        enrollmentImage.classList.add("active", "has-image");
-        previewPlaceholder.style.display = "none";
+        DOM.enrollmentImage.src = image.src;
+        DOM.enrollmentImage.classList.add("active", "has-image");
+        DOM.previewPlaceholder.style.display = "none";
 
         var detections = await faceapi.detectAllFaces(
             image,
-            new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.45 })
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.45 })
         ).withFaceLandmarks().withFaceDescriptors();
 
         if (detections.length === 0) {
@@ -1054,7 +1082,7 @@ photoInput.addEventListener("change", async function(event) {
         setValidation("Foto gagal dianalisis.", false);
         clearEnrollmentImage();
     } finally {
-        photoInput.value = "";
+        DOM.photoInput.value = "";
     }
 });
 
@@ -1062,15 +1090,15 @@ photoInput.addEventListener("change", async function(event) {
 // FORM VALIDATION
 // =========================================================
 
-[nisnInput, studentNameInput, studentClassInput].forEach(function(input) {
+[DOM.nisnInput, DOM.studentNameInput, DOM.studentClassInput].forEach(function(input) {
     input.addEventListener("input", updateSaveButton);
 });
 
 function updateSaveButton() {
-    var nisn = nisnInput.value.trim();
-    var name = studentNameInput.value.trim();
-    var className = studentClassInput.value.trim();
-    saveStudentButton.disabled = !(
+    var nisn = DOM.nisnInput.value.trim();
+    var name = DOM.studentNameInput.value.trim();
+    var className = DOM.studentClassInput.value.trim();
+    DOM.saveStudentButton.disabled = !(
         modelsReady &&
         /^\d+$/.test(nisn) &&
         nisn.length >= 4 &&
@@ -1085,10 +1113,10 @@ function updateSaveButton() {
 // SAVE STUDENT
 // =========================================================
 
-saveStudentButton.addEventListener("click", function() {
-    var nisn = nisnInput.value.trim();
-    var name = studentNameInput.value.trim();
-    var className = studentClassInput.value.trim();
+DOM.saveStudentButton.addEventListener("click", function() {
+    var nisn = DOM.nisnInput.value.trim();
+    var name = DOM.studentNameInput.value.trim();
+    var className = DOM.studentClassInput.value.trim();
 
     if (!/^\d+$/.test(nisn)) { showToast("NISN hanya boleh berisi angka."); return; }
     if (name.length < 2) { showToast("Nama siswa belum valid."); return; }
@@ -1113,16 +1141,16 @@ saveStudentButton.addEventListener("click", function() {
     students.push(student);
     saveStudents(students);
 
-    nisnInput.value = "";
-    studentNameInput.value = "";
-    studentClassInput.value = "";
+    DOM.nisnInput.value = "";
+    DOM.studentNameInput.value = "";
+    DOM.studentClassInput.value = "";
     currentEnrollmentDescriptor = null;
     currentEnrollmentImage = null;
-    enrollmentImage.src = "";
-    enrollmentImage.classList.remove("active", "has-image");
+    DOM.enrollmentImage.src = "";
+    DOM.enrollmentImage.classList.remove("active", "has-image");
     var replaceBtn = document.getElementById('replaceImageBtn');
     if (replaceBtn) replaceBtn.remove();
-    previewPlaceholder.style.display = "flex";
+    DOM.previewPlaceholder.style.display = "flex";
     resetEnrollmentState();
     updateSaveButton();
     renderDatabase();
@@ -1130,7 +1158,7 @@ saveStudentButton.addEventListener("click", function() {
 });
 
 // =========================================================
-// DATABASE RENDER
+// DATABASE RENDER - OPTIMIZED
 // =========================================================
 
 var filteredData = [];
@@ -1141,16 +1169,16 @@ function renderDatabase() {
     var today = getLocalDate();
     var todayAttendance = attendance.filter(function(item) { return item.date === today; });
 
-    totalStudents.textContent = students.length;
-    totalPresent.textContent = todayAttendance.length;
-    totalHistory.textContent = attendance.length;
+    DOM.totalStudents.textContent = students.length;
+    DOM.totalPresent.textContent = todayAttendance.length;
+    DOM.totalHistory.textContent = attendance.length;
 
     var percentage = students.length > 0 ? Math.round((todayAttendance.length / students.length) * 100) : 0;
-    attendancePercentage.textContent = Math.min(percentage, 100) + '%';
+    DOM.attendancePercentage.textContent = Math.min(percentage, 100) + '%';
 
-    var searchTerm = dbSearch.value.toLowerCase().trim();
-    var startDate = dbDateStart.value;
-    var endDate = dbDateEnd.value;
+    var searchTerm = DOM.dbSearch.value.toLowerCase().trim();
+    var startDate = DOM.dbDateStart.value;
+    var endDate = DOM.dbDateEnd.value;
 
     filteredData = attendance.filter(function(item) {
         var match = true;
@@ -1171,14 +1199,14 @@ function renderDatabase() {
         return match;
     });
 
-    attendanceTableBody.innerHTML = "";
+    DOM.attendanceTableBody.innerHTML = "";
 
     if (filteredData.length === 0) {
-        emptyDatabase.style.display = "block";
+        DOM.emptyDatabase.style.display = "block";
         return;
     }
 
-    emptyDatabase.style.display = "none";
+    DOM.emptyDatabase.style.display = "none";
 
     filteredData.forEach(function(item, index) {
         var date = new Date(item.timestamp);
@@ -1197,7 +1225,7 @@ function renderDatabase() {
             '<td>' + escapeHTML(item.method) + '</td>' +
             '<td>' + Number(item.confidence).toFixed(1) + '%</td>' +
             '<td><div class="row-actions"><button class="row-action-btn" data-id="' + item.id + '" title="Hapus"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button></div></td>';
-        attendanceTableBody.appendChild(row);
+        DOM.attendanceTableBody.appendChild(row);
     });
 
     document.querySelectorAll('.row-action-btn').forEach(function(btn) {
@@ -1309,7 +1337,7 @@ function deleteAllAttendance() {
 }
 
 // =========================================================
-// DATABASE TOOLBAR - TAMBAH BUTTON HAPUS SEMUA
+// DATABASE TOOLBAR
 // =========================================================
 
 var dbToolbar = document.querySelector('.db-toolbar');
@@ -1326,16 +1354,16 @@ if (dbToolbar) {
     }
 }
 
-dbFilterBtn.addEventListener("click", renderDatabase);
-dbSearch.addEventListener("input", renderDatabase);
-dbDateStart.addEventListener("change", renderDatabase);
-dbDateEnd.addEventListener("change", renderDatabase);
+DOM.dbFilterBtn.addEventListener("click", renderDatabase);
+DOM.dbSearch.addEventListener("input", renderDatabase);
+DOM.dbDateStart.addEventListener("change", renderDatabase);
+DOM.dbDateEnd.addEventListener("change", renderDatabase);
 
 // =========================================================
 // EXPORT DATABASE
 // =========================================================
 
-dbExportBtn.addEventListener("click", showExportDialog);
+DOM.dbExportBtn.addEventListener("click", showExportDialog);
 
 function showExportDialog() {
     var existingDialog = document.getElementById('exportDialog');
@@ -1575,7 +1603,7 @@ function getCameraErrorMessage(error) {
 // FULLSCREEN
 // =========================================================
 
-fullscreenButton.addEventListener("click", async function() {
+DOM.fullscreenButton.addEventListener("click", async function() {
     var stage = document.querySelector(".attendance-stage");
     try {
         if (!document.fullscreenElement) {
@@ -1593,7 +1621,7 @@ fullscreenButton.addEventListener("click", async function() {
 // BUTTON EVENTS
 // =========================================================
 
-attendanceCameraButton.addEventListener("click", function() {
+DOM.attendanceCameraButton.addEventListener("click", function() {
     if (attendanceStream) {
         stopAttendanceCamera();
     } else {
@@ -1601,7 +1629,7 @@ attendanceCameraButton.addEventListener("click", function() {
     }
 });
 
-cameraEnrollmentButton.addEventListener("click", function() {
+DOM.cameraEnrollmentButton.addEventListener("click", function() {
     if (enrollmentStream) {
         stopEnrollmentCamera();
         setValidation("Kamera dimatikan.", true);
@@ -1631,8 +1659,20 @@ window.addEventListener("beforeunload", function() {
 // =========================================================
 
 function initApp() {
-    renderDatabase();
+    cacheDomRefs();
+    initDefaultAdmin();
+    handleAuth();
+    
+    // Set default dates
+    if (DOM.dbDateStart) {
+        var defaultStart = new Date();
+        defaultStart.setDate(defaultStart.getDate() - 7);
+        DOM.dbDateStart.value = defaultStart.toISOString().split('T')[0];
+    }
+    if (DOM.dbDateEnd) {
+        DOM.dbDateEnd.value = getLocalDate();
+    }
 }
 
-initDefaultAdmin();
-handleAuth();
+// START
+document.addEventListener('DOMContentLoaded', initApp);

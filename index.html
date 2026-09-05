@@ -11,8 +11,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Face API -->
-    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <!-- Face API - LOAD LEBIH CEPAT -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js">
+    </script>
 
     <!-- CSS -->
     <link rel="stylesheet" href="style.css">
@@ -206,6 +207,7 @@
                                         <th>Waktu</th>
                                         <th>Metode</th>
                                         <th>Confidence</th>
+                                        <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody id="attendanceTableBody"></tbody>
@@ -318,12 +320,12 @@
 <div id="toast" class="toast" aria-live="polite"></div>
 
 <!-- =====================================================
-     MODEL LOADING
+     MODEL LOADING - HANYA TAMPIL JIKA PERLU
 ====================================================== -->
-<div id="modelLoading" class="loading-screen">
+<div id="modelLoading" class="loading-screen" style="display:none;">
     <div class="loading-spinner"></div>
     <strong>Amanah ID</strong>
-    <span>⏳ Menyiapkan sistem computer vision...</span>
+    <span>⏳ Menyiapkan sistem...</span>
 </div>
 
 <!-- =====================================================

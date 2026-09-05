@@ -1,5 +1,5 @@
 /* =========================================================
-   AMANAH ID v3.0 - MODERN GREEN THEME
+   AMANAH ID v3.0 - MODERN GREEN THEME (OPTIMIZED)
 ========================================================= */
 
 :root {
@@ -768,7 +768,7 @@ main {
 
 table {
     width: 100%;
-    min-width: 900px;
+    min-width: 1000px;
     border-collapse: collapse;
 }
 
@@ -832,6 +832,52 @@ tbody tr:hover {
 
 .db-empty span {
     font-size: 12px;
+}
+
+/* =========================================================
+   ROW ACTIONS
+========================================================= */
+.row-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.row-action-btn {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    transition: var(--transition);
+    padding: 0;
+}
+
+.row-action-btn:hover {
+    background: var(--red-soft);
+    color: var(--red);
+}
+
+/* =========================================================
+   DELETE ALL BUTTON
+========================================================= */
+.db-delete-all-btn {
+    height: 44px;
+    padding: 0 18px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    transition: var(--transition);
+    background: var(--surface-soft);
+    color: var(--red);
+    border: 1.5px solid var(--border);
+}
+
+.db-delete-all-btn:hover {
+    background: var(--red-soft);
+    border-color: var(--red);
 }
 
 /* =========================================================
@@ -1076,9 +1122,6 @@ tbody tr:hover {
     transform: translateY(-1px);
 }
 
-/* =========================================================
-   REPLACE IMAGE BUTTON
-========================================================= */
 .replace-image-btn {
     position: absolute;
     bottom: 16px;
@@ -1180,7 +1223,7 @@ tbody tr:hover {
 }
 
 .loading-screen.hidden {
-    display: none;
+    display: none !important;
 }
 
 .loading-screen strong {
@@ -1397,6 +1440,99 @@ tbody tr:hover {
 }
 
 /* =========================================================
+   DELETE DIALOG
+========================================================= */
+.delete-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 8500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+}
+
+.delete-dialog {
+    width: min(400px, 92%);
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+    animation: fadeIn 0.25s ease;
+}
+
+.delete-dialog-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.delete-dialog h3 {
+    font-family: "Montserrat", sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.delete-dialog p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.delete-dialog-sub {
+    font-size: 12px;
+    color: var(--red);
+    margin-top: 4px;
+}
+
+.delete-dialog-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+.delete-cancel-btn,
+.delete-confirm-btn {
+    padding: 10px 28px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.delete-cancel-btn {
+    background: var(--surface-soft);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.delete-cancel-btn:hover {
+    background: var(--border);
+}
+
+.delete-confirm-btn {
+    background: var(--red);
+    color: white;
+}
+
+.delete-confirm-btn:hover {
+    background: #a93226;
+    transform: translateY(-1px);
+}
+
+.delete-all-btn {
+    background: #c0392b;
+}
+
+.delete-all-dialog .delete-dialog-icon {
+    font-size: 52px;
+}
+
+/* =========================================================
    RESPONSIVE
 ========================================================= */
 @media (max-width: 1024px) {
@@ -1562,153 +1698,5 @@ tbody tr:hover {
     
     .db-date-group input[type="date"] {
         width: 100%;
-    }
-}
-
-/* =========================================================
-   DELETE DIALOG
-========================================================= */
-.delete-dialog-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 8500;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
-    animation: fadeIn 0.2s ease;
-}
-
-.delete-dialog {
-    width: min(400px, 92%);
-    background: var(--surface);
-    border-radius: var(--radius);
-    padding: 32px 28px;
-    text-align: center;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.2);
-    animation: fadeIn 0.25s ease;
-}
-
-.delete-dialog-icon {
-    font-size: 48px;
-    margin-bottom: 12px;
-}
-
-.delete-dialog h3 {
-    font-family: "Montserrat", sans-serif;
-    font-size: 18px;
-    font-weight: 800;
-    margin-bottom: 8px;
-}
-
-.delete-dialog p {
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-.delete-dialog-sub {
-    font-size: 12px;
-    color: var(--red);
-    margin-top: 4px;
-}
-
-.delete-dialog-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-    justify-content: center;
-}
-
-.delete-cancel-btn,
-.delete-confirm-btn {
-    padding: 10px 28px;
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    font-weight: 600;
-    transition: var(--transition);
-}
-
-.delete-cancel-btn {
-    background: var(--surface-soft);
-    color: var(--text);
-    border: 1px solid var(--border);
-}
-
-.delete-cancel-btn:hover {
-    background: var(--border);
-}
-
-.delete-confirm-btn {
-    background: var(--red);
-    color: white;
-}
-
-.delete-confirm-btn:hover {
-    background: #a93226;
-    transform: translateY(-1px);
-}
-
-.delete-all-btn {
-    background: #c0392b;
-}
-
-.delete-all-dialog .delete-dialog-icon {
-    font-size: 52px;
-}
-
-/* =========================================================
-   ROW ACTIONS
-========================================================= */
-.row-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.row-action-btn {
-    width: 30px;
-    height: 30px;
-    display: grid;
-    place-items: center;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--muted);
-    transition: var(--transition);
-    padding: 0;
-}
-
-.row-action-btn:hover {
-    background: var(--red-soft);
-    color: var(--red);
-}
-
-/* =========================================================
-   DELETE ALL BUTTON
-========================================================= */
-.db-delete-all-btn {
-    height: 44px;
-    padding: 0 18px;
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    font-weight: 600;
-    transition: var(--transition);
-    background: var(--surface-soft);
-    color: var(--red);
-    border: 1.5px solid var(--border);
-}
-
-.db-delete-all-btn:hover {
-    background: var(--red-soft);
-    border-color: var(--red);
-}
-
-/* Responsive */
-@media (max-width: 720px) {
-    .db-delete-all-btn {
-        height: 40px;
-        font-size: 10px;
-        padding: 0 12px;
     }
 }
