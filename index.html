@@ -301,28 +301,28 @@
     </div>
 </div>
 
-<!-- PROFILE MODAL -->
-<div id="profileModal" class="profile-modal" style="display:none;">
+<!-- PROFILE MODAL - HANYA JENDELA -->
+<div id="profileModal" class="profile-modal">
     <div class="profile-card">
         <div class="profile-header">
             <div>
                 <span class="eyebrow">AMANAH ID</span>
-                <h2 id="profileTitle" data-i18n="profile">Profil</h2>
+                <h2 id="profileTitle">Profil</h2>
             </div>
             <button class="profile-close" id="profileClose">✕</button>
         </div>
         <div class="profile-avatar-wrap">
             <img id="profileAvatar" class="profile-avatar" alt="Foto profil">
-            <label class="profile-photo-button" for="profilePhotoInput"><span data-i18n="changePhoto">Ganti foto</span></label>
+            <label class="profile-photo-button" for="profilePhotoInput">Ganti foto</label>
             <input id="profilePhotoInput" type="file" accept="image/*" hidden>
         </div>
         <div class="profile-fields">
-            <label><span data-i18n="fullName">Nama Lengkap</span><input id="profileName" type="text"></label>
-            <label><span data-i18n="email">Email</span><input id="profileEmail" type="email"></label>
-            <label><span data-i18n="password">Kata Sandi</span><input id="profilePassword" type="password"></label>
+            <label>Nama Lengkap <input id="profileName" type="text"></label>
+            <label>Email <input id="profileEmail" type="email"></label>
+            <label>Kata Sandi <input id="profilePassword" type="password"></label>
         </div>
         <div class="profile-language">
-            <label data-i18n="language">Bahasa</label>
+            <label>Bahasa</label>
             <div class="language-switcher">
                 <button class="lang-opt active" data-lang="id">Indonesia</button>
                 <button class="lang-opt" data-lang="en">English</button>
@@ -330,8 +330,8 @@
             </div>
         </div>
         <div class="profile-actions">
-            <button id="profileSaveButton" class="primary-button" type="button" data-i18n="saveProfile">Simpan Profil</button>
-            <button id="logoutButton" class="profile-logout" type="button" data-i18n="logout">Keluar</button>
+            <button id="profileSaveButton" class="primary-button">Simpan Profil</button>
+            <button id="logoutButton" class="profile-logout">Keluar</button>
         </div>
     </div>
 </div>
