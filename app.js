@@ -122,7 +122,7 @@
     };
 
     // =========================================================
-    // LANGUAGE - LENGKAP & MERATA
+    // LANGUAGE - LENGKAP 100%
     // =========================================================
 
     var translations = {
@@ -186,7 +186,11 @@
             uploadPhoto: 'Upload Foto',
             useCamera: 'Gunakan Kamera',
             noPhoto: 'Belum ada foto wajah',
-            aiAnalysis: 'Analisis AI'
+            aiAnalysis: 'Analisis AI',
+            search: 'Cari nama, NISN, atau kelas...',
+            export: 'Export',
+            deleteAll: 'Hapus Semua',
+            save: 'Simpan'
         },
         en: {
             login: 'Log in',
@@ -248,7 +252,11 @@
             uploadPhoto: 'Upload Photo',
             useCamera: 'Use Camera',
             noPhoto: 'No face photo yet',
-            aiAnalysis: 'AI Analysis'
+            aiAnalysis: 'AI Analysis',
+            search: 'Search name, NISN, or class...',
+            export: 'Export',
+            deleteAll: 'Delete All',
+            save: 'Save'
         },
         ar: {
             login: 'دخول',
@@ -310,7 +318,11 @@
             uploadPhoto: 'تحميل الصورة',
             useCamera: 'استخدام الكاميرا',
             noPhoto: 'لا توجد صورة وجه بعد',
-            aiAnalysis: 'تحليل الذكاء الاصطناعي'
+            aiAnalysis: 'تحليل الذكاء الاصطناعي',
+            search: 'ابحث عن الاسم أو NISN أو الفصل...',
+            export: 'تصدير',
+            deleteAll: 'حذف الكل',
+            save: 'حفظ'
         }
     };
 
@@ -329,10 +341,18 @@
         document.documentElement.lang = lang === 'ar' ? 'ar-KW' : lang;
         document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
         
-        // Semua elemen dengan data-i18n
+        // SEMUA elemen dengan data-i18n
         document.querySelectorAll('[data-i18n]').forEach(function(el) {
             var key = el.dataset.i18n;
-            el.textContent = translate(key);
+            var text = translate(key);
+            if (text) el.textContent = text;
+        });
+        
+        // Placeholder untuk input
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+            var key = el.dataset.i18nPlaceholder;
+            var text = translate(key);
+            if (text) el.placeholder = text;
         });
         
         // Language options
@@ -340,10 +360,12 @@
             opt.classList.toggle('active', opt.dataset.lang === lang);
         });
         
-        // Update profile modal
-        if (document.getElementById('profileTitle')) {
-            document.getElementById('profileTitle').textContent = translate('profile');
-        }
+        // Profile title
+        var profileTitle = document.getElementById('profileTitle');
+        if (profileTitle) profileTitle.textContent = translate('profile');
+        
+        // Toast juga kena
+        console.log('[Amanah ID] Language changed to:', lang);
     }
 
     // Language switcher events
@@ -410,7 +432,7 @@
     }
 
     // =========================================================
-    // TOAST - CEPAT
+    // TOAST - BISA TERJEMAH
     // =========================================================
 
     var toastTimer = null;
@@ -423,6 +445,10 @@
         toastTimer = setTimeout(function() {
             DOM.toast.classList.remove('show');
         }, 2000);
+    }
+
+    function showToastKey(key) {
+        showToast(translate(key));
     }
 
     // =========================================================
@@ -489,7 +515,7 @@
         }
     }
 
-    // LOGIN - LANGSUNG RESPON
+    // LOGIN
     if (DOM.loginForm) {
         DOM.loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -524,7 +550,7 @@
         });
     }
 
-    // SIGNUP - LANGSUNG RESPON
+    // SIGNUP
     if (DOM.signupForm) {
         DOM.signupForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -590,7 +616,7 @@
         });
     }
 
-    // LOGOUT - LANGSUNG
+    // LOGOUT
     if (DOM.logoutButton) {
         DOM.logoutButton.addEventListener('click', function() {
             localStorage.removeItem(STORAGE_KEYS.SESSION);
@@ -603,11 +629,11 @@
             if (DOM.authPage) DOM.authPage.style.display = 'flex';
             stopAttendanceCamera();
             stopEnrollmentCamera();
-            showToast('Berhasil keluar.');
+            showToast(translate('logout') + ' berhasil.');
         });
     }
 
-    // AUTH TABS - CEPAT
+    // AUTH TABS
     document.querySelectorAll('.auth-tab').forEach(function(tab) {
         tab.addEventListener('click', function() {
             document.querySelectorAll('.auth-tab').forEach(function(t) {
@@ -666,15 +692,15 @@
     }
 
     // =========================================================
-    // PROFILE MODAL - CEPAT
+    // PROFILE MODAL - JENDELA MELAYANG
     // =========================================================
 
     function getProfileFallback(name) {
         var initials = String(name || 'A').trim().split(/\s+/).slice(0, 2)
             .map(function(part) { return part.charAt(0).toUpperCase(); }).join('');
         var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160">' +
-            '<defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#0b9f9a"/>' +
-            '<stop offset="1" stop-color="#08716f"/></linearGradient></defs>' +
+            '<defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#1a73e8"/>' +
+            '<stop offset="1" stop-color="#0d47a1"/></linearGradient></defs>' +
             '<rect width="160" height="160" rx="80" fill="url(#g)"/>' +
             '<text x="80" y="94" text-anchor="middle" font-family="Arial" font-size="54" font-weight="700" fill="white">' +
             escapeHTML(initials || 'A') + '</text></svg>';
@@ -686,31 +712,59 @@
         if (DOM.profileName) DOM.profileName.value = currentUser.name || '';
         if (DOM.profileEmail) DOM.profileEmail.value = currentUser.email || '';
         if (DOM.profilePassword) DOM.profilePassword.value = currentUser.password || '';
-        if (DOM.profileAvatar) {
-            DOM.profileAvatar.src = currentUser.profilePhoto || getProfileFallback(currentUser.name);
+        
+        var avatarSrc = currentUser.profilePhoto || getProfileFallback(currentUser.name);
+        if (DOM.profileAvatar) DOM.profileAvatar.src = avatarSrc;
+        if (DOM.navAvatar) DOM.navAvatar.src = avatarSrc;
+    }
+
+    // Hapus foto profil dengan klik
+    function clearProfilePhoto() {
+        if (!currentUser) return;
+        currentUser.profilePhoto = null;
+        var users = getUsers();
+        var userIndex = users.findIndex(function(user) { return user.id === currentUser.id; });
+        if (userIndex >= 0) {
+            users[userIndex] = currentUser;
+            saveUsers(users);
         }
-        if (DOM.navAvatar) {
-            DOM.navAvatar.src = currentUser.profilePhoto || getProfileFallback(currentUser.name);
-        }
+        localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(currentUser));
+        renderProfile();
+        showToast('Foto profil dihapus.');
     }
 
     if (DOM.profileButton) {
         DOM.profileButton.addEventListener('click', function() {
             renderProfile();
-            if (DOM.profileModal) DOM.profileModal.style.display = 'flex';
+            if (DOM.profileModal) DOM.profileModal.classList.add('show');
         });
     }
 
     if (DOM.profileClose) {
         DOM.profileClose.addEventListener('click', function() {
-            if (DOM.profileModal) DOM.profileModal.style.display = 'none';
+            if (DOM.profileModal) DOM.profileModal.classList.remove('show');
         });
     }
 
     if (DOM.profileModal) {
         DOM.profileModal.addEventListener('click', function(event) {
-            if (event.target === this) this.style.display = 'none';
+            if (event.target === this) {
+                this.classList.remove('show');
+            }
         });
+    }
+
+    // Klik foto profil untuk hapus
+    if (DOM.profileAvatar) {
+        DOM.profileAvatar.addEventListener('click', function() {
+            if (currentUser && currentUser.profilePhoto) {
+                clearProfilePhoto();
+            } else {
+                showToast('Tidak ada foto untuk dihapus.');
+            }
+        });
+        DOM.profileAvatar.style.cursor = 'pointer';
+        DOM.profileAvatar.title = 'Klik untuk menghapus foto';
     }
 
     if (DOM.profilePhotoInput) {
@@ -719,8 +773,18 @@
             if (!file || !file.type.startsWith('image/')) return;
             var reader = new FileReader();
             reader.onload = function() {
-                if (DOM.profileAvatar) DOM.profileAvatar.src = reader.result;
-                if (currentUser) currentUser.profilePhoto = reader.result;
+                if (currentUser) {
+                    currentUser.profilePhoto = reader.result;
+                    var users = getUsers();
+                    var userIndex = users.findIndex(function(user) { return user.id === currentUser.id; });
+                    if (userIndex >= 0) {
+                        users[userIndex] = currentUser;
+                        saveUsers(users);
+                    }
+                    localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(currentUser));
+                    renderProfile();
+                    showToast('Foto profil diperbarui.');
+                }
             };
             reader.readAsDataURL(file);
         });
@@ -759,19 +823,19 @@
             localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(currentUser));
             
             if (DOM.welcomeMessage) DOM.welcomeMessage.textContent = 'Selamat datang, ' + currentUser.name + '!';
-            if (DOM.profileModal) DOM.profileModal.style.display = 'none';
+            if (DOM.profileModal) DOM.profileModal.classList.remove('show');
             showToast('Profil berhasil disimpan.');
         });
     }
 
     // =========================================================
-    // NAVIGATION - CEPAT
+    // NAVIGATION
     // =========================================================
 
     if (DOM.navItems) {
         DOM.navItems.forEach(function(button) {
             button.addEventListener('click', function() {
-                if (button.id === 'logoutButton') return;
+                if (button.id === 'logoutButton' || button.id === 'profileButton') return;
                 var pageId = button.dataset.page;
                 DOM.navItems.forEach(function(item) {
                     item.classList.remove('active');
@@ -870,7 +934,7 @@
     }
 
     // =========================================================
-    // ATTENDANCE - SUPER CEPAT
+    // ATTENDANCE - SUPER CEPAT & AKURAT
     // =========================================================
 
     async function startAttendanceCamera() {
@@ -918,7 +982,7 @@
 
     function startAttendanceLoop() {
         if (attendanceTimer) clearInterval(attendanceTimer);
-        attendanceTimer = setInterval(processAttendanceFrame, 300);
+        attendanceTimer = setInterval(processAttendanceFrame, 250);
     }
 
     async function processAttendanceFrame() {
@@ -931,7 +995,7 @@
         try {
             var detections = await faceapi.detectAllFaces(
                 DOM.attendanceVideo,
-                new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.50 })
+                new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.45 })
             ).withFaceLandmarks().withFaceDescriptors();
 
             if (DOM.attendanceOverlay) DOM.attendanceOverlay.innerHTML = '';
@@ -1090,7 +1154,7 @@
     }
 
     // =========================================================
-    // ENROLLMENT - SUPER CEPAT & AKURAT
+    // ENROLLMENT - SUPER CEPAT & AKURAT (DIOPTIMASI)
     // =========================================================
 
     async function startEnrollmentCamera() {
@@ -1165,7 +1229,7 @@
 
     function startEnrollmentLoop() {
         if (enrollmentTimer) clearInterval(enrollmentTimer);
-        enrollmentTimer = setInterval(processEnrollmentFrame, 100);
+        enrollmentTimer = setInterval(processEnrollmentFrame, 80);
     }
 
     var detectionCounter = 0;
@@ -1179,9 +1243,10 @@
         detectionCounter++;
 
         try {
+            // OPTIMASI: inputSize 160 untuk deteksi lebih cepat & akurat
             var detections = await faceapi.detectAllFaces(
                 DOM.enrollmentVideo,
-                new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.45 })
+                new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.40 })
             ).withFaceLandmarks().withFaceDescriptors();
 
             if (detections.length === 0) {
@@ -1205,14 +1270,14 @@
 
             var faceArea = (box.width * box.height) / (width * height);
             var sizeScore = 0;
-            if (faceArea >= 0.05 && faceArea <= 0.50) {
-                sizeScore = 90 + (1 - Math.abs(faceArea - 0.20) * 100);
-            } else if (faceArea > 0.50 && faceArea <= 0.70) {
-                sizeScore = 65 - (faceArea - 0.50) * 120;
-            } else if (faceArea >= 0.025 && faceArea < 0.05) {
-                sizeScore = 45 + (faceArea - 0.025) * 600;
+            if (faceArea >= 0.04 && faceArea <= 0.55) {
+                sizeScore = 90 + (1 - Math.abs(faceArea - 0.22) * 100);
+            } else if (faceArea > 0.55 && faceArea <= 0.75) {
+                sizeScore = 65 - (faceArea - 0.55) * 120;
+            } else if (faceArea >= 0.02 && faceArea < 0.04) {
+                sizeScore = 45 + (faceArea - 0.02) * 600;
             } else {
-                sizeScore = Math.max(0, 100 - Math.abs(faceArea - 0.20) * 200);
+                sizeScore = Math.max(0, 100 - Math.abs(faceArea - 0.22) * 200);
             }
             sizeScore = clamp(sizeScore, 0, 100);
 
@@ -1240,16 +1305,16 @@
                 var last = stabilityHistory[stabilityHistory.length - 1];
                 var movement = Math.hypot(last.x - first.x, last.y - first.y);
                 var sizeMovement = Math.abs(last.width - first.width);
-                stabilityScore = clamp(100 - (movement * 0.5) - (sizeMovement * 0.4), 0, 100);
+                stabilityScore = clamp(100 - (movement * 0.4) - (sizeMovement * 0.3), 0, 100);
             }
 
             var finalScore = (sizeScore * 0.30 + centerScore * 0.30 + 
                               lightScore * 0.15 + stabilityScore * 0.25);
 
             if (finalScore > enrollmentProgress) {
-                enrollmentProgress = enrollmentProgress * 0.30 + finalScore * 0.70;
+                enrollmentProgress = enrollmentProgress * 0.20 + finalScore * 0.80;
             } else {
-                enrollmentProgress = enrollmentProgress * 0.50 + finalScore * 0.50;
+                enrollmentProgress = enrollmentProgress * 0.40 + finalScore * 0.60;
             }
 
             if (finalScore >= 80 && sizeScore >= 70 && centerScore >= 75) {
@@ -1259,7 +1324,7 @@
             enrollmentProgress = clamp(enrollmentProgress, 0, 100);
             updateEnrollmentProgress(enrollmentProgress);
 
-            var ready = finalScore >= 75 && faceArea >= 0.04 && faceArea <= 0.65 && 
+            var ready = finalScore >= 75 && faceArea >= 0.03 && faceArea <= 0.70 && 
                         centerScore >= 70 && stabilityScore >= 60;
 
             if (ready && enrollmentProgress >= 80) {
@@ -1422,7 +1487,7 @@
 
                 var detections = await faceapi.detectAllFaces(
                     image,
-                    new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.45 })
+                    new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.40 })
                 ).withFaceLandmarks().withFaceDescriptors();
 
                 if (detections.length === 0) {
@@ -1542,7 +1607,7 @@
     }
 
     // =========================================================
-    // DATABASE - AUTO FILTER (TANPA TOMBOL FILTER)
+    // DATABASE - AUTO FILTER
     // =========================================================
 
     function renderDatabase() {
@@ -1771,7 +1836,7 @@
     }
 
     // =========================================================
-    // EXPORT - SEDERHANA
+    // EXPORT
     // =========================================================
 
     if (DOM.dbExportBtn) {
@@ -1829,7 +1894,7 @@
     }
 
     // =========================================================
-    // BUTTON EVENTS - CEPAT
+    // BUTTON EVENTS
     // =========================================================
 
     if (DOM.attendanceCameraButton) {
