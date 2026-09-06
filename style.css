@@ -134,6 +134,11 @@ img, video {
     to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes pageEnter {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .auth-container::before {
     content: '';
     position: absolute;
@@ -795,6 +800,7 @@ main {
 
 .page.active {
     display: block;
+    animation: pageEnter 0.24s ease both;
 }
 
 .page-container {
@@ -1796,6 +1802,26 @@ tbody tr:hover {
     .profile-card {
         padding: 24px;
         margin: 10px;
+    }
+
+    /* Keep the restored motion, but avoid expensive compositing on older devices. */
+    .topbar,
+    .app-footer,
+    .camera-status,
+    .camera-button,
+    .replace-image-btn {
+        backdrop-filter: none;
+    }
+
+    .topbar {
+        background: rgba(255, 255, 255, 0.98);
+    }
+
+    .card,
+    .db-stat-card,
+    .auth-container,
+    .profile-card {
+        box-shadow: var(--shadow);
     }
 }
 

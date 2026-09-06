@@ -1171,7 +1171,8 @@
 
     function startAttendanceLoop() {
         if (attendanceTimer) clearInterval(attendanceTimer);
-        attendanceTimer = setInterval(processAttendanceFrame, 200);
+        // Leave enough time between inferences for older phones/tablets to render.
+        attendanceTimer = setInterval(processAttendanceFrame, 280);
     }
 
     async function processAttendanceFrame() {
@@ -1420,7 +1421,8 @@
 
     function startEnrollmentLoop() {
         if (enrollmentTimer) clearInterval(enrollmentTimer);
-        enrollmentTimer = setInterval(processEnrollmentFrame, 60);
+        // Face inference is CPU-heavy; 180ms keeps the preview responsive on older devices.
+        enrollmentTimer = setInterval(processEnrollmentFrame, 180);
     }
 
     var detectionCounter = 0;
