@@ -188,6 +188,7 @@ img, video {
     border-radius: var(--radius-sm);
     padding: 4px;
     border: 1px solid var(--border);
+    direction: ltr;
 }
 
 .auth-tab {
@@ -211,17 +212,24 @@ img, video {
 .language-switcher {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    width: max-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
     gap: 4px;
     padding: 4px 6px;
     border: 1px solid var(--border);
     border-radius: 999px;
     background: var(--surface-soft);
     margin-bottom: 18px;
+    direction: ltr;
+    overflow-x: auto;
 }
 
 .lang-opt {
-    padding: 4px 14px;
+    flex: 0 0 auto;
+    padding: 5px 10px;
     border-radius: 999px;
     background: transparent;
     color: var(--muted);
@@ -533,6 +541,7 @@ img, video {
     display: flex;
     align-items: center;
     gap: 3px;
+    direction: ltr;
 }
 
 .nav-item {
@@ -726,6 +735,7 @@ img, video {
 .profile-actions {
     display: flex;
     gap: 10px;
+    direction: ltr;
 }
 
 .profile-actions .primary-button {
@@ -1448,6 +1458,7 @@ tbody tr:hover {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
     margin-top: 12px;
+    direction: ltr;
 }
 
 .secondary-button {

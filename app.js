@@ -243,7 +243,12 @@
             retry: 'Coba Lagi',
             fullscreenUnavailable: 'Fullscreen tidak tersedia.',
             confirmDelete: 'Hapus',
-            cancelDelete: 'Batal'
+            cancelDelete: 'Batal',
+            defaultCredentials: 'Default: admin@amanahid.sch.id / admin123',
+            enterFullName: 'Masukkan nama lengkap',
+            yourEmail: 'email@anda.com',
+            minPassword: 'Minimal 6 karakter',
+            repeatPassword: 'Ulangi kata sandi'
         },
         en: {
             login: 'Log in',
@@ -360,16 +365,21 @@
             retry: 'Retry',
             fullscreenUnavailable: 'Fullscreen not available.',
             confirmDelete: 'Delete',
-            cancelDelete: 'Cancel'
+            cancelDelete: 'Cancel',
+            defaultCredentials: 'Default: admin@amanahid.sch.id / admin123',
+            enterFullName: 'Enter full name',
+            yourEmail: 'your@email.com',
+            minPassword: 'Minimum 6 characters',
+            repeatPassword: 'Repeat password'
         },
         ar: {
-            login: 'دخول',
-            signup: 'تسجيل',
+            login: 'تسجيل الدخول',
+            signup: 'إنشاء حساب',
             logout: 'تسجيل الخروج',
             profile: 'الملف الشخصي',
             attendance: 'الحضور',
             database: 'قاعدة البيانات',
-            form: 'استمارة',
+            form: 'النموذج',
             subtitle: 'نظام التعرف على الوجوه',
             email: 'البريد الإلكتروني',
             password: 'كلمة المرور',
@@ -443,7 +453,7 @@
             leftFace: 'ضع وجهك من اليسار',
             faceCaptured: 'تم التقاط الوجه بنجاح!',
             faceVerified: 'تم التحقق من صورة الوجه بنجاح!',
-            studentRegistered: 'تم التسجيل بنجاح!',
+            studentRegistered: 'تم تسجيل الطالب بنجاح!',
             attendanceRecorded: 'تم تسجيل الحضور!',
             profileSaved: 'تم حفظ الملف الشخصي بنجاح.',
             photoChanged: 'تم تحديث صورة الملف الشخصي.',
@@ -462,8 +472,8 @@
             agreeRequired: 'يرجى الموافقة على الشروط والأحكام.',
             fillAllFields: 'يرجى ملء جميع الحقول.',
             termsAgreed: 'شكراً لموافقتك على الشروط والأحكام.',
-            nisnOnlyNumbers: 'NISN يجب أن يحتوي على أرقام فقط.',
-            nisnTaken: 'NISN مسجل بالفعل.',
+            nisnOnlyNumbers: 'يجب أن يتكون رقم NISN من أرقام فقط.',
+            nisnTaken: 'رقم NISN مسجل بالفعل.',
             faceNotVerified: 'لم يتم التحقق من الوجه.',
             noData: 'لا توجد بيانات.',
             dataDeleted: 'تم حذف البيانات.',
@@ -477,7 +487,12 @@
             retry: 'إعادة المحاولة',
             fullscreenUnavailable: 'وضع ملء الشاشة غير متاح.',
             confirmDelete: 'حذف',
-            cancelDelete: 'إلغاء'
+            cancelDelete: 'إلغاء',
+            defaultCredentials: 'البيانات الافتراضية: admin@amanahid.sch.id / admin123',
+            enterFullName: 'أدخل الاسم الكامل',
+            yourEmail: 'بريدك@الإلكتروني.com',
+            minPassword: '6 أحرف على الأقل',
+            repeatPassword: 'أعد إدخال كلمة المرور'
         }
     };
 
