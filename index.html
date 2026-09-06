@@ -6,12 +6,10 @@
     <meta name="theme-color" content="#ffffff">
     <title>Amanah ID - Sistem Presensi Wajah</title>
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -19,9 +17,7 @@
 
 <div class="app" id="app">
 
-    <!-- =====================================================
-         LOGIN PAGE
-    ====================================================== -->
+    <!-- LOGIN PAGE -->
     <div class="auth-page" id="authPage">
         <div class="auth-container">
             <div class="auth-brand">
@@ -32,50 +28,50 @@
                     </svg>
                 </div>
                 <h1>Amanah ID</h1>
-                <p>Sistem Presensi Wajah</p>
+                <p data-i18n="subtitle">Sistem Presensi Wajah</p>
             </div>
 
             <div class="auth-tabs">
-                <button class="auth-tab active" data-tab="login">Masuk</button>
-                <button class="auth-tab" data-tab="signup">Daftar</button>
+                <button class="auth-tab active" data-tab="login" data-i18n="login">Masuk</button>
+                <button class="auth-tab" data-tab="signup" data-i18n="signup">Daftar</button>
             </div>
-            <div class="language-switcher" role="group" aria-label="Pilihan bahasa">
-                <span>🌐</span>
-                <button class="language-option active" data-language="id">ID</button>
-                <button class="language-option" data-language="en">EN</button>
-                <button class="language-option" data-language="ar">العربية</button>
+
+            <div class="language-switcher">
+                <button class="lang-opt active" data-lang="id">Indonesia</button>
+                <button class="lang-opt" data-lang="en">English</button>
+                <button class="lang-opt" data-lang="ar">العربية</button>
             </div>
 
             <!-- Login Form -->
             <form class="auth-form active" id="loginForm">
                 <div class="auth-group">
-                    <label>Email</label>
+                    <label data-i18n="email">Email</label>
                     <input type="email" id="loginEmail" placeholder="admin@amanahid.sch.id" value="admin@amanahid.sch.id">
                 </div>
                 <div class="auth-group">
-                    <label>Kata Sandi</label>
+                    <label data-i18n="password">Kata Sandi</label>
                     <input type="password" id="loginPassword" placeholder="••••••••" value="admin123">
                 </div>
-                <button type="submit" class="auth-button" id="loginButton">Masuk</button>
+                <button type="submit" class="auth-button" id="loginButton" data-i18n="login">Masuk</button>
                 <p class="auth-hint">Default: admin@amanahid.sch.id / admin123</p>
             </form>
 
             <!-- Signup Form -->
             <form class="auth-form" id="signupForm">
                 <div class="auth-group">
-                    <label>Nama Lengkap</label>
+                    <label data-i18n="fullName">Nama Lengkap</label>
                     <input type="text" id="signupName" placeholder="Masukkan nama lengkap">
                 </div>
                 <div class="auth-group">
-                    <label>Email</label>
+                    <label data-i18n="email">Email</label>
                     <input type="email" id="signupEmail" placeholder="email@anda.com">
                 </div>
                 <div class="auth-group">
-                    <label>Kata Sandi</label>
+                    <label data-i18n="password">Kata Sandi</label>
                     <input type="password" id="signupPassword" placeholder="Minimal 6 karakter">
                 </div>
                 <div class="auth-group">
-                    <label>Konfirmasi Sandi</label>
+                    <label data-i18n="confirmPassword">Konfirmasi Sandi</label>
                     <input type="password" id="signupConfirm" placeholder="Ulangi kata sandi">
                 </div>
 
@@ -83,18 +79,16 @@
                     <label class="checkbox-container">
                         <input type="checkbox" id="signupAgree">
                         <span class="checkmark"></span>
-                        <span class="checkbox-text">Saya setuju dengan <a href="#" id="termsLink">Syarat & Ketentuan</a> yang berlaku</span>
+                        <span class="checkbox-text"><span data-i18n="agree">Saya setuju dengan</span> <a href="#" id="termsLink" data-i18n="terms">Syarat & Ketentuan</a></span>
                     </label>
                 </div>
 
-                <button type="submit" class="auth-button" id="signupButton" disabled>Daftar</button>
+                <button type="submit" class="auth-button" id="signupButton" disabled data-i18n="signup">Daftar</button>
             </form>
         </div>
     </div>
 
-    <!-- =====================================================
-         MAIN APP (Protected)
-    ====================================================== -->
+    <!-- MAIN APP -->
     <div class="main-app" id="mainApp" style="display:none;">
 
         <!-- HEADER -->
@@ -110,9 +104,9 @@
             </div>
 
             <nav class="navigation">
-                <button class="nav-item active" data-page="attendancePage">📷 Presensi</button>
-                <button class="nav-item" data-page="databasePage">📊 Database</button>
-                <button class="nav-item" data-page="formPage">✏️ Formulir</button>
+                <button class="nav-item active" data-page="attendancePage"><span data-i18n="attendance">Presensi</span></button>
+                <button class="nav-item" data-page="databasePage"><span data-i18n="database">Database</span></button>
+                <button class="nav-item" data-page="formPage"><span data-i18n="form">Formulir</span></button>
                 <button class="nav-item profile-nav" id="profileButton"><img id="navAvatar" class="nav-avatar" alt=""> <span data-i18n="profile">Profil</span></button>
             </nav>
         </header>
@@ -120,12 +114,12 @@
         <!-- MAIN CONTENT -->
         <main>
 
-            <!-- ATTENDANCE PAGE -->
+            <!-- ATTENDANCE -->
             <section id="attendancePage" class="page active">
                 <div class="attendance-stage">
                     <video id="attendanceVideo" autoplay muted playsinline></video>
                     <div id="attendanceOverlay" class="face-overlay"></div>
-                    <div id="attendanceStatus" class="camera-status">📷 Kamera belum aktif</div>
+                    <div id="attendanceStatus" class="camera-status" data-i18n="cameraOff">Kamera belum aktif</div>
                     <div class="camera-controls">
                         <button id="attendanceCameraButton" class="camera-button" title="Aktifkan kamera">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -142,48 +136,48 @@
                             </svg>
                         </button>
                     </div>
-                    <div id="welcomeMessage" class="welcome-message">👋 Selamat datang!</div>
+                    <div id="welcomeMessage" class="welcome-message">Selamat datang!</div>
                     <div id="attendanceError" class="camera-error">
                         <div class="error-icon">!</div>
-                        <h2>Kamera tidak dapat digunakan</h2>
-                        <p>Berikan izin kamera pada browser dan gunakan HTTPS atau localhost.</p>
+                        <h2 data-i18n="cameraErrorTitle">Kamera tidak dapat digunakan</h2>
+                        <p data-i18n="cameraErrorDesc">Berikan izin kamera pada browser dan gunakan HTTPS atau localhost.</p>
                     </div>
                 </div>
             </section>
 
-            <!-- DATABASE PAGE -->
+            <!-- DATABASE -->
             <section id="databasePage" class="page">
                 <div class="page-container">
                     <div class="db-header">
                         <div>
-                            <div class="eyebrow">📊 LAPORAN & DATA</div>
-                            <h1>Database Presensi</h1>
-                            <p>Kelola riwayat presensi, filter tanggal, & ekspor laporan.</p>
+                            <div class="eyebrow" data-i18n="reportData">LAPORAN & DATA</div>
+                            <h1 data-i18n="databaseTitle">Database Presensi</h1>
+                            <p data-i18n="databaseDesc">Kelola riwayat presensi, filter tanggal, & ekspor laporan.</p>
                         </div>
                     </div>
 
                     <div class="db-stats-grid">
                         <div class="db-stat-card">
-                            <span>👨‍🎓 TOTAL SISWA</span>
+                            <span data-i18n="totalStudents">TOTAL SISWA</span>
                             <strong id="totalStudents">0</strong>
                         </div>
                         <div class="db-stat-card">
-                            <span>✅ HADIR HARI INI</span>
+                            <span data-i18n="presentToday">HADIR HARI INI</span>
                             <strong id="totalPresent">0</strong>
                         </div>
                         <div class="db-stat-card">
-                            <span>📈 PERSENTASE</span>
+                            <span data-i18n="percentage">PERSENTASE</span>
                             <strong id="attendancePercentage">0%</strong>
                         </div>
                         <div class="db-stat-card">
-                            <span>📋 TOTAL RIWAYAT</span>
+                            <span data-i18n="totalHistory">TOTAL RIWAYAT</span>
                             <strong id="totalHistory">0</strong>
                         </div>
                     </div>
 
                     <div class="db-toolbar">
                         <div class="db-search">
-                            <input type="text" id="dbSearch" placeholder="🔍 Cari nama, NISN, atau kelas..." />
+                            <input type="text" id="dbSearch" placeholder="Cari nama, NISN, atau kelas..." />
                         </div>
                         <div class="db-filters">
                             <div class="db-date-group">
@@ -191,9 +185,8 @@
                                 <span>→</span>
                                 <input type="date" id="dbDateEnd" />
                             </div>
-                            <button id="dbFilterBtn" class="db-filter-btn">📅 Filter</button>
-                            <button id="dbExportBtn" class="db-export-btn">📊 Export</button>
-                            <button id="dbDeleteAllBtn" class="db-delete-all-btn">🗑️ Hapus Semua</button>
+                            <button id="dbExportBtn" class="db-export-btn">Export</button>
+                            <button id="dbDeleteAllBtn" class="db-delete-all-btn">Hapus Semua</button>
                         </div>
                     </div>
 
@@ -204,60 +197,60 @@
                                     <tr>
                                         <th>#</th>
                                         <th>NISN</th>
-                                        <th>Nama</th>
-                                        <th>Kelas</th>
-                                        <th>Status</th>
-                                        <th>Tanggal</th>
-                                        <th>Waktu</th>
-                                        <th>Metode</th>
-                                        <th>Confidence</th>
-                                        <th>Aksi</th>
+                                        <th data-i18n="name">Nama</th>
+                                        <th data-i18n="class">Kelas</th>
+                                        <th data-i18n="status">Status</th>
+                                        <th data-i18n="date">Tanggal</th>
+                                        <th data-i18n="time">Waktu</th>
+                                        <th data-i18n="method">Metode</th>
+                                        <th data-i18n="confidence">Confidence</th>
+                                        <th data-i18n="action">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody id="attendanceTableBody"></tbody>
                             </table>
                         </div>
                         <div id="emptyDatabase" class="db-empty">
-                            <strong>📭 Belum ada data presensi</strong>
-                            <span>Data akan muncul setelah siswa melakukan verifikasi wajah.</span>
+                            <strong data-i18n="emptyTitle">Belum ada data presensi</strong>
+                            <span data-i18n="emptyDesc">Data akan muncul setelah siswa melakukan verifikasi wajah.</span>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- FORM PAGE -->
+            <!-- FORM -->
             <section id="formPage" class="page">
                 <div class="page-container">
                     <div class="section-heading">
                         <div>
-                            <div class="eyebrow">📝 REGISTRASI</div>
-                            <h1>Formulir Siswa</h1>
-                            <p>Daftarkan identitas dan wajah siswa untuk presensi.</p>
+                            <div class="eyebrow" data-i18n="registration">REGISTRASI</div>
+                            <h1 data-i18n="formTitle">Formulir Siswa</h1>
+                            <p data-i18n="formDesc">Daftarkan identitas dan wajah siswa untuk presensi.</p>
                         </div>
                     </div>
 
                     <div class="form-layout">
                         <div class="card form-card">
-                            <h2>👤 Identitas Siswa</h2>
+                            <h2 data-i18n="studentIdentity">Identitas Siswa</h2>
                             <div class="form-group">
                                 <label for="nisn">NISN</label>
                                 <input id="nisn" type="text" inputmode="numeric" maxlength="20" placeholder="Masukkan NISN">
                             </div>
                             <div class="form-group">
-                                <label for="studentName">Nama Lengkap</label>
+                                <label for="studentName" data-i18n="fullName">Nama Lengkap</label>
                                 <input id="studentName" type="text" maxlength="100" placeholder="Masukkan nama lengkap">
                             </div>
                             <div class="form-group">
-                                <label for="studentClass">Kelas</label>
+                                <label for="studentClass" data-i18n="class">Kelas</label>
                                 <input id="studentClass" type="text" maxlength="30" placeholder="Contoh: XI IPA 1">
                             </div>
-                            <button id="saveStudentButton" class="primary-button" disabled>💾 Simpan Data Siswa</button>
+                            <button id="saveStudentButton" class="primary-button" disabled data-i18n="saveStudent">Simpan Data Siswa</button>
                         </div>
 
                         <div class="card media-card">
                             <div class="media-heading">
-                                <h2>📸 Verifikasi Wajah</h2>
-                                <p>Gunakan kamera atau upload satu foto wajah untuk registrasi.</p>
+                                <h2 data-i18n="faceVerification">Verifikasi Wajah</h2>
+                                <p data-i18n="faceVerificationDesc">Gunakan kamera atau upload satu foto wajah untuk registrasi.</p>
                             </div>
 
                             <div id="enrollmentPreview" class="enrollment-preview">
@@ -269,13 +262,13 @@
                                         <circle cx="9" cy="10" r="2"/>
                                         <path d="M21 15l-4-4L5 21"/>
                                     </svg>
-                                    <span>Belum ada foto wajah</span>
+                                    <span data-i18n="noPhoto">Belum ada foto wajah</span>
                                 </div>
                             </div>
 
                             <div class="ai-progress-box">
                                 <div class="ai-progress-header">
-                                    <strong>🤖 Analisis AI</strong>
+                                    <strong data-i18n="aiAnalysis">Analisis AI</strong>
                                     <span id="aiPercent">0%</span>
                                 </div>
                                 <div class="progress-track">
@@ -286,8 +279,8 @@
                             <div id="faceValidation" class="validation-message" aria-live="polite"></div>
 
                             <div class="media-actions">
-                                <button id="uploadButton" class="secondary-button" type="button">📁 Upload Foto</button>
-                                <button id="cameraEnrollmentButton" class="dark-button" type="button">📷 Gunakan Kamera</button>
+                                <button id="uploadButton" class="secondary-button" type="button" data-i18n="uploadPhoto">Upload Foto</button>
+                                <button id="cameraEnrollmentButton" class="dark-button" type="button" data-i18n="useCamera">Gunakan Kamera</button>
                             </div>
                             <input id="photoInput" type="file" accept="image/*" hidden>
                         </div>
@@ -299,41 +292,42 @@
 
         <footer class="app-footer">
             <div class="footer-content">
-                <span>© 2026 Tim Azhar, Asa, Rezky APSI</span>
+                <span>2026 Tim Azhar, Asa, Rezky APSI</span>
                 <span class="footer-divider">•</span>
                 <span>Amanah ID v3.0</span>
-                <span class="footer-divider">•</span>
-                <span>Built with ❤️</span>
             </div>
         </footer>
 
     </div>
 </div>
 
-<div id="profileModal" class="profile-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+<!-- PROFILE MODAL -->
+<div id="profileModal" class="profile-modal" style="display:none;">
     <div class="profile-card">
         <div class="profile-header">
             <div>
                 <span class="eyebrow">AMANAH ID</span>
                 <h2 id="profileTitle" data-i18n="profile">Profil</h2>
             </div>
-            <button class="profile-close" id="profileClose" aria-label="Tutup">✕</button>
+            <button class="profile-close" id="profileClose">✕</button>
         </div>
         <div class="profile-avatar-wrap">
             <img id="profileAvatar" class="profile-avatar" alt="Foto profil">
-            <label class="profile-photo-button" for="profilePhotoInput">📷 <span data-i18n="changePhoto">Ganti foto</span></label>
+            <label class="profile-photo-button" for="profilePhotoInput"><span data-i18n="changePhoto">Ganti foto</span></label>
             <input id="profilePhotoInput" type="file" accept="image/*" hidden>
         </div>
         <div class="profile-fields">
             <label><span data-i18n="fullName">Nama Lengkap</span><input id="profileName" type="text"></label>
-            <label><span>Email</span><input id="profileEmail" type="email" readonly></label>
-            <label><span data-i18n="password">Kata Sandi</span><input id="profilePassword" type="password" readonly></label>
+            <label><span data-i18n="email">Email</span><input id="profileEmail" type="email"></label>
+            <label><span data-i18n="password">Kata Sandi</span><input id="profilePassword" type="password"></label>
         </div>
-        <div class="profile-language language-switcher" role="group" aria-label="Pilihan bahasa">
-            <span>🌐</span>
-            <button class="language-option active" data-language="id">ID</button>
-            <button class="language-option" data-language="en">EN</button>
-            <button class="language-option" data-language="ar">العربية</button>
+        <div class="profile-language">
+            <label data-i18n="language">Bahasa</label>
+            <div class="language-switcher">
+                <button class="lang-opt active" data-lang="id">Indonesia</button>
+                <button class="lang-opt" data-lang="en">English</button>
+                <button class="lang-opt" data-lang="ar">العربية</button>
+            </div>
         </div>
         <div class="profile-actions">
             <button id="profileSaveButton" class="primary-button" type="button" data-i18n="saveProfile">Simpan Profil</button>
@@ -342,1852 +336,36 @@
     </div>
 </div>
 
-<!-- =====================================================
-     TOAST
-====================================================== -->
+<!-- TOAST -->
 <div id="toast" class="toast" aria-live="polite"></div>
-<span id="modelLoading" hidden></span>
 
-<!-- =====================================================
-     TERMS MODAL
-====================================================== -->
+<!-- TERMS MODAL -->
 <div id="termsModal" class="terms-modal" style="display:none;">
     <div class="terms-modal-content">
         <div class="terms-modal-header">
-            <h2>📋 Syarat & Ketentuan</h2>
+            <h2 data-i18n="termsTitle">Syarat & Ketentuan</h2>
             <button class="terms-modal-close" id="termsModalClose">✕</button>
         </div>
         <div class="terms-modal-body">
-            <h3>1. Penggunaan Layanan</h3>
-            <p>Dengan menggunakan layanan Amanah ID, Anda setuju untuk menggunakan sistem presensi wajah sesuai dengan ketentuan yang berlaku.</p>
-            <h3>2. Privasi Data</h3>
-            <p>Data wajah dan identitas Anda akan disimpan secara aman dan hanya digunakan untuk keperluan presensi di lingkungan sekolah.</p>
-            <h3>3. Keamanan</h3>
-            <p>Anda bertanggung jawab atas keamanan akun Anda. Jangan membagikan kredensial login kepada pihak lain.</p>
-            <h3>4. Larangan</h3>
-            <p>Dilarang menggunakan sistem ini untuk tujuan yang melanggar hukum atau menyalahgunakan fitur yang tersedia.</p>
-            <h3>5. Perubahan Ketentuan</h3>
-            <p>Kami berhak mengubah syarat dan ketentuan ini sewaktu-waktu dengan pemberitahuan terlebih dahulu.</p>
+            <h3 data-i18n="terms1Title">1. Penggunaan Layanan</h3>
+            <p data-i18n="terms1Desc">Dengan menggunakan layanan Amanah ID, Anda setuju untuk menggunakan sistem presensi wajah sesuai dengan ketentuan yang berlaku.</p>
+            <h3 data-i18n="terms2Title">2. Privasi Data</h3>
+            <p data-i18n="terms2Desc">Data wajah dan identitas Anda akan disimpan secara aman dan hanya digunakan untuk keperluan presensi di lingkungan sekolah.</p>
+            <h3 data-i18n="terms3Title">3. Keamanan</h3>
+            <p data-i18n="terms3Desc">Anda bertanggung jawab atas keamanan akun Anda. Jangan membagikan kredensial login kepada pihak lain.</p>
+            <h3 data-i18n="terms4Title">4. Larangan</h3>
+            <p data-i18n="terms4Desc">Dilarang menggunakan sistem ini untuk tujuan yang melanggar hukum atau menyalahgunakan fitur yang tersedia.</p>
+            <h3 data-i18n="terms5Title">5. Perubahan Ketentuan</h3>
+            <p data-i18n="terms5Desc">Kami berhak mengubah syarat dan ketentuan ini sewaktu-waktu dengan pemberitahuan terlebih dahulu.</p>
         </div>
         <div class="terms-modal-footer">
-            <button class="terms-modal-btn" id="termsModalAgree">Saya Setuju</button>
+            <button class="terms-modal-btn" id="termsModalAgree" data-i18n="agree">Saya Setuju</button>
         </div>
     </div>
 </div>
 
-<!-- =====================================================
-     JAVASCRIPT - FACE API (LOAD DENGAN SCRIPT TAG)
-====================================================== -->
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js">
-</script>
-
-<!-- =====================================================
-     APP.JS - DIPINDAHKAN KE SINI
-====================================================== -->
-<script>
-// =========================================================
-// AMANAH ID v3.0 - FULL APP (SINGLE FILE)
-// =========================================================
-
-(function() {
-    'use strict';
-
-    console.log('[Amanah ID] Starting...');
-
-    // =========================================================
-    // DOM REFS - SIMPLIFIED
-    // =========================================================
-    
-    function getEl(id) {
-        var el = document.getElementById(id);
-        if (!el) console.warn('[Amanah ID] Element not found:', id);
-        return el;
-    }
-
-    function getAll(selector) {
-        return document.querySelectorAll(selector);
-    }
-
-    var DOM = {
-        authPage: getEl('authPage'),
-        mainApp: getEl('mainApp'),
-        loginForm: getEl('loginForm'),
-        signupForm: getEl('signupForm'),
-        loginEmail: getEl('loginEmail'),
-        loginPassword: getEl('loginPassword'),
-        loginButton: getEl('loginButton'),
-        signupName: getEl('signupName'),
-        signupEmail: getEl('signupEmail'),
-        signupPassword: getEl('signupPassword'),
-        signupConfirm: getEl('signupConfirm'),
-        signupAgree: getEl('signupAgree'),
-        signupButton: getEl('signupButton'),
-        termsLink: getEl('termsLink'),
-        termsModal: getEl('termsModal'),
-        termsModalClose: getEl('termsModalClose'),
-        termsModalAgree: getEl('termsModalAgree'),
-        profileButton: getEl('profileButton'),
-        navAvatar: getEl('navAvatar'),
-        profileModal: getEl('profileModal'),
-        profileClose: getEl('profileClose'),
-        profileAvatar: getEl('profileAvatar'),
-        profilePhotoInput: getEl('profilePhotoInput'),
-        profileName: getEl('profileName'),
-        profileEmail: getEl('profileEmail'),
-        profilePassword: getEl('profilePassword'),
-        profileSaveButton: getEl('profileSaveButton'),
-        logoutButton: getEl('logoutButton'),
-        toast: getEl('toast'),
-        navItems: getAll('.nav-item'),
-        pages: getAll('.page'),
-        attendanceVideo: getEl('attendanceVideo'),
-        attendanceOverlay: getEl('attendanceOverlay'),
-        attendanceStatus: getEl('attendanceStatus'),
-        attendanceError: getEl('attendanceError'),
-        attendanceCameraButton: getEl('attendanceCameraButton'),
-        fullscreenButton: getEl('fullscreenButton'),
-        welcomeMessage: getEl('welcomeMessage'),
-        totalStudents: getEl('totalStudents'),
-        totalPresent: getEl('totalPresent'),
-        attendancePercentage: getEl('attendancePercentage'),
-        totalHistory: getEl('totalHistory'),
-        attendanceTableBody: getEl('attendanceTableBody'),
-        emptyDatabase: getEl('emptyDatabase'),
-        nisnInput: getEl('nisn'),
-        studentNameInput: getEl('studentName'),
-        studentClassInput: getEl('studentClass'),
-        saveStudentButton: getEl('saveStudentButton'),
-        enrollmentVideo: getEl('enrollmentVideo'),
-        enrollmentImage: getEl('enrollmentImage'),
-        previewPlaceholder: getEl('previewPlaceholder'),
-        uploadButton: getEl('uploadButton'),
-        cameraEnrollmentButton: getEl('cameraEnrollmentButton'),
-        photoInput: getEl('photoInput'),
-        faceValidation: getEl('faceValidation'),
-        aiProgress: getEl('aiProgress'),
-        aiPercent: getEl('aiPercent'),
-        dbSearch: getEl('dbSearch'),
-        dbDateStart: getEl('dbDateStart'),
-        dbDateEnd: getEl('dbDateEnd'),
-        dbFilterBtn: getEl('dbFilterBtn'),
-        dbExportBtn: getEl('dbExportBtn'),
-        dbDeleteAllBtn: getEl('dbDeleteAllBtn'),
-        modelLoading: getEl('modelLoading')
-    };
-
-    // =========================================================
-    // STATE
-    // =========================================================
-
-    var modelsReady = false;
-    var isAuthenticated = false;
-    var currentUser = null;
-    var modelLoadingStarted = false;
-    var modelLoadingComplete = false;
-
-    var attendanceStream = null;
-    var enrollmentStream = null;
-    var attendanceTimer = null;
-    var enrollmentTimer = null;
-    var attendanceProcessing = false;
-    var enrollmentProcessing = false;
-
-    var currentEnrollmentDescriptor = null;
-    var currentEnrollmentImage = null;
-    var enrollmentProgress = 0;
-    var enrollmentReadyFrames = 0;
-    var stabilityHistory = [];
-
-    var attendanceMatchStudentId = null;
-    var attendanceMatchFrames = 0;
-    var attendanceCooldown = new Map();
-
-    var STORAGE_KEYS = {
-        USERS: 'amanah_users_v3',
-        STUDENTS: 'amanah_students_v3',
-        ATTENDANCE: 'amanah_attendance_v3',
-        SESSION: 'amanah_session'
-    };
-
-    var LANGUAGE_KEY = 'amanah_language';
-    var translations = {
-        id: {
-            profile: 'Profil', changePhoto: 'Ganti foto', fullName: 'Nama Lengkap',
-            password: 'Kata Sandi', saveProfile: 'Simpan Profil', logout: 'Keluar',
-            login: 'Masuk', signup: 'Daftar', attendance: 'Presensi', database: 'Database',
-            form: 'Formulir', cameraOff: 'Kamera belum aktif', cameraOn: 'Mencari wajah...'
-        },
-        en: {
-            profile: 'Profile', changePhoto: 'Change photo', fullName: 'Full name',
-            password: 'Password', saveProfile: 'Save profile', logout: 'Log out',
-            login: 'Log in', signup: 'Sign up', attendance: 'Attendance', database: 'Database',
-            form: 'Registration', cameraOff: 'Camera is off', cameraOn: 'Looking for a face...'
-        },
-        ar: {
-            profile: 'الملف الشخصي', changePhoto: 'تغيير الصورة', fullName: 'الاسم الكامل',
-            password: 'كلمة المرور', saveProfile: 'حفظ الملف', logout: 'تسجيل الخروج',
-            login: 'دخول', signup: 'تسجيل', attendance: 'الحضور', database: 'قاعدة البيانات',
-            form: 'التسجيل', cameraOff: 'الكاميرا غير مفعلة', cameraOn: 'جارٍ البحث عن وجه...'
-        }
-    };
-    var language = localStorage.getItem(LANGUAGE_KEY) || 'id';
-
-    function translate(key) {
-        return (translations[language] && translations[language][key]) || translations.id[key] || key;
-    }
-
-    function applyLanguage(nextLanguage) {
-        if (!translations[nextLanguage]) return;
-        language = nextLanguage;
-        localStorage.setItem(LANGUAGE_KEY, language);
-        document.documentElement.lang = language === 'ar' ? 'ar-KW' : language;
-        document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
-        document.querySelectorAll('[data-i18n]').forEach(function(el) {
-            el.textContent = translate(el.dataset.i18n);
-        });
-        document.querySelectorAll('.language-option').forEach(function(option) {
-            option.classList.toggle('active', option.dataset.language === language);
-        });
-        var loginTab = document.querySelector('.auth-tab[data-tab="login"]');
-        var signupTab = document.querySelector('.auth-tab[data-tab="signup"]');
-        if (loginTab) loginTab.textContent = translate('login');
-        if (signupTab) signupTab.textContent = translate('signup');
-        var navItems = document.querySelectorAll('.nav-item');
-        if (navItems[0]) navItems[0].lastChild.textContent = ' ' + translate('attendance');
-        if (navItems[1]) navItems[1].lastChild.textContent = ' ' + translate('database');
-        if (navItems[2]) navItems[2].lastChild.textContent = ' ' + translate('form');
-    }
-
-    // =========================================================
-    // STORAGE HELPERS
-    // =========================================================
-
-    function getUsers() {
-        try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS)) || []; } 
-        catch { return []; }
-    }
-
-    function saveUsers(users) {
-        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    }
-
-    function getStudents() {
-        try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS)) || []; } 
-        catch { return []; }
-    }
-
-    function saveStudents(students) {
-        localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
-    }
-
-    function getAttendance() {
-        try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.ATTENDANCE)) || []; } 
-        catch { return []; }
-    }
-
-    function saveAttendance(attendance) {
-        localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(attendance));
-    }
-
-    function getLocalDate() {
-        var now = new Date();
-        return now.getFullYear() + '-' + 
-               String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-               String(now.getDate()).padStart(2, '0');
-    }
-
-    function createId() {
-        return Date.now().toString(36) + Math.random().toString(36).slice(2);
-    }
-
-    function escapeHTML(str) {
-        return String(str).replace(/[&<>"]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            if (m === '"') return '&quot;';
-            return m;
-        });
-    }
-
-    function clamp(val, min, max) {
-        return Math.max(min, Math.min(max, val));
-    }
-
-    // =========================================================
-    // TOAST
-    // =========================================================
-
-    var toastTimer = null;
-
-    function showToast(message) {
-        if (!DOM.toast) return;
-        DOM.toast.textContent = message;
-        DOM.toast.classList.add('show');
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(function() {
-            DOM.toast.classList.remove('show');
-        }, 2600);
-    }
-
-    // =========================================================
-    // AUTH - INIT DEFAULT ADMIN
-    // =========================================================
-
-    function initDefaultAdmin() {
-        var users = getUsers();
-        var exists = users.some(function(u) { 
-            return u.email === 'admin@amanahid.sch.id'; 
-        });
-        if (!exists) {
-            users.push({
-                id: 'admin_' + Date.now(),
-                name: 'Admin',
-                email: 'admin@amanahid.sch.id',
-                password: 'admin123',
-                role: 'admin',
-                createdAt: new Date().toISOString()
-            });
-            saveUsers(users);
-        }
-    }
-
-    // =========================================================
-    // AUTH - LOGIN / LOGOUT
-    // =========================================================
-
-    function goToDashboard() {
-        if (!DOM.authPage || !DOM.mainApp) return;
-        DOM.authPage.classList.add('is-hidden');
-        DOM.authPage.style.display = 'none';
-        DOM.mainApp.style.display = 'flex';
-        DOM.mainApp.classList.add('active');
-        renderProfile();
-        renderDatabase();
-        
-        setTimeout(function() {
-            if (!modelsReady && !modelLoadingStarted) {
-                loadModelsBackground();
-            }
-        }, 500);
-    }
-
-    function handleAuth() {
-        var savedUser = localStorage.getItem(STORAGE_KEYS.SESSION);
-        
-        if (savedUser) {
-            try {
-                var user = JSON.parse(savedUser);
-                if (user && user.email) {
-                    currentUser = user;
-                    isAuthenticated = true;
-                    goToDashboard();
-                    return;
-                }
-            } catch (e) {
-                localStorage.removeItem(STORAGE_KEYS.SESSION);
-            }
-        }
-        
-        if (DOM.authPage) {
-            DOM.authPage.classList.remove('is-hidden');
-            DOM.authPage.style.display = 'flex';
-        }
-        if (DOM.mainApp) {
-            DOM.mainApp.style.display = 'none';
-            DOM.mainApp.classList.remove('active');
-        }
-    }
-
-    // LOGIN
-    if (DOM.loginForm) {
-        DOM.loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            var email = DOM.loginEmail ? DOM.loginEmail.value.trim() : '';
-            var password = DOM.loginPassword ? DOM.loginPassword.value.trim() : '';
-
-            if (!email || !password) {
-                showToast('Harap isi email dan password.');
-                return;
-            }
-
-            var users = getUsers();
-            var user = null;
-            for (var i = 0; i < users.length; i++) {
-                if (users[i].email === email && users[i].password === password) {
-                    user = users[i];
-                    break;
-                }
-            }
-
-            if (!user) {
-                showToast('Email atau password salah.');
-                return;
-            }
-
-            try {
-                localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(user));
-                currentUser = user;
-                isAuthenticated = true;
-                showToast('Selamat datang, ' + user.name + '!');
-                goToDashboard();
-            } catch (err) {
-                console.error('Login error:', err);
-                showToast('Gagal login.');
-            }
-        });
-    }
-
-    // SIGNUP
-    if (DOM.signupForm) {
-        DOM.signupForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            var name = DOM.signupName ? DOM.signupName.value.trim() : '';
-            var email = DOM.signupEmail ? DOM.signupEmail.value.trim() : '';
-            var password = DOM.signupPassword ? DOM.signupPassword.value.trim() : '';
-            var confirm = DOM.signupConfirm ? DOM.signupConfirm.value.trim() : '';
-
-            if (!name || !email || !password || !confirm) {
-                showToast('Harap isi semua field.');
-                return;
-            }
-
-            if (password.length < 6) {
-                showToast('Password minimal 6 karakter.');
-                return;
-            }
-
-            if (password !== confirm) {
-                showToast('Password tidak cocok.');
-                return;
-            }
-
-            if (DOM.signupAgree && !DOM.signupAgree.checked) {
-                showToast('Harap setujui syarat & ketentuan.');
-                return;
-            }
-
-            var users = getUsers();
-            for (var i = 0; i < users.length; i++) {
-                if (users[i].email === email) {
-                    showToast('Email sudah terdaftar.');
-                    return;
-                }
-            }
-
-            var newUser = {
-                id: 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-                name: name,
-                email: email,
-                password: password,
-                role: 'user',
-                createdAt: new Date().toISOString()
-            };
-
-            users.push(newUser);
-            saveUsers(users);
-            
-            showToast('Akun berhasil dibuat! Silakan login.');
-            
-            if (DOM.signupName) DOM.signupName.value = '';
-            if (DOM.signupEmail) DOM.signupEmail.value = '';
-            if (DOM.signupPassword) DOM.signupPassword.value = '';
-            if (DOM.signupConfirm) DOM.signupConfirm.value = '';
-            if (DOM.signupAgree) DOM.signupAgree.checked = false;
-            if (DOM.signupButton) DOM.signupButton.disabled = true;
-            
-            var loginTab = document.querySelector('.auth-tab[data-tab="login"]');
-            if (loginTab) loginTab.click();
-            if (DOM.loginEmail) DOM.loginEmail.value = email;
-            if (DOM.loginPassword) DOM.loginPassword.value = '';
-        });
-    }
-
-    // LOGOUT
-    if (DOM.logoutButton) {
-        DOM.logoutButton.addEventListener('click', function() {
-            localStorage.removeItem(STORAGE_KEYS.SESSION);
-            isAuthenticated = false;
-            currentUser = null;
-            if (DOM.mainApp) {
-                DOM.mainApp.style.display = 'none';
-                DOM.mainApp.classList.remove('active');
-            }
-            if (DOM.authPage) DOM.authPage.style.display = 'flex';
-            stopAttendanceCamera();
-            stopEnrollmentCamera();
-            showToast('Berhasil keluar.');
-        });
-    }
-
-    // =========================================================
-    // AUTH TABS
-    // =========================================================
-
-    document.querySelectorAll('.auth-tab').forEach(function(tab) {
-        tab.addEventListener('click', function() {
-            document.querySelectorAll('.auth-tab').forEach(function(t) {
-                t.classList.remove('active');
-            });
-            this.classList.add('active');
-            document.querySelectorAll('.auth-form').forEach(function(f) {
-                f.classList.remove('active');
-            });
-            var formId = this.dataset.tab === 'login' ? 'loginForm' : 'signupForm';
-            var form = document.getElementById(formId);
-            if (form) form.classList.add('active');
-            if (this.dataset.tab === 'signup') {
-                if (DOM.signupAgree) DOM.signupAgree.checked = false;
-                if (DOM.signupButton) DOM.signupButton.disabled = true;
-            }
-        });
-    });
-
-    // =========================================================
-    // CHECKBOX & TERMS
-    // =========================================================
-
-    if (DOM.signupAgree) {
-        DOM.signupAgree.addEventListener('change', function() {
-            if (DOM.signupButton) DOM.signupButton.disabled = !this.checked;
-        });
-    }
-
-    if (DOM.termsLink) {
-        DOM.termsLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (DOM.termsModal) DOM.termsModal.style.display = 'flex';
-        });
-    }
-
-    if (DOM.termsModalClose) {
-        DOM.termsModalClose.addEventListener('click', function() {
-            if (DOM.termsModal) DOM.termsModal.style.display = 'none';
-        });
-    }
-
-    if (DOM.termsModalAgree) {
-        DOM.termsModalAgree.addEventListener('click', function() {
-            if (DOM.termsModal) DOM.termsModal.style.display = 'none';
-            if (DOM.signupAgree) DOM.signupAgree.checked = true;
-            if (DOM.signupButton) DOM.signupButton.disabled = false;
-            showToast('Terima kasih telah menyetujui syarat & ketentuan.');
-        });
-    }
-
-    if (DOM.termsModal) {
-        DOM.termsModal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.style.display = 'none';
-            }
-        });
-    }
-
-    document.querySelectorAll('.language-option').forEach(function(option) {
-        option.addEventListener('click', function() {
-            applyLanguage(this.dataset.language);
-        });
-    });
-
-    function getProfileFallback(name) {
-        var initials = String(name || 'A').trim().split(/\s+/).slice(0, 2)
-            .map(function(part) { return part.charAt(0).toUpperCase(); }).join('');
-        var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160">' +
-            '<defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#0b9f9a"/>' +
-            '<stop offset="1" stop-color="#08716f"/></linearGradient></defs>' +
-            '<rect width="160" height="160" rx="80" fill="url(#g)"/>' +
-            '<text x="80" y="94" text-anchor="middle" font-family="Arial" font-size="54" font-weight="700" fill="white">' +
-            escapeHTML(initials || 'A') + '</text></svg>';
-        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
-    }
-
-    function renderProfile() {
-        if (!currentUser) return;
-        if (DOM.profileName) DOM.profileName.value = currentUser.name || '';
-        if (DOM.profileEmail) DOM.profileEmail.value = currentUser.email || '';
-        if (DOM.profilePassword) DOM.profilePassword.value = currentUser.password || '';
-        if (DOM.profileAvatar) {
-            DOM.profileAvatar.src = currentUser.profilePhoto || getProfileFallback(currentUser.name);
-        }
-        if (DOM.navAvatar) {
-            DOM.navAvatar.src = currentUser.profilePhoto || getProfileFallback(currentUser.name);
-        }
-    }
-
-    if (DOM.profileButton) {
-        DOM.profileButton.addEventListener('click', function() {
-            renderProfile();
-            if (DOM.profileModal) DOM.profileModal.style.display = 'flex';
-        });
-    }
-    if (DOM.profileClose) {
-        DOM.profileClose.addEventListener('click', function() {
-            if (DOM.profileModal) DOM.profileModal.style.display = 'none';
-        });
-    }
-    if (DOM.profileModal) {
-        DOM.profileModal.addEventListener('click', function(event) {
-            if (event.target === this) this.style.display = 'none';
-        });
-    }
-    if (DOM.profilePhotoInput) {
-        DOM.profilePhotoInput.addEventListener('change', function(event) {
-            var file = event.target.files && event.target.files[0];
-            if (!file || !file.type.startsWith('image/')) return;
-            var reader = new FileReader();
-            reader.onload = function() {
-                if (DOM.profileAvatar) DOM.profileAvatar.src = reader.result;
-                if (currentUser) currentUser.profilePhoto = reader.result;
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-    if (DOM.profileSaveButton) {
-        DOM.profileSaveButton.addEventListener('click', function() {
-            if (!currentUser) return;
-            var name = DOM.profileName ? DOM.profileName.value.trim() : '';
-            if (name.length < 2) {
-                showToast(language === 'en' ? 'Name is not valid.' : language === 'ar' ? 'الاسم غير صالح.' : 'Nama belum valid.');
-                return;
-            }
-            currentUser.name = name;
-            var users = getUsers();
-            var userIndex = users.findIndex(function(user) { return user.id === currentUser.id; });
-            if (userIndex >= 0) users[userIndex] = currentUser;
-            saveUsers(users);
-            localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(currentUser));
-            if (DOM.welcomeMessage) DOM.welcomeMessage.textContent = '👋 ' + currentUser.name + '!';
-            if (DOM.profileModal) DOM.profileModal.style.display = 'none';
-            showToast(language === 'en' ? 'Profile saved.' : language === 'ar' ? 'تم حفظ الملف الشخصي.' : 'Profil disimpan.');
-        });
-    }
-
-    // =========================================================
-    // NAVIGATION
-    // =========================================================
-
-    if (DOM.navItems) {
-        DOM.navItems.forEach(function(button) {
-            button.addEventListener('click', function() {
-                if (button.id === 'logoutButton') return;
-                var pageId = button.dataset.page;
-                DOM.navItems.forEach(function(item) {
-                    item.classList.remove('active');
-                });
-                button.classList.add('active');
-                DOM.pages.forEach(function(page) {
-                    page.classList.remove('active');
-                });
-                var targetPage = document.getElementById(pageId);
-                if (targetPage) targetPage.classList.add('active');
-                if (pageId !== 'attendancePage') stopAttendanceCamera();
-                if (pageId !== 'formPage') stopEnrollmentCamera();
-                if (pageId === 'databasePage') renderDatabase();
-            });
-        });
-    }
-
-    // =========================================================
-    // LOAD MODELS (BACKGROUND - TIDAK MEMBLOKIR)
-    // =========================================================
-
-    function loadModelsBackground() {
-        if (modelLoadingStarted || modelLoadingComplete) return;
-        if (typeof faceapi === 'undefined') {
-            console.warn('[Amanah ID] faceapi not loaded, retrying...');
-            modelLoadingStarted = false;
-            setTimeout(function() {
-                if (!modelsReady && !modelLoadingComplete) {
-                    loadModelsBackground();
-                }
-            }, 2000);
-            return;
-        }
-
-        modelLoadingStarted = true;
-        console.log('[Amanah ID] Loading AI models...');
-
-        var TIMEOUT_MS = 15000;
-        var loadTimeout = setTimeout(function() {
-            console.warn('[Amanah ID] Model loading timeout');
-            modelLoadingStarted = false;
-            showToast('AI loading timeout, silakan refresh.');
-        }, TIMEOUT_MS);
-
-        function loadModelSet(url) {
-            return Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri(url),
-                faceapi.nets.faceLandmark68Net.loadFromUri(url),
-                faceapi.nets.faceRecognitionNet.loadFromUri(url)
-            ]);
-        }
-        loadModelSet('https://justadudewhohacks.github.io/face-api.js/models')
-        .catch(function() {
-            return loadModelSet('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models');
-        })
-        .then(function() {
-            clearTimeout(loadTimeout);
-            modelsReady = true;
-            modelLoadingComplete = true;
-            modelLoadingStarted = false;
-            console.log('[Amanah ID] AI models ready!');
-            updateSaveButton();
-            showToast('AI siap digunakan!');
-        }).catch(function(err) {
-            console.error('[Amanah ID] Model load error:', err);
-            clearTimeout(loadTimeout);
-            modelLoadingStarted = false;
-            showToast('AI gagal dimuat. Fitur wajah tidak tersedia.');
-        });
-    }
-
-    // =========================================================
-    // CAMERA HELPERS
-    // =========================================================
-
-    function requestCamera() {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            throw new Error('Browser tidak mendukung getUserMedia.');
-        }
-        var constraints = {
-            video: {
-                facingMode: { ideal: 'user' },
-                width: { ideal: 640, min: 320 },
-                height: { ideal: 480, min: 240 },
-                frameRate: { ideal: 30, max: 30 }
-            },
-            audio: false
-        };
-        return navigator.mediaDevices.getUserMedia(constraints).catch(function(error) {
-            if (error && (error.name === 'OverconstrainedError' || error.name === 'NotReadableError')) {
-                return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-            }
-            throw error;
-        });
-    }
-
-    function getCameraErrorMessage(error) {
-        if (error && error.name === 'NotAllowedError') {
-            return 'Izin kamera ditolak. Izinkan akses kamera.';
-        }
-        if (error && error.name === 'NotFoundError') {
-            return 'Tidak ada kamera yang ditemukan.';
-        }
-        if (error && error.name === 'NotReadableError') {
-            return 'Kamera sedang digunakan aplikasi lain.';
-        }
-        if (error && error.name === 'SecurityError') {
-            return 'Kamera membutuhkan HTTPS atau localhost.';
-        }
-        return 'Kamera tidak dapat digunakan pada perangkat ini.';
-    }
-
-    // =========================================================
-    // ATTENDANCE CAMERA
-    // =========================================================
-
-    async function startAttendanceCamera() {
-        if (!modelsReady) {
-            showToast('AI sedang disiapkan...');
-            if (!modelLoadingStarted) {
-                loadModelsBackground();
-            }
-            setTimeout(function() {
-                if (modelsReady) {
-                    startAttendanceCamera();
-                } else {
-                    showToast('AI masih disiapkan, coba lagi.');
-                }
-            }, 2000);
-            return;
-        }
-        
-        try {
-            stopAttendanceCamera();
-            if (DOM.attendanceError) DOM.attendanceError.classList.remove('show');
-            if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = 'Mengaktifkan kamera...';
-            attendanceStream = await requestCamera();
-            if (DOM.attendanceVideo) {
-                DOM.attendanceVideo.srcObject = attendanceStream;
-                await DOM.attendanceVideo.play();
-            }
-            if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = 'Mencari wajah...';
-            if (DOM.attendanceCameraButton) DOM.attendanceCameraButton.title = 'Matikan kamera';
-            startAttendanceLoop();
-        } catch (error) {
-            console.error('[Attendance Camera]', error);
-            if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = 'Kamera tidak tersedia';
-            if (DOM.attendanceError) DOM.attendanceError.classList.add('show');
-            showToast('Kamera gagal diakses.');
-        }
-    }
-
-    function stopAttendanceCamera() {
-        if (attendanceTimer) { clearInterval(attendanceTimer); attendanceTimer = null; }
-        if (attendanceStream) {
-            attendanceStream.getTracks().forEach(function(track) { track.stop(); });
-            attendanceStream = null;
-        }
-        if (DOM.attendanceVideo) DOM.attendanceVideo.srcObject = null;
-        if (DOM.attendanceOverlay) DOM.attendanceOverlay.innerHTML = '';
-        if (DOM.welcomeMessage) DOM.welcomeMessage.classList.remove('show');
-        if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = 'Kamera belum aktif';
-        if (DOM.attendanceCameraButton) DOM.attendanceCameraButton.title = 'Aktifkan kamera';
-        attendanceProcessing = false;
-        attendanceMatchStudentId = null;
-        attendanceMatchFrames = 0;
-    }
-
-    function startAttendanceLoop() {
-        if (attendanceTimer) clearInterval(attendanceTimer);
-        attendanceTimer = setInterval(processAttendanceFrame, 400);
-    }
-
-    // =========================================================
-    // ATTENDANCE PROCESSING
-    // =========================================================
-
-    async function processAttendanceFrame() {
-        if (attendanceProcessing || !modelsReady || !attendanceStream || 
-            !DOM.attendanceVideo || DOM.attendanceVideo.readyState < 2) {
-            return;
-        }
-        attendanceProcessing = true;
-
-        try {
-            var detections = await faceapi.detectAllFaces(
-                DOM.attendanceVideo,
-                new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.50 })
-            ).withFaceLandmarks().withFaceDescriptors();
-
-            if (DOM.attendanceOverlay) DOM.attendanceOverlay.innerHTML = '';
-
-            if (detections.length === 0) {
-                if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = 'Mencari wajah...';
-                if (DOM.welcomeMessage) DOM.welcomeMessage.classList.remove('show');
-                attendanceMatchStudentId = null;
-                attendanceMatchFrames = 0;
-                return;
-            }
-
-            var students = getStudents();
-            var faceResults = [];
-            for (var i = 0; i < detections.length; i++) {
-                var match = findBestMatch(detections[i].descriptor, students);
-                faceResults.push({ detection: detections[i], match: match });
-            }
-
-            for (var j = 0; j < faceResults.length; j++) {
-                var result = faceResults[j];
-                var recognized = result.match && result.match.distance <= 0.42;
-                createFaceOutline(result.detection.detection.box, recognized);
-            }
-
-            var recognizedFaces = [];
-            for (var k = 0; k < faceResults.length; k++) {
-                if (faceResults[k].match && faceResults[k].match.distance <= 0.42) {
-                    recognizedFaces.push(faceResults[k]);
-                }
-            }
-
-            if (recognizedFaces.length === 0) {
-                if (DOM.attendanceStatus) {
-                    DOM.attendanceStatus.textContent = detections.length === 1 ? 
-                        'Wajah terdeteksi, belum cocok' : 
-                        detections.length + ' wajah, tidak ada identitas cocok';
-                }
-                if (DOM.welcomeMessage) DOM.welcomeMessage.classList.remove('show');
-                attendanceMatchStudentId = null;
-                attendanceMatchFrames = 0;
-                return;
-            }
-
-            recognizedFaces.sort(function(a, b) { return a.match.distance - b.match.distance; });
-            var best = recognizedFaces[0];
-            var student = best.match.student;
-
-            if (attendanceMatchStudentId === student.id) {
-                attendanceMatchFrames += 1;
-            } else {
-                attendanceMatchStudentId = student.id;
-                attendanceMatchFrames = 1;
-            }
-
-            if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = student.name + ' terdeteksi';
-
-            if (attendanceMatchFrames >= 2) {
-                if (DOM.welcomeMessage) {
-                    DOM.welcomeMessage.textContent = 'Selamat datang, ' + student.name + '!';
-                    DOM.welcomeMessage.classList.add('show');
-                }
-                registerAttendance(student, best.match.distance);
-            } else {
-                if (DOM.welcomeMessage) DOM.welcomeMessage.classList.remove('show');
-            }
-        } catch (error) {
-            console.error('[Attendance Detection]', error);
-        } finally {
-            attendanceProcessing = false;
-        }
-    }
-
-    // =========================================================
-    // FACE OUTLINE
-    // =========================================================
-
-    function createFaceOutline(box, recognized) {
-        if (!DOM.attendanceVideo || !DOM.attendanceVideo.videoWidth || 
-            !DOM.attendanceVideo.videoHeight || !DOM.attendanceOverlay) {
-            return;
-        }
-        var outline = document.createElement('div');
-        outline.className = recognized ? 'face-outline recognized' : 'face-outline';
-        var mapped = mapVideoBox(box, DOM.attendanceVideo, true);
-        outline.style.cssText = 'left:' + mapped.x + 'px;top:' + mapped.y + 'px;width:' + 
-                                mapped.width + 'px;height:' + mapped.height + 'px;';
-        DOM.attendanceOverlay.appendChild(outline);
-    }
-
-    function mapVideoBox(box, video, mirrored) {
-        var videoWidth = video.videoWidth;
-        var videoHeight = video.videoHeight;
-        var containerWidth = video.clientWidth;
-        var containerHeight = video.clientHeight;
-        var scale = Math.max(containerWidth / videoWidth, containerHeight / videoHeight);
-        var renderedWidth = videoWidth * scale;
-        var renderedHeight = videoHeight * scale;
-        var offsetX = (containerWidth - renderedWidth) / 2;
-        var offsetY = (containerHeight - renderedHeight) / 2;
-        var x = offsetX + box.x * scale;
-        if (mirrored) {
-            x = containerWidth - (offsetX + (box.x + box.width) * scale);
-        }
-        return { x: x, y: offsetY + box.y * scale, width: box.width * scale, height: box.height * scale };
-    }
-
-    // =========================================================
-    // MATCHING
-    // =========================================================
-
-    function findBestMatch(descriptor, students) {
-        var bestStudent = null;
-        var bestDistance = Infinity;
-
-        for (var i = 0; i < students.length; i++) {
-            var student = students[i];
-            if (!Array.isArray(student.descriptor) || student.descriptor.length !== descriptor.length) {
-                continue;
-            }
-            var distance = faceapi.euclideanDistance(descriptor, new Float32Array(student.descriptor));
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                bestStudent = student;
-            }
-        }
-
-        if (!bestStudent) return null;
-        return { student: bestStudent, distance: bestDistance };
-    }
-
-    // =========================================================
-    // ATTENDANCE REGISTER
-    // =========================================================
-
-    function registerAttendance(student, distance) {
-        var attendance = getAttendance();
-        var today = getLocalDate();
-        
-        for (var i = 0; i < attendance.length; i++) {
-            if (attendance[i].nisn === student.nisn && attendance[i].date === today) {
-                return;
-            }
-        }
-
-        var currentTime = Date.now();
-        var previous = attendanceCooldown.get(student.id);
-        if (previous && currentTime - previous < 5000) return;
-        attendanceCooldown.set(student.id, currentTime);
-
-        var confidence = Math.max(0, Math.min(100, (1 - distance) * 100));
-        var record = {
-            id: createId(),
-            nisn: student.nisn,
-            name: student.name,
-            className: student.className,
-            status: 'Hadir',
-            date: today,
-            timestamp: new Date().toISOString(),
-            method: 'Face Recognition',
-            confidence: confidence
-        };
-
-        attendance.unshift(record);
-        saveAttendance(attendance);
-        renderDatabase();
-        showToast(student.name + ' berhasil presensi!');
-    }
-
-    // =========================================================
-    // ENROLLMENT CAMERA
-    // =========================================================
-
-    async function startEnrollmentCamera() {
-        if (!modelsReady) {
-            showToast('AI sedang disiapkan...');
-            if (!modelLoadingStarted) {
-                loadModelsBackground();
-            }
-            setTimeout(function() {
-                if (modelsReady) {
-                    startEnrollmentCamera();
-                } else {
-                    showToast('AI masih disiapkan, coba lagi.');
-                }
-            }, 2000);
-            return;
-        }
-        
-        try {
-            stopEnrollmentCamera();
-            resetEnrollmentState();
-            clearEnrollmentImage();
-            enrollmentStream = await requestCamera();
-            if (DOM.enrollmentVideo) {
-                DOM.enrollmentVideo.srcObject = enrollmentStream;
-                DOM.enrollmentVideo.classList.add('active');
-            }
-            if (DOM.previewPlaceholder) DOM.previewPlaceholder.style.display = 'none';
-            if (DOM.enrollmentVideo) {
-                await waitForVideoReady(DOM.enrollmentVideo);
-            }
-            setValidation('Kamera aktif. Posisikan wajah di tengah.', true);
-            startEnrollmentLoop();
-        } catch (error) {
-            console.error('[Enrollment Camera]', error);
-            setValidation(getCameraErrorMessage(error), false);
-            showToast('Kamera formulir gagal dibuka.');
-        }
-    }
-
-    function stopEnrollmentCamera() {
-        if (enrollmentTimer) { clearInterval(enrollmentTimer); enrollmentTimer = null; }
-        if (enrollmentStream) {
-            enrollmentStream.getTracks().forEach(function(track) { track.stop(); });
-            enrollmentStream = null;
-        }
-        if (DOM.enrollmentVideo) {
-            DOM.enrollmentVideo.pause();
-            DOM.enrollmentVideo.srcObject = null;
-            DOM.enrollmentVideo.classList.remove('active');
-        }
-        enrollmentProcessing = false;
-        stabilityHistory = [];
-        enrollmentReadyFrames = 0;
-    }
-
-    function clearEnrollmentImage() {
-        currentEnrollmentDescriptor = null;
-        currentEnrollmentImage = null;
-        if (DOM.enrollmentImage) {
-            DOM.enrollmentImage.src = '';
-            DOM.enrollmentImage.classList.remove('active', 'has-image');
-        }
-        var replaceBtn = document.getElementById('replaceImageBtn');
-        if (replaceBtn) replaceBtn.remove();
-        if (DOM.previewPlaceholder) DOM.previewPlaceholder.style.display = 'flex';
-        resetEnrollmentState();
-        updateSaveButton();
-    }
-
-    function waitForVideoReady(video) {
-        return new Promise(function(resolve) {
-            if (video.readyState >= 2) { resolve(); return; }
-            var handler = function() {
-                video.removeEventListener('loadedmetadata', handler);
-                resolve();
-            };
-            video.addEventListener('loadedmetadata', handler);
-        });
-    }
-
-    function startEnrollmentLoop() {
-        if (enrollmentTimer) clearInterval(enrollmentTimer);
-        enrollmentTimer = setInterval(processEnrollmentFrame, 120);
-    }
-
-    // =========================================================
-    // ENROLLMENT PROCESSING
-    // =========================================================
-
-    var detectionCounter = 0;
-
-    async function processEnrollmentFrame() {
-        if (enrollmentProcessing || !enrollmentStream || 
-            !DOM.enrollmentVideo || DOM.enrollmentVideo.readyState < 2) {
-            return;
-        }
-        enrollmentProcessing = true;
-        detectionCounter++;
-
-        try {
-            var detections = await faceapi.detectAllFaces(
-                DOM.enrollmentVideo,
-                new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.45 })
-            ).withFaceLandmarks().withFaceDescriptors();
-
-            if (detections.length === 0) {
-                enrollmentReadyFrames = 0;
-                updateEnrollmentProgress(0);
-                setValidation('Wajah belum terdeteksi.', false);
-                return;
-            }
-
-            if (detections.length > 1) {
-                enrollmentReadyFrames = 0;
-                updateEnrollmentProgress(5);
-                setValidation('Hanya satu wajah yang boleh berada di kamera.', false);
-                return;
-            }
-
-            var detection = detections[0];
-            var box = detection.detection.box;
-            var width = DOM.enrollmentVideo.videoWidth;
-            var height = DOM.enrollmentVideo.videoHeight;
-
-            var faceArea = (box.width * box.height) / (width * height);
-            var sizeScore = 0;
-            if (faceArea >= 0.05 && faceArea <= 0.50) {
-                sizeScore = 90 + (1 - Math.abs(faceArea - 0.20) * 100);
-            } else if (faceArea > 0.50 && faceArea <= 0.70) {
-                sizeScore = 65 - (faceArea - 0.50) * 120;
-            } else if (faceArea >= 0.025 && faceArea < 0.05) {
-                sizeScore = 45 + (faceArea - 0.025) * 600;
-            } else {
-                sizeScore = Math.max(0, 100 - Math.abs(faceArea - 0.20) * 200);
-            }
-            sizeScore = clamp(sizeScore, 0, 100);
-
-            var faceCenterX = box.x + box.width / 2;
-            var faceCenterY = box.y + box.height / 2;
-            var frameCenterX = width / 2;
-            var frameCenterY = height / 2;
-            var dist = Math.hypot((faceCenterX - frameCenterX) / width, 
-                                  (faceCenterY - frameCenterY) / height);
-            var centerScore = clamp(100 - (dist * 250), 0, 100);
-
-            var lightScore = 80;
-            if (detectionCounter % 3 === 0) {
-                var brightness = calculateBrightness(DOM.enrollmentVideo);
-                lightScore = calculateLightScore(brightness);
-            }
-
-            stabilityHistory.push({ x: faceCenterX, y: faceCenterY, 
-                                    width: box.width, height: box.height });
-            if (stabilityHistory.length > 3) stabilityHistory.shift();
-
-            var stabilityScore = 50;
-            if (stabilityHistory.length >= 3) {
-                var first = stabilityHistory[0];
-                var last = stabilityHistory[stabilityHistory.length - 1];
-                var movement = Math.hypot(last.x - first.x, last.y - first.y);
-                var sizeMovement = Math.abs(last.width - first.width);
-                stabilityScore = clamp(100 - (movement * 0.5) - (sizeMovement * 0.4), 0, 100);
-            }
-
-            var finalScore = (sizeScore * 0.30 + centerScore * 0.30 + 
-                              lightScore * 0.15 + stabilityScore * 0.25);
-
-            if (finalScore > enrollmentProgress) {
-                enrollmentProgress = enrollmentProgress * 0.30 + finalScore * 0.70;
-            } else {
-                enrollmentProgress = enrollmentProgress * 0.50 + finalScore * 0.50;
-            }
-
-            if (finalScore >= 80 && sizeScore >= 70 && centerScore >= 75) {
-                enrollmentProgress = Math.min(100, enrollmentProgress + 20);
-            }
-
-            enrollmentProgress = clamp(enrollmentProgress, 0, 100);
-            updateEnrollmentProgress(enrollmentProgress);
-
-            var ready = finalScore >= 75 && faceArea >= 0.04 && faceArea <= 0.65 && 
-                        centerScore >= 70 && stabilityScore >= 60;
-
-            if (ready && enrollmentProgress >= 80) {
-                enrollmentReadyFrames += 1;
-            } else {
-                enrollmentReadyFrames = 0;
-            }
-
-            if (enrollmentProgress < 25) setValidation('Mendeteksi wajah...', true);
-            else if (enrollmentProgress < 50) setValidation('Analisis kualitas...', true);
-            else if (enrollmentProgress < 75) setValidation('Pertahankan posisi...', true);
-            else if (enrollmentProgress < 100) setValidation('Hampir selesai...', true);
-            else setValidation('Siap!', true);
-
-            if (enrollmentProgress >= 100 && enrollmentReadyFrames >= 1) {
-                await captureEnrollment(detection);
-            }
-        } catch (error) {
-            console.error('[Enrollment Detection]', error);
-        } finally {
-            enrollmentProcessing = false;
-        }
-    }
-
-    function calculateBrightness(video) {
-        var canvas = document.createElement('canvas');
-        canvas.width = 8;
-        canvas.height = 6;
-        var context = canvas.getContext('2d', { willReadFrequently: true });
-        if (!context) return 128;
-        context.drawImage(video, 0, 0, 8, 6);
-        var image = context.getImageData(0, 0, 8, 6);
-        var sum = 0;
-        for (var i = 0; i < image.data.length; i += 4) {
-            sum += (0.299 * image.data[i]) + (0.587 * image.data[i + 1]) + (0.114 * image.data[i + 2]);
-        }
-        return sum / (image.data.length / 4);
-    }
-
-    function calculateLightScore(brightness) {
-        if (brightness >= 50 && brightness <= 220) {
-            return 100 - Math.abs(brightness - 130) * 0.3;
-        } else if (brightness < 50) {
-            return clamp(brightness / 50 * 100, 0, 100);
-        } else {
-            return clamp(100 - (brightness - 220) / 40 * 100, 0, 100);
-        }
-    }
-
-    function updateEnrollmentProgress(value) {
-        enrollmentProgress = clamp(value, 0, 100);
-        var percentage = Math.round(enrollmentProgress);
-        if (DOM.aiProgress) DOM.aiProgress.style.width = percentage + '%';
-        if (DOM.aiPercent) DOM.aiPercent.textContent = percentage + '%';
-    }
-
-    function setValidation(message, success) {
-        if (!DOM.faceValidation) return;
-        DOM.faceValidation.textContent = message;
-        DOM.faceValidation.className = 'validation-message';
-        if (message) {
-            DOM.faceValidation.classList.add(success ? 'success' : 'error');
-        }
-    }
-
-    function resetEnrollmentState() {
-        enrollmentProgress = 0;
-        enrollmentReadyFrames = 0;
-        stabilityHistory = [];
-        detectionCounter = 0;
-        updateEnrollmentProgress(0);
-        setValidation('', true);
-    }
-
-    async function captureEnrollment(detection) {
-        stopEnrollmentCamera();
-        var canvas = document.createElement('canvas');
-        canvas.width = DOM.enrollmentVideo.videoWidth;
-        canvas.height = DOM.enrollmentVideo.videoHeight;
-        var context = canvas.getContext('2d');
-        if (!context) { 
-            setValidation('Gagal memproses gambar.', false); 
-            return; 
-        }
-        context.translate(canvas.width, 0);
-        context.scale(-1, 1);
-        context.drawImage(DOM.enrollmentVideo, 0, 0, canvas.width, canvas.height);
-        var imageData = canvas.toDataURL('image/jpeg', 0.90);
-
-        currentEnrollmentDescriptor = Array.from(detection.descriptor);
-        currentEnrollmentImage = imageData;
-
-        if (DOM.enrollmentImage) {
-            DOM.enrollmentImage.src = imageData;
-            DOM.enrollmentImage.classList.add('active', 'has-image');
-        }
-        if (DOM.enrollmentVideo) DOM.enrollmentVideo.classList.remove('active');
-        if (DOM.previewPlaceholder) DOM.previewPlaceholder.style.display = 'none';
-        addReplaceButton();
-
-        updateEnrollmentProgress(100);
-        setValidation('Foto wajah berhasil diverifikasi!', true);
-        updateSaveButton();
-        showToast('Wajah berhasil ditangkap!');
-    }
-
-    function addReplaceButton() {
-        var oldBtn = document.getElementById('replaceImageBtn');
-        if (oldBtn) oldBtn.remove();
-        var replaceBtn = document.createElement('button');
-        replaceBtn.id = 'replaceImageBtn';
-        replaceBtn.className = 'replace-image-btn';
-        replaceBtn.innerHTML = 'Ganti Foto';
-        replaceBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            clearEnrollmentImage();
-            showToast('Foto dihapus. Silakan ambil foto baru.');
-        });
-        var preview = document.getElementById('enrollmentPreview');
-        if (preview) { 
-            preview.style.position = 'relative'; 
-            preview.appendChild(replaceBtn); 
-        }
-    }
-
-    // =========================================================
-    // UPLOAD IMAGE
-    // =========================================================
-
-    if (DOM.uploadButton) {
-        DOM.uploadButton.addEventListener('click', function() {
-            if (DOM.photoInput) DOM.photoInput.click();
-        });
-    }
-
-    if (DOM.photoInput) {
-        DOM.photoInput.addEventListener('change', async function(event) {
-            var file = event.target.files ? event.target.files[0] : null;
-            if (!file) return;
-            if (!file.type.startsWith('image/')) {
-                setValidation('File bukan gambar.', false);
-                return;
-            }
-
-            if (!modelsReady) {
-                setValidation('AI sedang disiapkan, tunggu sebentar...', false);
-                if (!modelLoadingStarted) {
-                    loadModelsBackground();
-                }
-                setTimeout(function() {
-                    if (modelsReady) {
-                        showToast('AI siap, upload ulang foto.');
-                    }
-                }, 3000);
-                return;
-            }
-
-            try {
-                stopEnrollmentCamera();
-                resetEnrollmentState();
-                var image = await faceapi.bufferToImage(file);
-                if (DOM.enrollmentImage) {
-                    DOM.enrollmentImage.src = image.src;
-                    DOM.enrollmentImage.classList.add('active', 'has-image');
-                }
-                if (DOM.previewPlaceholder) DOM.previewPlaceholder.style.display = 'none';
-
-                var detections = await faceapi.detectAllFaces(
-                    image,
-                    new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.45 })
-                ).withFaceLandmarks().withFaceDescriptors();
-
-                if (detections.length === 0) {
-                    setValidation('Foto ditolak: wajah tidak ditemukan.', false);
-                    clearEnrollmentImage();
-                    showToast('Wajah tidak terdeteksi di foto.');
-                    return;
-                }
-
-                if (detections.length > 1) {
-                    setValidation('Foto ditolak: lebih dari satu wajah.', false);
-                    clearEnrollmentImage();
-                    showToast('Deteksi lebih dari satu wajah.');
-                    return;
-                }
-
-                var detection = detections[0];
-                var box = detection.detection.box;
-                var areaRatio = (box.width * box.height) / (image.width * image.height);
-
-                if (areaRatio < 0.025) {
-                    setValidation('Wajah terlalu kecil dalam foto.', false);
-                    clearEnrollmentImage();
-                    return;
-                }
-
-                currentEnrollmentDescriptor = Array.from(detection.descriptor);
-                currentEnrollmentImage = image.src;
-                updateEnrollmentProgress(100);
-                setValidation('Foto diterima. Wajah berhasil dianalisis.', true);
-                addReplaceButton();
-                updateSaveButton();
-            } catch (error) {
-                console.error('[Upload Image]', error);
-                setValidation('Foto gagal dianalisis.', false);
-                clearEnrollmentImage();
-            } finally {
-                if (DOM.photoInput) DOM.photoInput.value = '';
-            }
-        });
-    }
-
-    // =========================================================
-    // FORM VALIDATION & SAVE
-    // =========================================================
-
-    if (DOM.nisnInput && DOM.studentNameInput && DOM.studentClassInput) {
-        [DOM.nisnInput, DOM.studentNameInput, DOM.studentClassInput].forEach(function(input) {
-            input.addEventListener('input', updateSaveButton);
-        });
-    }
-
-    function updateSaveButton() {
-        if (!DOM.saveStudentButton) return;
-        var nisn = DOM.nisnInput ? DOM.nisnInput.value.trim() : '';
-        var name = DOM.studentNameInput ? DOM.studentNameInput.value.trim() : '';
-        var className = DOM.studentClassInput ? DOM.studentClassInput.value.trim() : '';
-        DOM.saveStudentButton.disabled = !(
-            modelsReady &&
-            /^\d+$/.test(nisn) &&
-            nisn.length >= 4 &&
-            name.length >= 2 &&
-            className.length >= 1 &&
-            Array.isArray(currentEnrollmentDescriptor) &&
-            currentEnrollmentDescriptor.length > 0
-        );
-    }
-
-    if (DOM.saveStudentButton) {
-        DOM.saveStudentButton.addEventListener('click', function() {
-            var nisn = DOM.nisnInput ? DOM.nisnInput.value.trim() : '';
-            var name = DOM.studentNameInput ? DOM.studentNameInput.value.trim() : '';
-            var className = DOM.studentClassInput ? DOM.studentClassInput.value.trim() : '';
-
-            if (!/^\d+$/.test(nisn)) { showToast('NISN hanya boleh berisi angka.'); return; }
-            if (name.length < 2) { showToast('Nama siswa belum valid.'); return; }
-            if (!className) { showToast('Kelas belum diisi.'); return; }
-            if (!currentEnrollmentDescriptor) { showToast('Wajah belum diverifikasi.'); return; }
-
-            var students = getStudents();
-            for (var i = 0; i < students.length; i++) {
-                if (students[i].nisn === nisn) {
-                    showToast('NISN tersebut sudah terdaftar.');
-                    return;
-                }
-            }
-
-            var student = {
-                id: createId(),
-                nisn: nisn,
-                name: name,
-                className: className,
-                descriptor: currentEnrollmentDescriptor,
-                registeredAt: new Date().toISOString()
-            };
-
-            students.push(student);
-            saveStudents(students);
-
-            if (DOM.nisnInput) DOM.nisnInput.value = '';
-            if (DOM.studentNameInput) DOM.studentNameInput.value = '';
-            if (DOM.studentClassInput) DOM.studentClassInput.value = '';
-            currentEnrollmentDescriptor = null;
-            currentEnrollmentImage = null;
-            if (DOM.enrollmentImage) {
-                DOM.enrollmentImage.src = '';
-                DOM.enrollmentImage.classList.remove('active', 'has-image');
-            }
-            var replaceBtn = document.getElementById('replaceImageBtn');
-            if (replaceBtn) replaceBtn.remove();
-            if (DOM.previewPlaceholder) DOM.previewPlaceholder.style.display = 'flex';
-            resetEnrollmentState();
-            updateSaveButton();
-            renderDatabase();
-            showToast(name + ' berhasil didaftarkan!');
-        });
-    }
-
-    // =========================================================
-    // DATABASE RENDER
-    // =========================================================
-
-    function renderDatabase() {
-        if (!DOM.totalStudents || !DOM.totalPresent || 
-            !DOM.attendancePercentage || !DOM.totalHistory) {
-            return;
-        }
-        
-        var students = getStudents();
-        var attendance = getAttendance();
-        var today = getLocalDate();
-        var todayAttendance = [];
-        for (var i = 0; i < attendance.length; i++) {
-            if (attendance[i].date === today) {
-                todayAttendance.push(attendance[i]);
-            }
-        }
-
-        DOM.totalStudents.textContent = students.length;
-        DOM.totalPresent.textContent = todayAttendance.length;
-        DOM.totalHistory.textContent = attendance.length;
-
-        var percentage = students.length > 0 ? 
-            Math.round((todayAttendance.length / students.length) * 100) : 0;
-        DOM.attendancePercentage.textContent = Math.min(percentage, 100) + '%';
-
-        var searchTerm = DOM.dbSearch ? DOM.dbSearch.value.toLowerCase().trim() : '';
-        var startDate = DOM.dbDateStart ? DOM.dbDateStart.value : '';
-        var endDate = DOM.dbDateEnd ? DOM.dbDateEnd.value : '';
-
-        var filteredData = [];
-        for (var j = 0; j < attendance.length; j++) {
-            var item = attendance[j];
-            var match = true;
-            if (searchTerm) {
-                match = match && (
-                    item.nisn.toLowerCase().includes(searchTerm) ||
-                    item.name.toLowerCase().includes(searchTerm) ||
-                    item.className.toLowerCase().includes(searchTerm)
-                );
-            }
-            if (startDate && endDate) {
-                match = match && item.date >= startDate && item.date <= endDate;
-            } else if (startDate) {
-                match = match && item.date >= startDate;
-            } else if (endDate) {
-                match = match && item.date <= endDate;
-            }
-            if (match) filteredData.push(item);
-        }
-
-        if (DOM.attendanceTableBody) DOM.attendanceTableBody.innerHTML = '';
-
-        if (filteredData.length === 0) {
-            if (DOM.emptyDatabase) DOM.emptyDatabase.style.display = 'block';
-            return;
-        }
-
-        if (DOM.emptyDatabase) DOM.emptyDatabase.style.display = 'none';
-
-        for (var k = 0; k < filteredData.length; k++) {
-            var item = filteredData[k];
-            var date = new Date(item.timestamp);
-            var dateText = date.toLocaleDateString('id-ID');
-            var timeText = date.toLocaleTimeString('id-ID', { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit' 
-            });
-
-            var row = document.createElement('tr');
-            row.innerHTML = 
-                '<td>' + (k + 1) + '</td>' +
-                '<td><strong>' + escapeHTML(item.nisn) + '</strong></td>' +
-                '<td>' + escapeHTML(item.name) + '</td>' +
-                '<td>' + escapeHTML(item.className) + '</td>' +
-                '<td><span class="status-pill"><span class="status-dot"></span>' + 
-                    escapeHTML(item.status) + '</span></td>' +
-                '<td>' + dateText + '</td>' +
-                '<td>' + timeText + '</td>' +
-                '<td>' + escapeHTML(item.method) + '</td>' +
-                '<td>' + Number(item.confidence).toFixed(1) + '%</td>' +
-                '<td><div class="row-actions"><button class="row-action-btn" data-id="' + 
-                    item.id + '" title="Hapus"><svg viewBox="0 0 24 24" width="16" height="16" ' +
-                    'fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' +
-                    '<line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>' +
-                    '</svg></button></div></td>';
-            if (DOM.attendanceTableBody) DOM.attendanceTableBody.appendChild(row);
-        }
-
-        document.querySelectorAll('.row-action-btn').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                var id = this.dataset.id;
-                showDeleteConfirm(id);
-            });
-        });
-    }
-
-    // =========================================================
-    // DELETE FUNCTIONS
-    // =========================================================
-
-    function showDeleteConfirm(id) {
-        var oldDialog = document.getElementById('deleteDialog');
-        if (oldDialog) oldDialog.remove();
-
-        var dialog = document.createElement('div');
-        dialog.id = 'deleteDialog';
-        dialog.className = 'delete-dialog-overlay';
-        dialog.innerHTML = 
-            '<div class="delete-dialog">' +
-                '<div class="delete-dialog-icon">🗑️</div>' +
-                '<h3>Hapus Data Presensi</h3>' +
-                '<p>Apakah Anda yakin ingin menghapus data ini?</p>' +
-                '<p class="delete-dialog-sub">Tindakan ini tidak dapat dibatalkan.</p>' +
-                '<div class="delete-dialog-actions">' +
-                    '<button class="delete-cancel-btn">Batal</button>' +
-                    '<button class="delete-confirm-btn" data-id="' + id + '">Hapus</button>' +
-                '</div>' +
-            '</div>';
-        document.body.appendChild(dialog);
-
-        dialog.querySelector('.delete-cancel-btn').addEventListener('click', function() {
-            dialog.remove();
-        });
-
-        dialog.querySelector('.delete-confirm-btn').addEventListener('click', function() {
-            var id = this.dataset.id;
-            deleteAttendanceRecord(id);
-            dialog.remove();
-        });
-
-        dialog.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.remove();
-            }
-        });
-    }
-
-    function deleteAttendanceRecord(id) {
-        var attendance = getAttendance();
-        var record = null;
-        for (var i = 0; i < attendance.length; i++) {
-            if (attendance[i].id === id) {
-                record = attendance[i];
-                break;
-            }
-        }
-        if (!record) {
-            showToast('Data tidak ditemukan.');
-            return;
-        }
-        
-        var newAttendance = [];
-        for (var j = 0; j < attendance.length; j++) {
-            if (attendance[j].id !== id) {
-                newAttendance.push(attendance[j]);
-            }
-        }
-        saveAttendance(newAttendance);
-        renderDatabase();
-        showToast('Data presensi ' + record.name + ' telah dihapus.');
-    }
-
-    function deleteAllAttendance() {
-        var oldDialog = document.getElementById('deleteDialog');
-        if (oldDialog) oldDialog.remove();
-
-        var dialog = document.createElement('div');
-        dialog.id = 'deleteDialog';
-        dialog.className = 'delete-dialog-overlay';
-        dialog.innerHTML = 
-            '<div class="delete-dialog delete-all-dialog">' +
-                '<div class="delete-dialog-icon">⚠️</div>' +
-                '<h3>Hapus Semua Data?</h3>' +
-                '<p>Anda akan menghapus <strong>SEMUA</strong> data presensi.</p>' +
-                '<p class="delete-dialog-sub">Tindakan ini tidak dapat dibatalkan!</p>' +
-                '<div class="delete-dialog-actions">' +
-                    '<button class="delete-cancel-btn">Batal</button>' +
-                    '<button class="delete-confirm-btn delete-all-btn">Hapus Semua</button>' +
-                '</div>' +
-            '</div>';
-        document.body.appendChild(dialog);
-
-        dialog.querySelector('.delete-cancel-btn').addEventListener('click', function() {
-            dialog.remove();
-        });
-
-        dialog.querySelector('.delete-all-btn').addEventListener('click', function() {
-            var attendance = getAttendance();
-            if (attendance.length === 0) {
-                showToast('Tidak ada data untuk dihapus.');
-                dialog.remove();
-                return;
-            }
-            saveAttendance([]);
-            renderDatabase();
-            showToast('Semua data presensi (' + attendance.length + ' data) telah dihapus.');
-            dialog.remove();
-        });
-
-        dialog.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.remove();
-            }
-        });
-    }
-
-    // =========================================================
-    // DATABASE EVENTS
-    // =========================================================
-
-    if (DOM.dbFilterBtn) {
-        DOM.dbFilterBtn.addEventListener('click', renderDatabase);
-    }
-    if (DOM.dbSearch) {
-        DOM.dbSearch.addEventListener('input', renderDatabase);
-    }
-    if (DOM.dbDateStart) {
-        DOM.dbDateStart.addEventListener('change', renderDatabase);
-    }
-    if (DOM.dbDateEnd) {
-        DOM.dbDateEnd.addEventListener('change', renderDatabase);
-    }
-
-    if (DOM.dbDeleteAllBtn) {
-        DOM.dbDeleteAllBtn.addEventListener('click', deleteAllAttendance);
-    }
-
-    // =========================================================
-    // EXPORT
-    // =========================================================
-
-    if (DOM.dbExportBtn) {
-        DOM.dbExportBtn.addEventListener('click', function() {
-            var attendance = getAttendance();
-            if (attendance.length === 0) {
-                showToast('Tidak ada data untuk diekspor.');
-                return;
-            }
-            exportToCSV(attendance);
-        });
-    }
-
-    function exportToCSV(data) {
-        try {
-            var headers = ['No', 'NISN', 'Nama', 'Kelas', 'Status', 'Tanggal', 'Waktu', 'Metode', 'Confidence'];
-            var csvRows = [headers.join(',')];
-            
-            for (var i = 0; i < data.length; i++) {
-                var item = data[i];
-                var date = new Date(item.timestamp);
-                var dateText = date.toLocaleDateString('id-ID');
-                var timeText = date.toLocaleTimeString('id-ID', { 
-                    hour: '2-digit', 
-                    minute: '2-digit', 
-                    second: '2-digit' 
-                });
-                
-                var row = [
-                    i + 1,
-                    item.nisn,
-                    '"' + item.name + '"',
-                    '"' + item.className + '"',
-                    item.status,
-                    item.date,
-                    timeText,
-                    item.method,
-                    Number(item.confidence).toFixed(1) + '%'
-                ];
-                csvRows.push(row.join(','));
-            }
-            
-            var csvString = csvRows.join('\n');
-            var blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-            var link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'presensi_' + getLocalDate() + '.csv';
-            link.click();
-            URL.revokeObjectURL(link.href);
-            showToast('Berhasil export ' + data.length + ' data.');
-        } catch (error) {
-            console.error('[Export CSV]', error);
-            showToast('Gagal export ke CSV.');
-        }
-    }
-
-    // =========================================================
-    // BUTTON EVENTS
-    // =========================================================
-
-    if (DOM.attendanceCameraButton) {
-        DOM.attendanceCameraButton.addEventListener('click', function() {
-            if (attendanceStream) {
-                stopAttendanceCamera();
-            } else {
-                startAttendanceCamera();
-            }
-        });
-    }
-
-    if (DOM.cameraEnrollmentButton) {
-        DOM.cameraEnrollmentButton.addEventListener('click', function() {
-            if (enrollmentStream) {
-                stopEnrollmentCamera();
-                setValidation('Kamera dimatikan.', true);
-            } else {
-                startEnrollmentCamera();
-            }
-        });
-    }
-
-    // =========================================================
-    // FULLSCREEN
-    // =========================================================
-
-    if (DOM.fullscreenButton) {
-        DOM.fullscreenButton.addEventListener('click', async function() {
-            var stage = document.querySelector('.attendance-stage');
-            try {
-                if (!document.fullscreenElement) {
-                    await stage.requestFullscreen();
-                } else {
-                    await document.exitFullscreen();
-                }
-            } catch (error) {
-                console.error('[Fullscreen]', error);
-                showToast('Fullscreen tidak tersedia.');
-            }
-        });
-    }
-
-    // =========================================================
-    // VISIBILITY
-    // =========================================================
-
-    document.addEventListener('visibilitychange', function() {
-        if (document.hidden) {
-            stopAttendanceCamera();
-            stopEnrollmentCamera();
-        }
-    });
-
-    window.addEventListener('beforeunload', function() {
-        stopAttendanceCamera();
-        stopEnrollmentCamera();
-    });
-
-    // =========================================================
-    // INIT - MAIN ENTRY
-    // =========================================================
-
-    function init() {
-        console.log('[Amanah ID] Initializing...');
-        
-        // Set default dates
-        if (DOM.dbDateStart) {
-            var defaultStart = new Date();
-            defaultStart.setDate(defaultStart.getDate() - 7);
-            DOM.dbDateStart.value = defaultStart.toISOString().split('T')[0];
-        }
-        if (DOM.dbDateEnd) {
-            DOM.dbDateEnd.value = getLocalDate();
-        }
-        
-        // Setup admin
-        initDefaultAdmin();
-        applyLanguage(language);
-        
-        // Handle auth
-        handleAuth();
-        
-        console.log('[Amanah ID] Ready!');
-    }
-
-    // Start
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-
-})();
-</script>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script src="app.js"></script>
 
 </body>
 </html>
