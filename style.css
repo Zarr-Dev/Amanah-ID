@@ -103,10 +103,10 @@ img, video {
 
 .auth-container {
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     background: var(--surface);
     border-radius: var(--radius);
-    padding: 36px 30px;
+    padding: 40px 32px;
     box-shadow: 0 20px 60px rgba(10, 37, 64, 0.08);
     border: 1px solid var(--border);
     position: relative;
@@ -191,13 +191,13 @@ img, video {
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-/* LANGUAGE SWITCHER - RAPIH & KOMPAK */
+/* LANGUAGE SWITCHER - DIPERPERSEMPIT */
 .language-switcher {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    padding: 3px 4px;
+    gap: 2px;
+    padding: 2px 3px;
     border: 1px solid var(--border);
     border-radius: 999px;
     background: var(--surface-soft);
@@ -205,11 +205,11 @@ img, video {
 }
 
 .lang-opt {
-    padding: 5px 14px;
+    padding: 3px 10px;
     border-radius: 999px;
     background: transparent;
     color: var(--muted);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     transition: var(--transition);
 }
@@ -772,9 +772,9 @@ main {
 }
 
 .page-container {
-    width: min(1280px, calc(100% - 32px));
+    width: min(1300px, calc(100% - 40px));
     margin: 0 auto;
-    padding: 28px 0 50px;
+    padding: 32px 0 60px;
 }
 
 /* =========================================================
@@ -993,12 +993,12 @@ main {
 .db-stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
+    gap: 16px;
     margin-bottom: 22px;
 }
 
 .db-stat-card {
-    padding: 16px 20px;
+    padding: 20px 22px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -1022,7 +1022,7 @@ main {
     display: block;
     margin-top: 4px;
     font-family: "Montserrat", sans-serif;
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 900;
     color: var(--text);
 }
@@ -1502,7 +1502,7 @@ tbody tr:hover {
 }
 
 .footer-content {
-    max-width: 1280px;
+    max-width: 1300px;
     margin: 0 auto;
     display: flex;
     align-items: center;
@@ -1672,8 +1672,8 @@ tbody tr:hover {
     }
     
     .page-container {
-        width: min(100% - 20px, 1280px);
-        padding: 18px 0 35px;
+        width: min(100% - 24px, 1300px);
+        padding: 24px 0 45px;
     }
     
     .db-stats-grid {
@@ -1737,7 +1737,7 @@ tbody tr:hover {
     }
     
     .auth-container {
-        padding: 28px 20px;
+        padding: 32px 24px;
     }
     
     .footer-content {

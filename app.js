@@ -1,7 +1,7 @@
 "use strict";
 
 /* =========================================================
-   AMANAH ID v3.0 - ULTRA FAST
+   AMANAH ID v3.0 - ULTRA FAST & ACCURATE
 ========================================================= */
 
 (function() {
@@ -28,6 +28,7 @@
         signupForm: getEl('signupForm'),
         loginEmail: getEl('loginEmail'),
         loginPassword: getEl('loginPassword'),
+        loginAgree: getEl('loginAgree'),
         loginButton: getEl('loginButton'),
         signupName: getEl('signupName'),
         signupEmail: getEl('signupEmail'),
@@ -108,6 +109,7 @@
     var enrollmentProgress = 0;
     var enrollmentReadyFrames = 0;
     var stabilityHistory = [];
+    var enrollmentStage = 'front'; // front, right, left
 
     var attendanceMatchStudentId = null;
     var attendanceMatchFrames = 0;
@@ -122,7 +124,7 @@
     };
 
     // =========================================================
-    // LANGUAGE - LENGKAP 100%
+    // LANGUAGE - LENGKAP 100% (DEFAULT ENGLISH)
     // =========================================================
 
     var translations = {
@@ -190,7 +192,58 @@
             search: 'Cari nama, NISN, atau kelas...',
             export: 'Export',
             deleteAll: 'Hapus Semua',
-            save: 'Simpan'
+            save: 'Simpan',
+            welcome: 'Selamat datang',
+            presensi: 'presensi',
+            deleteConfirmTitle: 'Hapus Data Presensi',
+            deleteConfirmDesc: 'Apakah Anda yakin ingin menghapus data ini?',
+            deleteAllConfirmTitle: 'Hapus Semua Data?',
+            deleteAllConfirmDesc: 'Anda akan menghapus SEMUA data presensi dan siswa.',
+            deleteConfirmSub: 'Tindakan ini tidak dapat dibatalkan!',
+            cancel: 'Batal',
+            confirm: 'Hapus',
+            confirmAll: 'Hapus Semua',
+            loginAgree: 'Saya setuju dengan Syarat & Ketentuan',
+            frontFace: 'Posisikan wajah dari depan',
+            rightFace: 'Posisikan wajah dari kanan',
+            leftFace: 'Posisikan wajah dari kiri',
+            faceCaptured: 'Wajah berhasil ditangkap!',
+            faceVerified: 'Foto wajah berhasil diverifikasi!',
+            studentRegistered: 'berhasil didaftarkan!',
+            attendanceRecorded: 'presensi!',
+            profileSaved: 'Profil berhasil disimpan.',
+            photoChanged: 'Foto profil diperbarui.',
+            photoDeleted: 'Foto profil dihapus.',
+            noPhoto: 'Tidak ada foto untuk dihapus.',
+            cameraFailed: 'Kamera gagal diakses.',
+            cameraUnavailable: 'Kamera tidak tersedia',
+            invalidName: 'Nama belum valid.',
+            invalidEmail: 'Email tidak valid.',
+            invalidPassword: 'Password minimal 6 karakter.',
+            emailRequired: 'Harap isi email dan password.',
+            invalidCredentials: 'Email atau password salah.',
+            emailTaken: 'Email sudah terdaftar.',
+            accountCreated: 'Akun berhasil dibuat! Silakan login.',
+            logoutSuccess: 'Keluar berhasil.',
+            agreeRequired: 'Harap setujui syarat & ketentuan.',
+            fillAllFields: 'Harap isi semua field.',
+            termsAgreed: 'Terima kasih telah menyetujui syarat & ketentuan.',
+            nisnOnlyNumbers: 'NISN hanya angka.',
+            nisnTaken: 'NISN sudah terdaftar.',
+            faceNotVerified: 'Wajah belum diverifikasi.',
+            noData: 'Tidak ada data.',
+            dataDeleted: 'Data dihapus.',
+            allDataDeleted: 'Semua data dihapus.',
+            exportSuccess: 'Export data berhasil.',
+            exportFailed: 'Gagal export.',
+            aiReady: 'Sistem AI siap digunakan.',
+            aiLoading: 'AI disiapkan...',
+            aiFailed: 'AI gagal dimuat.',
+            loadingTimeout: 'AI loading timeout',
+            retry: 'Coba Lagi',
+            fullscreenUnavailable: 'Fullscreen tidak tersedia.',
+            confirmDelete: 'Hapus',
+            cancelDelete: 'Batal'
         },
         en: {
             login: 'Log in',
@@ -256,7 +309,58 @@
             search: 'Search name, NISN, or class...',
             export: 'Export',
             deleteAll: 'Delete All',
-            save: 'Save'
+            save: 'Save',
+            welcome: 'Welcome',
+            presensi: 'attendance',
+            deleteConfirmTitle: 'Delete Attendance Record',
+            deleteConfirmDesc: 'Are you sure you want to delete this data?',
+            deleteAllConfirmTitle: 'Delete All Data?',
+            deleteAllConfirmDesc: 'You are about to delete ALL attendance and student data.',
+            deleteConfirmSub: 'This action cannot be undone!',
+            cancel: 'Cancel',
+            confirm: 'Delete',
+            confirmAll: 'Delete All',
+            loginAgree: 'I agree to the Terms & Conditions',
+            frontFace: 'Position your face from the front',
+            rightFace: 'Position your face from the right',
+            leftFace: 'Position your face from the left',
+            faceCaptured: 'Face captured successfully!',
+            faceVerified: 'Face photo verified successfully!',
+            studentRegistered: 'registered successfully!',
+            attendanceRecorded: 'attendance recorded!',
+            profileSaved: 'Profile saved successfully.',
+            photoChanged: 'Profile photo updated.',
+            photoDeleted: 'Profile photo deleted.',
+            noPhoto: 'No photo to delete.',
+            cameraFailed: 'Camera access failed.',
+            cameraUnavailable: 'Camera unavailable',
+            invalidName: 'Name is not valid.',
+            invalidEmail: 'Email is not valid.',
+            invalidPassword: 'Password must be at least 6 characters.',
+            emailRequired: 'Please fill in email and password.',
+            invalidCredentials: 'Email or password is incorrect.',
+            emailTaken: 'Email is already registered.',
+            accountCreated: 'Account created! Please log in.',
+            logoutSuccess: 'Logged out successfully.',
+            agreeRequired: 'Please agree to the terms & conditions.',
+            fillAllFields: 'Please fill in all fields.',
+            termsAgreed: 'Thank you for agreeing to the terms & conditions.',
+            nisnOnlyNumbers: 'NISN must contain only numbers.',
+            nisnTaken: 'NISN is already registered.',
+            faceNotVerified: 'Face has not been verified.',
+            noData: 'No data available.',
+            dataDeleted: 'Data deleted.',
+            allDataDeleted: 'All data deleted.',
+            exportSuccess: 'Data exported successfully.',
+            exportFailed: 'Export failed.',
+            aiReady: 'AI system is ready.',
+            aiLoading: 'AI is loading...',
+            aiFailed: 'AI failed to load.',
+            loadingTimeout: 'AI loading timeout',
+            retry: 'Retry',
+            fullscreenUnavailable: 'Fullscreen not available.',
+            confirmDelete: 'Delete',
+            cancelDelete: 'Cancel'
         },
         ar: {
             login: 'دخول',
@@ -322,15 +426,66 @@
             search: 'ابحث عن الاسم أو NISN أو الفصل...',
             export: 'تصدير',
             deleteAll: 'حذف الكل',
-            save: 'حفظ'
+            save: 'حفظ',
+            welcome: 'مرحباً',
+            presensi: 'الحضور',
+            deleteConfirmTitle: 'حذف سجل الحضور',
+            deleteConfirmDesc: 'هل أنت متأكد من رغبتك في حذف هذه البيانات؟',
+            deleteAllConfirmTitle: 'حذف جميع البيانات؟',
+            deleteAllConfirmDesc: 'أنت على وشك حذف جميع بيانات الحضور والطلاب.',
+            deleteConfirmSub: 'لا يمكن التراجع عن هذا الإجراء!',
+            cancel: 'إلغاء',
+            confirm: 'حذف',
+            confirmAll: 'حذف الكل',
+            loginAgree: 'أوافق على الشروط والأحكام',
+            frontFace: 'ضع وجهك من الأمام',
+            rightFace: 'ضع وجهك من اليمين',
+            leftFace: 'ضع وجهك من اليسار',
+            faceCaptured: 'تم التقاط الوجه بنجاح!',
+            faceVerified: 'تم التحقق من صورة الوجه بنجاح!',
+            studentRegistered: 'تم التسجيل بنجاح!',
+            attendanceRecorded: 'تم تسجيل الحضور!',
+            profileSaved: 'تم حفظ الملف الشخصي بنجاح.',
+            photoChanged: 'تم تحديث صورة الملف الشخصي.',
+            photoDeleted: 'تم حذف صورة الملف الشخصي.',
+            noPhoto: 'لا توجد صورة للحذف.',
+            cameraFailed: 'فشل الوصول إلى الكاميرا.',
+            cameraUnavailable: 'الكاميرا غير متاحة',
+            invalidName: 'الاسم غير صالح.',
+            invalidEmail: 'البريد الإلكتروني غير صالح.',
+            invalidPassword: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل.',
+            emailRequired: 'يرجى ملء البريد الإلكتروني وكلمة المرور.',
+            invalidCredentials: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+            emailTaken: 'البريد الإلكتروني مسجل بالفعل.',
+            accountCreated: 'تم إنشاء الحساب! يرجى تسجيل الدخول.',
+            logoutSuccess: 'تم تسجيل الخروج بنجاح.',
+            agreeRequired: 'يرجى الموافقة على الشروط والأحكام.',
+            fillAllFields: 'يرجى ملء جميع الحقول.',
+            termsAgreed: 'شكراً لموافقتك على الشروط والأحكام.',
+            nisnOnlyNumbers: 'NISN يجب أن يحتوي على أرقام فقط.',
+            nisnTaken: 'NISN مسجل بالفعل.',
+            faceNotVerified: 'لم يتم التحقق من الوجه.',
+            noData: 'لا توجد بيانات.',
+            dataDeleted: 'تم حذف البيانات.',
+            allDataDeleted: 'تم حذف جميع البيانات.',
+            exportSuccess: 'تم تصدير البيانات بنجاح.',
+            exportFailed: 'فشل التصدير.',
+            aiReady: 'نظام الذكاء الاصطناعي جاهز.',
+            aiLoading: 'جاري تحميل الذكاء الاصطناعي...',
+            aiFailed: 'فشل تحميل الذكاء الاصطناعي.',
+            loadingTimeout: 'انتهت مهلة تحميل الذكاء الاصطناعي',
+            retry: 'إعادة المحاولة',
+            fullscreenUnavailable: 'وضع ملء الشاشة غير متاح.',
+            confirmDelete: 'حذف',
+            cancelDelete: 'إلغاء'
         }
     };
 
-    var currentLang = localStorage.getItem(STORAGE_KEYS.LANGUAGE) || 'id';
+    var currentLang = localStorage.getItem(STORAGE_KEYS.LANGUAGE) || 'en';
 
     function translate(key) {
         return (translations[currentLang] && translations[currentLang][key]) || 
-               (translations['id'] && translations['id'][key]) || key;
+               (translations['en'] && translations['en'][key]) || key;
     }
 
     function applyLanguage(lang) {
@@ -515,16 +670,21 @@
         }
     }
 
-    // LOGIN
+    // LOGIN - dengan checkbox agree
     if (DOM.loginForm) {
         DOM.loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            if (DOM.loginAgree && !DOM.loginAgree.checked) {
+                showToast(translate('agreeRequired'));
+                return;
+            }
             
             var email = DOM.loginEmail ? DOM.loginEmail.value.trim() : '';
             var password = DOM.loginPassword ? DOM.loginPassword.value.trim() : '';
 
             if (!email || !password) {
-                showToast(translate('email') + ' dan ' + translate('password') + ' harus diisi.');
+                showToast(translate('emailRequired'));
                 return;
             }
 
@@ -538,14 +698,14 @@
             }
 
             if (!user) {
-                showToast(translate('email') + ' atau ' + translate('password') + ' salah.');
+                showToast(translate('invalidCredentials'));
                 return;
             }
 
             localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(user));
             currentUser = user;
             isAuthenticated = true;
-            showToast('Selamat datang, ' + user.name + '!');
+            showToast(translate('welcome') + ', ' + user.name + '!');
             goToDashboard();
         });
     }
@@ -561,29 +721,29 @@
             var confirm = DOM.signupConfirm ? DOM.signupConfirm.value.trim() : '';
 
             if (!name || !email || !password || !confirm) {
-                showToast('Harap isi semua field.');
+                showToast(translate('fillAllFields'));
                 return;
             }
 
             if (password.length < 6) {
-                showToast('Password minimal 6 karakter.');
+                showToast(translate('invalidPassword'));
                 return;
             }
 
             if (password !== confirm) {
-                showToast('Password tidak cocok.');
+                showToast(translate('invalidPassword'));
                 return;
             }
 
             if (DOM.signupAgree && !DOM.signupAgree.checked) {
-                showToast('Harap setujui syarat & ketentuan.');
+                showToast(translate('agreeRequired'));
                 return;
             }
 
             var users = getUsers();
             for (var i = 0; i < users.length; i++) {
                 if (users[i].email === email) {
-                    showToast('Email sudah terdaftar.');
+                    showToast(translate('emailTaken'));
                     return;
                 }
             }
@@ -600,7 +760,7 @@
             users.push(newUser);
             saveUsers(users);
             
-            showToast('Akun berhasil dibuat! Silakan login.');
+            showToast(translate('accountCreated'));
             
             if (DOM.signupName) DOM.signupName.value = '';
             if (DOM.signupEmail) DOM.signupEmail.value = '';
@@ -613,12 +773,16 @@
             if (loginTab) loginTab.click();
             if (DOM.loginEmail) DOM.loginEmail.value = email;
             if (DOM.loginPassword) DOM.loginPassword.value = '';
+            if (DOM.loginAgree) DOM.loginAgree.checked = true;
         });
     }
 
-    // LOGOUT
+    // LOGOUT - tutup profile modal
     if (DOM.logoutButton) {
         DOM.logoutButton.addEventListener('click', function() {
+            // Tutup profile modal
+            if (DOM.profileModal) DOM.profileModal.classList.remove('show');
+            
             localStorage.removeItem(STORAGE_KEYS.SESSION);
             isAuthenticated = false;
             currentUser = null;
@@ -629,7 +793,7 @@
             if (DOM.authPage) DOM.authPage.style.display = 'flex';
             stopAttendanceCamera();
             stopEnrollmentCamera();
-            showToast(translate('logout') + ' berhasil.');
+            showToast(translate('logoutSuccess'));
         });
     }
 
@@ -650,14 +814,22 @@
                 if (DOM.signupAgree) DOM.signupAgree.checked = false;
                 if (DOM.signupButton) DOM.signupButton.disabled = true;
             }
+            if (this.dataset.tab === 'login') {
+                if (DOM.loginAgree) DOM.loginAgree.checked = true;
+            }
         });
     });
 
-    // CHECKBOX
+    // CHECKBOX - Signup
     if (DOM.signupAgree) {
         DOM.signupAgree.addEventListener('change', function() {
             if (DOM.signupButton) DOM.signupButton.disabled = !this.checked;
         });
+    }
+
+    // CHECKBOX - Login
+    if (DOM.loginAgree) {
+        DOM.loginAgree.checked = true;
     }
 
     // TERMS
@@ -679,7 +851,8 @@
             if (DOM.termsModal) DOM.termsModal.style.display = 'none';
             if (DOM.signupAgree) DOM.signupAgree.checked = true;
             if (DOM.signupButton) DOM.signupButton.disabled = false;
-            showToast('Terima kasih telah menyetujui syarat & ketentuan.');
+            if (DOM.loginAgree) DOM.loginAgree.checked = true;
+            showToast(translate('termsAgreed'));
         });
     }
 
@@ -730,7 +903,7 @@
         }
         localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(currentUser));
         renderProfile();
-        showToast('Foto profil dihapus.');
+        showToast(translate('photoDeleted'));
     }
 
     if (DOM.profileButton) {
@@ -760,7 +933,7 @@
             if (currentUser && currentUser.profilePhoto) {
                 clearProfilePhoto();
             } else {
-                showToast('Tidak ada foto untuk dihapus.');
+                showToast(translate('noPhoto'));
             }
         });
         DOM.profileAvatar.style.cursor = 'pointer';
@@ -783,7 +956,7 @@
                     }
                     localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(currentUser));
                     renderProfile();
-                    showToast('Foto profil diperbarui.');
+                    showToast(translate('photoChanged'));
                 }
             };
             reader.readAsDataURL(file);
@@ -798,17 +971,17 @@
             var password = DOM.profilePassword ? DOM.profilePassword.value.trim() : '';
             
             if (name.length < 2) {
-                showToast('Nama belum valid.');
+                showToast(translate('invalidName'));
                 return;
             }
             
             if (!email || email.length < 3) {
-                showToast('Email tidak valid.');
+                showToast(translate('invalidEmail'));
                 return;
             }
             
             if (password.length < 6) {
-                showToast('Password minimal 6 karakter.');
+                showToast(translate('invalidPassword'));
                 return;
             }
             
@@ -822,9 +995,9 @@
             saveUsers(users);
             localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(currentUser));
             
-            if (DOM.welcomeMessage) DOM.welcomeMessage.textContent = 'Selamat datang, ' + currentUser.name + '!';
+            if (DOM.welcomeMessage) DOM.welcomeMessage.textContent = translate('welcome') + ', ' + currentUser.name + '!';
             if (DOM.profileModal) DOM.profileModal.classList.remove('show');
-            showToast('Profil berhasil disimpan.');
+            showToast(translate('profileSaved'));
         });
     }
 
@@ -884,7 +1057,6 @@
             ]);
         }
 
-        // Coba cepat dengan timeout
         Promise.race([
             loadModelSet('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models'),
             new Promise(function(_, reject) {
@@ -898,15 +1070,17 @@
             modelLoadingStarted = false;
             console.log('[Amanah ID] AI models ready!');
             updateSaveButton();
+            showToast(translate('aiReady'));
         }).catch(function(err) {
             console.error('[Amanah ID] Model load error:', err);
             clearTimeout(loadTimeout);
             modelLoadingStarted = false;
+            showToast(translate('aiFailed'));
         });
     }
 
     // =========================================================
-    // CAMERA HELPERS - CEPAT
+    // CAMERA HELPERS
     // =========================================================
 
     function requestCamera() {
@@ -934,12 +1108,12 @@
     }
 
     // =========================================================
-    // ATTENDANCE - SUPER CEPAT & AKURAT
+    // ATTENDANCE - SUPER AKURAT
     // =========================================================
 
     async function startAttendanceCamera() {
         if (!modelsReady) {
-            showToast('AI disiapkan...');
+            showToast(translate('aiLoading'));
             if (!modelLoadingStarted) loadModelsBackground();
             return;
         }
@@ -953,14 +1127,14 @@
                 DOM.attendanceVideo.srcObject = attendanceStream;
                 await DOM.attendanceVideo.play();
             }
-            if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = 'Mencari wajah...';
+            if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = translate('cameraOn');
             if (DOM.attendanceCameraButton) DOM.attendanceCameraButton.title = 'Matikan kamera';
             startAttendanceLoop();
         } catch (error) {
             console.error('[Attendance Camera]', error);
-            if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = 'Kamera tidak tersedia';
+            if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = translate('cameraUnavailable');
             if (DOM.attendanceError) DOM.attendanceError.classList.add('show');
-            showToast('Kamera gagal diakses.');
+            showToast(translate('cameraFailed'));
         }
     }
 
@@ -973,7 +1147,7 @@
         if (DOM.attendanceVideo) DOM.attendanceVideo.srcObject = null;
         if (DOM.attendanceOverlay) DOM.attendanceOverlay.innerHTML = '';
         if (DOM.welcomeMessage) DOM.welcomeMessage.classList.remove('show');
-        if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = 'Kamera belum aktif';
+        if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = translate('cameraOff');
         if (DOM.attendanceCameraButton) DOM.attendanceCameraButton.title = 'Aktifkan kamera';
         attendanceProcessing = false;
         attendanceMatchStudentId = null;
@@ -982,7 +1156,7 @@
 
     function startAttendanceLoop() {
         if (attendanceTimer) clearInterval(attendanceTimer);
-        attendanceTimer = setInterval(processAttendanceFrame, 250);
+        attendanceTimer = setInterval(processAttendanceFrame, 200);
     }
 
     async function processAttendanceFrame() {
@@ -995,13 +1169,13 @@
         try {
             var detections = await faceapi.detectAllFaces(
                 DOM.attendanceVideo,
-                new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.45 })
+                new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.40 })
             ).withFaceLandmarks().withFaceDescriptors();
 
             if (DOM.attendanceOverlay) DOM.attendanceOverlay.innerHTML = '';
 
             if (detections.length === 0) {
-                if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = 'Mencari wajah...';
+                if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = translate('cameraOn');
                 if (DOM.welcomeMessage) DOM.welcomeMessage.classList.remove('show');
                 attendanceMatchStudentId = null;
                 attendanceMatchFrames = 0;
@@ -1055,7 +1229,7 @@
 
             if (attendanceMatchFrames >= 2) {
                 if (DOM.welcomeMessage) {
-                    DOM.welcomeMessage.textContent = 'Selamat datang, ' + student.name + '!';
+                    DOM.welcomeMessage.textContent = translate('welcome') + ', ' + student.name + '!';
                     DOM.welcomeMessage.classList.add('show');
                 }
                 registerAttendance(student, best.match.distance);
@@ -1150,16 +1324,16 @@
         attendance.unshift(record);
         saveAttendance(attendance);
         renderDatabase();
-        showToast(student.name + ' presensi!');
+        showToast(student.name + ' ' + translate('presensi') + '!');
     }
 
     // =========================================================
-    // ENROLLMENT - SUPER CEPAT & AKURAT (DIOPTIMASI)
+    // ENROLLMENT - 3 STAGE (FRONT, RIGHT, LEFT) - SUPER CEPAT
     // =========================================================
 
     async function startEnrollmentCamera() {
         if (!modelsReady) {
-            showToast('AI disiapkan...');
+            showToast(translate('aiLoading'));
             if (!modelLoadingStarted) loadModelsBackground();
             return;
         }
@@ -1168,6 +1342,7 @@
             stopEnrollmentCamera();
             resetEnrollmentState();
             clearEnrollmentImage();
+            enrollmentStage = 'front';
             enrollmentStream = await requestCamera();
             if (DOM.enrollmentVideo) {
                 DOM.enrollmentVideo.srcObject = enrollmentStream;
@@ -1177,12 +1352,12 @@
             if (DOM.enrollmentVideo) {
                 await waitForVideoReady(DOM.enrollmentVideo);
             }
-            setValidation('Kamera aktif. Posisikan wajah di tengah.', true);
+            setValidation(translate('frontFace'), true);
             startEnrollmentLoop();
         } catch (error) {
             console.error('[Enrollment Camera]', error);
             setValidation(getCameraErrorMessage(error), false);
-            showToast('Kamera gagal dibuka.');
+            showToast(translate('cameraFailed'));
         }
     }
 
@@ -1200,6 +1375,7 @@
         enrollmentProcessing = false;
         stabilityHistory = [];
         enrollmentReadyFrames = 0;
+        enrollmentStage = 'front';
     }
 
     function clearEnrollmentImage() {
@@ -1229,7 +1405,7 @@
 
     function startEnrollmentLoop() {
         if (enrollmentTimer) clearInterval(enrollmentTimer);
-        enrollmentTimer = setInterval(processEnrollmentFrame, 80);
+        enrollmentTimer = setInterval(processEnrollmentFrame, 60);
     }
 
     var detectionCounter = 0;
@@ -1243,16 +1419,15 @@
         detectionCounter++;
 
         try {
-            // OPTIMASI: inputSize 160 untuk deteksi lebih cepat & akurat
             var detections = await faceapi.detectAllFaces(
                 DOM.enrollmentVideo,
-                new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.40 })
+                new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.35 })
             ).withFaceLandmarks().withFaceDescriptors();
 
             if (detections.length === 0) {
                 enrollmentReadyFrames = 0;
                 updateEnrollmentProgress(0);
-                setValidation('Wajah belum terdeteksi.', false);
+                setValidation(translate('cameraOn'), false);
                 return;
             }
 
@@ -1312,13 +1487,13 @@
                               lightScore * 0.15 + stabilityScore * 0.25);
 
             if (finalScore > enrollmentProgress) {
-                enrollmentProgress = enrollmentProgress * 0.20 + finalScore * 0.80;
+                enrollmentProgress = enrollmentProgress * 0.15 + finalScore * 0.85;
             } else {
-                enrollmentProgress = enrollmentProgress * 0.40 + finalScore * 0.60;
+                enrollmentProgress = enrollmentProgress * 0.30 + finalScore * 0.70;
             }
 
             if (finalScore >= 80 && sizeScore >= 70 && centerScore >= 75) {
-                enrollmentProgress = Math.min(100, enrollmentProgress + 20);
+                enrollmentProgress = Math.min(100, enrollmentProgress + 25);
             }
 
             enrollmentProgress = clamp(enrollmentProgress, 0, 100);
@@ -1333,19 +1508,92 @@
                 enrollmentReadyFrames = 0;
             }
 
+            var stageMessages = {
+                front: translate('frontFace'),
+                right: translate('rightFace'),
+                left: translate('leftFace')
+            };
+
             if (enrollmentProgress < 25) setValidation('Mendeteksi wajah...', true);
             else if (enrollmentProgress < 50) setValidation('Analisis kualitas...', true);
             else if (enrollmentProgress < 75) setValidation('Pertahankan posisi...', true);
             else if (enrollmentProgress < 100) setValidation('Hampir selesai...', true);
-            else setValidation('Siap!', true);
+            else setValidation(translate('faceCaptured'), true);
 
             if (enrollmentProgress >= 100 && enrollmentReadyFrames >= 1) {
-                await captureEnrollment(detection);
+                await captureEnrollmentStage(detection);
             }
         } catch (error) {
             console.error('[Enrollment Detection]', error);
         } finally {
             enrollmentProcessing = false;
+        }
+    }
+
+    async function captureEnrollmentStage(detection) {
+        // Simpan descriptor untuk stage saat ini
+        if (!currentEnrollmentDescriptor) {
+            currentEnrollmentDescriptor = [];
+        }
+        currentEnrollmentDescriptor.push(Array.from(detection.descriptor));
+
+        // Update stage
+        if (enrollmentStage === 'front') {
+            enrollmentStage = 'right';
+            enrollmentProgress = 0;
+            enrollmentReadyFrames = 0;
+            stabilityHistory = [];
+            setValidation(translate('rightFace'), true);
+            updateEnrollmentProgress(0);
+            showToast('Sisi kanan berhasil!');
+        } else if (enrollmentStage === 'right') {
+            enrollmentStage = 'left';
+            enrollmentProgress = 0;
+            enrollmentReadyFrames = 0;
+            stabilityHistory = [];
+            setValidation(translate('leftFace'), true);
+            updateEnrollmentProgress(0);
+            showToast('Sisi kiri berhasil!');
+        } else if (enrollmentStage === 'left') {
+            // Selesai 3 stage
+            stopEnrollmentCamera();
+            
+            // Ambil rata-rata dari 3 descriptor
+            var avgDescriptor = [];
+            var len = currentEnrollmentDescriptor[0].length;
+            for (var i = 0; i < len; i++) {
+                var sum = 0;
+                for (var j = 0; j < currentEnrollmentDescriptor.length; j++) {
+                    sum += currentEnrollmentDescriptor[j][i];
+                }
+                avgDescriptor.push(sum / currentEnrollmentDescriptor.length);
+            }
+            currentEnrollmentDescriptor = avgDescriptor;
+            
+            // Capture image dari video
+            var canvas = document.createElement('canvas');
+            canvas.width = DOM.enrollmentVideo.videoWidth;
+            canvas.height = DOM.enrollmentVideo.videoHeight;
+            var context = canvas.getContext('2d');
+            if (context) {
+                context.translate(canvas.width, 0);
+                context.scale(-1, 1);
+                context.drawImage(DOM.enrollmentVideo, 0, 0, canvas.width, canvas.height);
+                currentEnrollmentImage = canvas.toDataURL('image/jpeg', 0.90);
+            }
+
+            if (DOM.enrollmentImage) {
+                DOM.enrollmentImage.src = currentEnrollmentImage || '';
+                DOM.enrollmentImage.classList.add('active', 'has-image');
+            }
+            if (DOM.enrollmentVideo) DOM.enrollmentVideo.classList.remove('active');
+            if (DOM.previewPlaceholder) DOM.previewPlaceholder.style.display = 'none';
+            addReplaceButton();
+
+            updateEnrollmentProgress(100);
+            setValidation(translate('faceVerified'), true);
+            updateSaveButton();
+            showToast(translate('faceCaptured'));
         }
     }
 
@@ -1395,40 +1643,10 @@
         enrollmentReadyFrames = 0;
         stabilityHistory = [];
         detectionCounter = 0;
+        enrollmentStage = 'front';
+        currentEnrollmentDescriptor = null;
         updateEnrollmentProgress(0);
         setValidation('', true);
-    }
-
-    async function captureEnrollment(detection) {
-        stopEnrollmentCamera();
-        var canvas = document.createElement('canvas');
-        canvas.width = DOM.enrollmentVideo.videoWidth;
-        canvas.height = DOM.enrollmentVideo.videoHeight;
-        var context = canvas.getContext('2d');
-        if (!context) { 
-            setValidation('Gagal memproses gambar.', false); 
-            return; 
-        }
-        context.translate(canvas.width, 0);
-        context.scale(-1, 1);
-        context.drawImage(DOM.enrollmentVideo, 0, 0, canvas.width, canvas.height);
-        var imageData = canvas.toDataURL('image/jpeg', 0.90);
-
-        currentEnrollmentDescriptor = Array.from(detection.descriptor);
-        currentEnrollmentImage = imageData;
-
-        if (DOM.enrollmentImage) {
-            DOM.enrollmentImage.src = imageData;
-            DOM.enrollmentImage.classList.add('active', 'has-image');
-        }
-        if (DOM.enrollmentVideo) DOM.enrollmentVideo.classList.remove('active');
-        if (DOM.previewPlaceholder) DOM.previewPlaceholder.style.display = 'none';
-        addReplaceButton();
-
-        updateEnrollmentProgress(100);
-        setValidation('Foto wajah berhasil!', true);
-        updateSaveButton();
-        showToast('Wajah berhasil ditangkap!');
     }
 
     function addReplaceButton() {
@@ -1470,7 +1688,7 @@
             }
 
             if (!modelsReady) {
-                setValidation('AI disiapkan, tunggu...', false);
+                setValidation(translate('aiLoading'), false);
                 if (!modelLoadingStarted) loadModelsBackground();
                 return;
             }
@@ -1487,7 +1705,7 @@
 
                 var detections = await faceapi.detectAllFaces(
                     image,
-                    new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.40 })
+                    new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.35 })
                 ).withFaceLandmarks().withFaceDescriptors();
 
                 if (detections.length === 0) {
@@ -1517,7 +1735,7 @@
                 currentEnrollmentDescriptor = Array.from(detection.descriptor);
                 currentEnrollmentImage = image.src;
                 updateEnrollmentProgress(100);
-                setValidation('Foto diterima!', true);
+                setValidation(translate('faceVerified'), true);
                 addReplaceButton();
                 updateSaveButton();
             } catch (error) {
@@ -1531,7 +1749,7 @@
     }
 
     // =========================================================
-    // FORM VALIDATION - CEPAT
+    // FORM VALIDATION
     // =========================================================
 
     if (DOM.nisnInput && DOM.studentNameInput && DOM.studentClassInput) {
@@ -1562,15 +1780,15 @@
             var name = DOM.studentNameInput ? DOM.studentNameInput.value.trim() : '';
             var className = DOM.studentClassInput ? DOM.studentClassInput.value.trim() : '';
 
-            if (!/^\d+$/.test(nisn)) { showToast('NISN hanya angka.'); return; }
-            if (name.length < 2) { showToast('Nama belum valid.'); return; }
+            if (!/^\d+$/.test(nisn)) { showToast(translate('nisnOnlyNumbers')); return; }
+            if (name.length < 2) { showToast(translate('invalidName')); return; }
             if (!className) { showToast('Kelas belum diisi.'); return; }
-            if (!currentEnrollmentDescriptor) { showToast('Wajah belum diverifikasi.'); return; }
+            if (!currentEnrollmentDescriptor) { showToast(translate('faceNotVerified')); return; }
 
             var students = getStudents();
             for (var i = 0; i < students.length; i++) {
                 if (students[i].nisn === nisn) {
-                    showToast('NISN sudah terdaftar.');
+                    showToast(translate('nisnTaken'));
                     return;
                 }
             }
@@ -1602,7 +1820,7 @@
             resetEnrollmentState();
             updateSaveButton();
             renderDatabase();
-            showToast(name + ' berhasil didaftarkan!');
+            showToast(name + ' ' + translate('studentRegistered'));
         });
     }
 
@@ -1708,7 +1926,7 @@
     }
 
     // =========================================================
-    // DELETE FUNCTIONS
+    // DELETE FUNCTIONS - HAPUS JUGA DATA SISWA
     // =========================================================
 
     function showDeleteConfirm(id) {
@@ -1721,12 +1939,12 @@
         dialog.innerHTML = 
             '<div class="delete-dialog">' +
                 '<div class="delete-dialog-icon">🗑️</div>' +
-                '<h3>Hapus Data Presensi</h3>' +
-                '<p>Apakah Anda yakin ingin menghapus data ini?</p>' +
-                '<p class="delete-dialog-sub">Tindakan ini tidak dapat dibatalkan.</p>' +
+                '<h3>' + translate('deleteConfirmTitle') + '</h3>' +
+                '<p>' + translate('deleteConfirmDesc') + '</p>' +
+                '<p class="delete-dialog-sub">' + translate('deleteConfirmSub') + '</p>' +
                 '<div class="delete-dialog-actions">' +
-                    '<button class="delete-cancel-btn">Batal</button>' +
-                    '<button class="delete-confirm-btn" data-id="' + id + '">Hapus</button>' +
+                    '<button class="delete-cancel-btn">' + translate('cancel') + '</button>' +
+                    '<button class="delete-confirm-btn" data-id="' + id + '">' + translate('confirm') + '</button>' +
                 '</div>' +
             '</div>';
         document.body.appendChild(dialog);
@@ -1769,8 +1987,21 @@
             }
         }
         saveAttendance(newAttendance);
+        
+        // Hapus siswa terkait jika tidak ada presensi lain
+        var students = getStudents();
+        var studentExists = newAttendance.some(function(item) {
+            return item.nisn === record.nisn;
+        });
+        if (!studentExists) {
+            var newStudents = students.filter(function(s) {
+                return s.nisn !== record.nisn;
+            });
+            saveStudents(newStudents);
+        }
+        
         renderDatabase();
-        showToast('Data ' + record.name + ' dihapus.');
+        showToast('Data ' + record.name + ' ' + translate('dataDeleted'));
     }
 
     function deleteAllAttendance() {
@@ -1783,12 +2014,12 @@
         dialog.innerHTML = 
             '<div class="delete-dialog delete-all-dialog">' +
                 '<div class="delete-dialog-icon">⚠️</div>' +
-                '<h3>Hapus Semua Data?</h3>' +
-                '<p>Anda akan menghapus SEMUA data presensi.</p>' +
-                '<p class="delete-dialog-sub">Tindakan ini tidak dapat dibatalkan!</p>' +
+                '<h3>' + translate('deleteAllConfirmTitle') + '</h3>' +
+                '<p>' + translate('deleteAllConfirmDesc') + '</p>' +
+                '<p class="delete-dialog-sub">' + translate('deleteConfirmSub') + '</p>' +
                 '<div class="delete-dialog-actions">' +
-                    '<button class="delete-cancel-btn">Batal</button>' +
-                    '<button class="delete-confirm-btn delete-all-btn">Hapus Semua</button>' +
+                    '<button class="delete-cancel-btn">' + translate('cancel') + '</button>' +
+                    '<button class="delete-confirm-btn delete-all-btn">' + translate('confirmAll') + '</button>' +
                 '</div>' +
             '</div>';
         document.body.appendChild(dialog);
@@ -1800,13 +2031,19 @@
         dialog.querySelector('.delete-all-btn').addEventListener('click', function() {
             var attendance = getAttendance();
             if (attendance.length === 0) {
-                showToast('Tidak ada data.');
+                showToast(translate('noData'));
                 dialog.remove();
                 return;
             }
+            
+            // Hapus semua attendance
             saveAttendance([]);
+            
+            // Hapus semua siswa
+            saveStudents([]);
+            
             renderDatabase();
-            showToast('Semua data (' + attendance.length + ') dihapus.');
+            showToast(translate('allDataDeleted'));
             dialog.remove();
         });
 
@@ -1836,14 +2073,14 @@
     }
 
     // =========================================================
-    // EXPORT
+    // EXPORT - dengan tanggal
     // =========================================================
 
     if (DOM.dbExportBtn) {
         DOM.dbExportBtn.addEventListener('click', function() {
             var attendance = getAttendance();
             if (attendance.length === 0) {
-                showToast('Tidak ada data.');
+                showToast(translate('noData'));
                 return;
             }
             exportToCSV(attendance);
@@ -1886,10 +2123,10 @@
             link.download = 'presensi_' + getLocalDate() + '.csv';
             link.click();
             URL.revokeObjectURL(link.href);
-            showToast('Export ' + data.length + ' data.');
+            showToast(translate('exportSuccess'));
         } catch (error) {
             console.error('[Export CSV]', error);
-            showToast('Gagal export.');
+            showToast(translate('exportFailed'));
         }
     }
 
@@ -1933,7 +2170,7 @@
                 }
             } catch (error) {
                 console.error('[Fullscreen]', error);
-                showToast('Fullscreen tidak tersedia.');
+                showToast(translate('fullscreenUnavailable'));
             }
         });
     }
