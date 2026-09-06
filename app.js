@@ -109,7 +109,8 @@
     var enrollmentProgress = 0;
     var enrollmentReadyFrames = 0;
     var stabilityHistory = [];
-    var enrollmentStage = 'front'; // front, right, left
+    var enrollmentStage = 'front'; // front, right, left, up, down
+    var enrollmentDescriptors = [];
 
     var attendanceMatchStudentId = null;
     var attendanceMatchFrames = 0;
@@ -183,7 +184,7 @@
             formDesc: 'Daftarkan identitas dan wajah siswa untuk presensi.',
             studentIdentity: 'Identitas Siswa',
             faceVerification: 'Verifikasi Wajah',
-            faceVerificationDesc: 'Gunakan kamera atau upload satu foto wajah untuk registrasi.',
+            faceVerificationDesc: 'Ambil wajah dari depan, kiri, kanan, atas, dan bawah agar presensi tetap akurat.',
             saveStudent: 'Simpan Data Siswa',
             uploadPhoto: 'Upload Foto',
             useCamera: 'Gunakan Kamera',
@@ -207,6 +208,8 @@
             frontFace: 'Posisikan wajah dari depan',
             rightFace: 'Posisikan wajah dari kanan',
             leftFace: 'Posisikan wajah dari kiri',
+            upFace: 'Angkat wajah sedikit ke atas',
+            downFace: 'Tundukkan wajah sedikit ke bawah',
             faceCaptured: 'Wajah berhasil ditangkap!',
             faceVerified: 'Foto wajah berhasil diverifikasi!',
             studentRegistered: 'berhasil didaftarkan!',
@@ -305,7 +308,7 @@
             formDesc: 'Register student identity and face for attendance.',
             studentIdentity: 'Student Identity',
             faceVerification: 'Face Verification',
-            faceVerificationDesc: 'Use camera or upload one face photo for registration.',
+            faceVerificationDesc: 'Capture front, left, right, up, and down angles for reliable attendance.',
             saveStudent: 'Save Student Data',
             uploadPhoto: 'Upload Photo',
             useCamera: 'Use Camera',
@@ -327,8 +330,10 @@
             confirmAll: 'Delete All',
             loginAgree: 'I agree to the Terms & Conditions',
             frontFace: 'Position your face from the front',
-            rightFace: 'Position your face from the right',
-            leftFace: 'Position your face from the left',
+            rightFace: 'Turn your face to the right',
+            leftFace: 'Turn your face to the left',
+            upFace: 'Tilt your face slightly upward',
+            downFace: 'Tilt your face slightly downward',
             faceCaptured: 'Face captured successfully!',
             faceVerified: 'Face photo verified successfully!',
             studentRegistered: 'registered successfully!',
@@ -1067,6 +1072,7 @@
         function loadModelSet(url) {
             return Promise.all([
                 faceapi.nets.tinyFaceDetector.loadFromUri(url),
+                faceapi.nets.ssdMobilenetv1.loadFromUri(url),
                 faceapi.nets.faceLandmark68Net.loadFromUri(url),
                 faceapi.nets.faceRecognitionNet.loadFromUri(url)
             ]);
@@ -1105,13 +1111,91 @@
         var constraints = {
             video: {
                 facingMode: { ideal: 'user' },
-                width: { ideal: 480, min: 240 },
-                height: { ideal: 360, min: 180 },
+                width: { ideal: 640, min: 320 },
+                height: { ideal: 480, min: 240 },
                 frameRate: { ideal: 30 }
             },
             audio: false
         };
         return navigator.mediaDevices.getUserMedia(constraints);
+    }
+
+    function createEnhancedFrame(source) {
+        var width = source.videoWidth || source.naturalWidth || source.width;
+        var height = source.videoHeight || source.naturalHeight || source.height;
+        var canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        var context = canvas.getContext('2d', { willReadFrequently: true });
+        if (!context || !width || !height) return source;
+
+        context.drawImage(source, 0, 0, width, height);
+        var image = context.getImageData(0, 0, width, height);
+        var sum = 0;
+        for (var i = 0; i < image.data.length; i += 4) {
+            sum += 0.299 * image.data[i] + 0.587 * image.data[i + 1] + 0.114 * image.data[i + 2];
+        }
+        var brightness = sum / (image.data.length / 4);
+        var gamma = brightness < 92 ? 0.72 : (brightness > 190 ? 1.12 : 1);
+        var contrast = brightness < 70 ? 1.18 : 1.05;
+        var midpoint = 128;
+        for (var p = 0; p < image.data.length; p += 4) {
+            image.data[p] = clamp(Math.pow(image.data[p] / 255, gamma) * 255 * contrast + midpoint * (1 - contrast), 0, 255);
+            image.data[p + 1] = clamp(Math.pow(image.data[p + 1] / 255, gamma) * 255 * contrast + midpoint * (1 - contrast), 0, 255);
+            image.data[p + 2] = clamp(Math.pow(image.data[p + 2] / 255, gamma) * 255 * contrast + midpoint * (1 - contrast), 0, 255);
+        }
+        context.putImageData(image, 0, 0);
+        return canvas;
+    }
+
+    async function detectFaceDescriptors(source) {
+        var enhanced = createEnhancedFrame(source);
+        var detections = await faceapi.detectAllFaces(
+            enhanced,
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.25 })
+        ).withFaceLandmarks().withFaceDescriptors();
+        if (detections.length === 0 && faceapi.nets.ssdMobilenetv1.isLoaded) {
+            detections = await faceapi.detectAllFaces(
+                enhanced,
+                new faceapi.SsdMobilenetv1Options({ minConfidence: 0.25 })
+            ).withFaceLandmarks().withFaceDescriptors();
+        }
+        return detections;
+    }
+
+    function getPose(detection) {
+        var positions = detection.landmarks && detection.landmarks.positions;
+        if (!positions || positions.length < 68) return { yaw: 0, pitch: 0 };
+        var leftEye = positions.slice(36, 42);
+        var rightEye = positions.slice(42, 48);
+        var eyeCenterX = (averagePoints(leftEye).x + averagePoints(rightEye).x) / 2;
+        var eyeCenterY = (averagePoints(leftEye).y + averagePoints(rightEye).y) / 2;
+        var nose = averagePoints(positions.slice(27, 36));
+        var faceWidth = Math.max(1, detection.detection.box.width);
+        var faceHeight = Math.max(1, detection.detection.box.height);
+        return {
+            yaw: (nose.x - eyeCenterX) / faceWidth,
+            pitch: (nose.y - eyeCenterY) / faceHeight - 0.23
+        };
+    }
+
+    function averagePoints(points) {
+        var result = { x: 0, y: 0 };
+        for (var i = 0; i < points.length; i++) {
+            result.x += points[i].x;
+            result.y += points[i].y;
+        }
+        return points.length ? { x: result.x / points.length, y: result.y / points.length } : result;
+    }
+
+    function isPoseSuitable(detection, stage) {
+        var pose = getPose(detection);
+        if (stage === 'front') return Math.abs(pose.yaw) < 0.12 && Math.abs(pose.pitch) < 0.12;
+        if (stage === 'right') return pose.yaw < -0.08;
+        if (stage === 'left') return pose.yaw > 0.08;
+        if (stage === 'up') return pose.pitch < -0.06;
+        if (stage === 'down') return pose.pitch > 0.06;
+        return true;
     }
 
     function getCameraErrorMessage(error) {
@@ -1183,10 +1267,7 @@
         attendanceProcessing = true;
 
         try {
-            var detections = await faceapi.detectAllFaces(
-                DOM.attendanceVideo,
-                new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.40 })
-            ).withFaceLandmarks().withFaceDescriptors();
+            var detections = await detectFaceDescriptors(DOM.attendanceVideo);
 
             if (DOM.attendanceOverlay) DOM.attendanceOverlay.innerHTML = '';
 
@@ -1207,13 +1288,13 @@
 
             for (var j = 0; j < faceResults.length; j++) {
                 var result = faceResults[j];
-                var recognized = result.match && result.match.distance <= 0.42;
+                var recognized = result.match && result.match.distance <= 0.45;
                 createFaceOutline(result.detection.detection.box, recognized);
             }
 
             var recognizedFaces = [];
             for (var k = 0; k < faceResults.length; k++) {
-                if (faceResults[k].match && faceResults[k].match.distance <= 0.42) {
+                if (faceResults[k].match && faceResults[k].match.distance <= 0.45) {
                     recognizedFaces.push(faceResults[k]);
                 }
             }
@@ -1243,7 +1324,7 @@
 
             if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = student.name + ' terdeteksi';
 
-            if (attendanceMatchFrames >= 2) {
+            if (attendanceMatchFrames >= 3) {
                 if (DOM.welcomeMessage) {
                     DOM.welcomeMessage.textContent = translate('welcome') + ', ' + student.name + '!';
                     DOM.welcomeMessage.classList.add('show');
@@ -1295,13 +1376,14 @@
 
         for (var i = 0; i < students.length; i++) {
             var student = students[i];
-            if (!Array.isArray(student.descriptor) || student.descriptor.length !== descriptor.length) {
-                continue;
-            }
-            var distance = faceapi.euclideanDistance(descriptor, new Float32Array(student.descriptor));
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                bestStudent = student;
+            var templates = Array.isArray(student.descriptors) ? student.descriptors : [student.descriptor];
+            for (var j = 0; j < templates.length; j++) {
+                if (!Array.isArray(templates[j]) || templates[j].length !== descriptor.length) continue;
+                var distance = faceapi.euclideanDistance(descriptor, new Float32Array(templates[j]));
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    bestStudent = student;
+                }
             }
         }
 
@@ -1436,10 +1518,7 @@
         detectionCounter++;
 
         try {
-            var detections = await faceapi.detectAllFaces(
-                DOM.enrollmentVideo,
-                new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.35 })
-            ).withFaceLandmarks().withFaceDescriptors();
+            var detections = await detectFaceDescriptors(DOM.enrollmentVideo);
 
             if (detections.length === 0) {
                 enrollmentReadyFrames = 0;
@@ -1480,6 +1559,7 @@
             var dist = Math.hypot((faceCenterX - frameCenterX) / width, 
                                   (faceCenterY - frameCenterY) / height);
             var centerScore = clamp(100 - (dist * 250), 0, 100);
+            var poseReady = isPoseSuitable(detection, enrollmentStage);
 
             var lightScore = 80;
             if (detectionCounter % 3 === 0) {
@@ -1500,8 +1580,9 @@
                 stabilityScore = clamp(100 - (movement * 0.4) - (sizeMovement * 0.3), 0, 100);
             }
 
-            var finalScore = (sizeScore * 0.30 + centerScore * 0.30 + 
-                              lightScore * 0.15 + stabilityScore * 0.25);
+            var poseScore = poseReady ? 100 : 35;
+            var finalScore = (sizeScore * 0.25 + centerScore * 0.20 +
+                              lightScore * 0.15 + stabilityScore * 0.15 + poseScore * 0.25);
 
             if (finalScore > enrollmentProgress) {
                 enrollmentProgress = enrollmentProgress * 0.15 + finalScore * 0.85;
@@ -1516,8 +1597,8 @@
             enrollmentProgress = clamp(enrollmentProgress, 0, 100);
             updateEnrollmentProgress(enrollmentProgress);
 
-            var ready = finalScore >= 75 && faceArea >= 0.03 && faceArea <= 0.70 && 
-                        centerScore >= 70 && stabilityScore >= 60;
+            var ready = finalScore >= 75 && faceArea >= 0.025 && faceArea <= 0.75 &&
+                        centerScore >= 65 && stabilityScore >= 55 && poseReady;
 
             if (ready && enrollmentProgress >= 80) {
                 enrollmentReadyFrames += 1;
@@ -1528,10 +1609,13 @@
             var stageMessages = {
                 front: translate('frontFace'),
                 right: translate('rightFace'),
-                left: translate('leftFace')
+                left: translate('leftFace'),
+                up: translate('upFace'),
+                down: translate('downFace')
             };
 
-            if (enrollmentProgress < 25) setValidation('Mendeteksi wajah...', true);
+            if (!poseReady) setValidation(stageMessages[enrollmentStage], false);
+            else if (enrollmentProgress < 25) setValidation('Mendeteksi wajah...', true);
             else if (enrollmentProgress < 50) setValidation('Analisis kualitas...', true);
             else if (enrollmentProgress < 75) setValidation('Pertahankan posisi...', true);
             else if (enrollmentProgress < 100) setValidation('Hampir selesai...', true);
@@ -1549,10 +1633,8 @@
 
     async function captureEnrollmentStage(detection) {
         // Simpan descriptor untuk stage saat ini
-        if (!currentEnrollmentDescriptor) {
-            currentEnrollmentDescriptor = [];
-        }
-        currentEnrollmentDescriptor.push(Array.from(detection.descriptor));
+        enrollmentDescriptors.push(Array.from(detection.descriptor));
+        currentEnrollmentDescriptor = enrollmentDescriptors[0];
 
         // Update stage
         if (enrollmentStage === 'front') {
@@ -1572,20 +1654,25 @@
             updateEnrollmentProgress(0);
             showToast('Sisi kiri berhasil!');
         } else if (enrollmentStage === 'left') {
-            // Selesai 3 stage
+            enrollmentStage = 'up';
+            enrollmentProgress = 0;
+            enrollmentReadyFrames = 0;
+            stabilityHistory = [];
+            setValidation(translate('upFace'), true);
+            updateEnrollmentProgress(0);
+            showToast('Sudut kiri berhasil!');
+        } else if (enrollmentStage === 'up') {
+            enrollmentStage = 'down';
+            enrollmentProgress = 0;
+            enrollmentReadyFrames = 0;
+            stabilityHistory = [];
+            setValidation(translate('downFace'), true);
+            updateEnrollmentProgress(0);
+            showToast('Sudut atas berhasil!');
+        } else if (enrollmentStage === 'down') {
+            // Selesai semua sudut penting
             stopEnrollmentCamera();
-            
-            // Ambil rata-rata dari 3 descriptor
-            var avgDescriptor = [];
-            var len = currentEnrollmentDescriptor[0].length;
-            for (var i = 0; i < len; i++) {
-                var sum = 0;
-                for (var j = 0; j < currentEnrollmentDescriptor.length; j++) {
-                    sum += currentEnrollmentDescriptor[j][i];
-                }
-                avgDescriptor.push(sum / currentEnrollmentDescriptor.length);
-            }
-            currentEnrollmentDescriptor = avgDescriptor;
+            currentEnrollmentDescriptor = enrollmentDescriptors[0] || null;
             
             // Capture image dari video
             var canvas = document.createElement('canvas');
@@ -1662,6 +1749,7 @@
         detectionCounter = 0;
         enrollmentStage = 'front';
         currentEnrollmentDescriptor = null;
+        enrollmentDescriptors = [];
         updateEnrollmentProgress(0);
         setValidation('', true);
     }
@@ -1720,10 +1808,7 @@
                 }
                 if (DOM.previewPlaceholder) DOM.previewPlaceholder.style.display = 'none';
 
-                var detections = await faceapi.detectAllFaces(
-                    image,
-                    new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.35 })
-                ).withFaceLandmarks().withFaceDescriptors();
+                var detections = await detectFaceDescriptors(image);
 
                 if (detections.length === 0) {
                     setValidation('Foto ditolak: wajah tidak ditemukan.', false);
@@ -1749,7 +1834,8 @@
                     return;
                 }
 
-                currentEnrollmentDescriptor = Array.from(detection.descriptor);
+                enrollmentDescriptors = [Array.from(detection.descriptor)];
+                currentEnrollmentDescriptor = enrollmentDescriptors[0];
                 currentEnrollmentImage = image.src;
                 updateEnrollmentProgress(100);
                 setValidation(translate('faceVerified'), true);
@@ -1816,6 +1902,7 @@
                 name: name,
                 className: className,
                 descriptor: currentEnrollmentDescriptor,
+                descriptors: enrollmentDescriptors.length ? enrollmentDescriptors : [currentEnrollmentDescriptor],
                 registeredAt: new Date().toISOString()
             };
 
