@@ -12,9 +12,7 @@
     // =========================================================
     
     function getEl(id) {
-        var el = document.getElementById(id);
-        if (!el) console.warn('[Amanah ID] Element not found:', id);
-        return el;
+        return document.getElementById(id);
     }
 
     function getAll(selector) {
@@ -501,7 +499,11 @@
         }
     };
 
-    var currentLang = localStorage.getItem(STORAGE_KEYS.LANGUAGE) || 'en';
+    var currentLang = localStorage.getItem(STORAGE_KEYS.LANGUAGE) || 'id';
+
+    function isDashboardPage() {
+        return window.location.pathname.toLowerCase().indexOf('/user/dashboard.html') !== -1;
+    }
 
     function translate(key) {
         return (translations[currentLang] && translations[currentLang][key]) || 
@@ -649,8 +651,12 @@
     }
 
     function goToDashboard() {
-        if (!DOM.authPage || !DOM.mainApp) return;
-        DOM.authPage.style.display = 'none';
+        if (!isDashboardPage()) {
+            window.location.href = 'User/dashboard.html';
+            return;
+        }
+        if (!DOM.mainApp) return;
+        if (DOM.authPage) DOM.authPage.style.display = 'none';
         DOM.mainApp.style.display = 'flex';
         DOM.mainApp.classList.add('active');
         renderProfile();
@@ -680,6 +686,11 @@
                 localStorage.removeItem(STORAGE_KEYS.SESSION);
             }
         }
+
+        if (isDashboardPage()) {
+            window.location.replace('../index.html');
+            return;
+        }
         
         if (DOM.authPage) {
             DOM.authPage.style.display = 'flex';
@@ -700,7 +711,7 @@
                 return;
             }
             
-            var email = DOM.loginEmail ? DOM.loginEmail.value.trim() : '';
+            var email = DOM.loginEmail ? DOM.loginEmail.value.trim().toLowerCase() : '';
             var password = DOM.loginPassword ? DOM.loginPassword.value.trim() : '';
 
             if (!email || !password) {
@@ -736,7 +747,7 @@
             e.preventDefault();
             
             var name = DOM.signupName ? DOM.signupName.value.trim() : '';
-            var email = DOM.signupEmail ? DOM.signupEmail.value.trim() : '';
+            var email = DOM.signupEmail ? DOM.signupEmail.value.trim().toLowerCase() : '';
             var password = DOM.signupPassword ? DOM.signupPassword.value.trim() : '';
             var confirm = DOM.signupConfirm ? DOM.signupConfirm.value.trim() : '';
 
@@ -780,20 +791,11 @@
             users.push(newUser);
             saveUsers(users);
             
+            localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(newUser));
+            currentUser = newUser;
+            isAuthenticated = true;
             showToast(translate('accountCreated'));
-            
-            if (DOM.signupName) DOM.signupName.value = '';
-            if (DOM.signupEmail) DOM.signupEmail.value = '';
-            if (DOM.signupPassword) DOM.signupPassword.value = '';
-            if (DOM.signupConfirm) DOM.signupConfirm.value = '';
-            if (DOM.signupAgree) DOM.signupAgree.checked = false;
-            if (DOM.signupButton) DOM.signupButton.disabled = true;
-            
-            var loginTab = document.querySelector('.auth-tab[data-tab="login"]');
-            if (loginTab) loginTab.click();
-            if (DOM.loginEmail) DOM.loginEmail.value = email;
-            if (DOM.loginPassword) DOM.loginPassword.value = '';
-            if (DOM.loginAgree) DOM.loginAgree.checked = true;
+            goToDashboard();
         });
     }
 
@@ -801,19 +803,12 @@
     if (DOM.logoutButton) {
         DOM.logoutButton.addEventListener('click', function() {
             // Tutup profile modal
-            if (DOM.profileModal) DOM.profileModal.classList.remove('show');
-            
             localStorage.removeItem(STORAGE_KEYS.SESSION);
             isAuthenticated = false;
             currentUser = null;
-            if (DOM.mainApp) {
-                DOM.mainApp.style.display = 'none';
-                DOM.mainApp.classList.remove('active');
-            }
-            if (DOM.authPage) DOM.authPage.style.display = 'flex';
             stopAttendanceCamera();
             stopEnrollmentCamera();
-            showToast(translate('logoutSuccess'));
+            window.location.replace('../index.html');
         });
     }
 

@@ -1,380 +1,117 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#ffffff">
-    <title>Amanah ID - Face Recognition System</title>
-
+    <meta name="description" content="Amanah ID - Sistem presensi wajah untuk lingkungan sekolah.">
+    <title>Amanah ID | Masuk</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
 <div class="app" id="app">
-
-    <!-- LOGIN PAGE -->
-    <div class="auth-page" id="authPage">
-        <div class="auth-container">
+    <main class="auth-page" id="authPage">
+        <section class="auth-container" aria-labelledby="authTitle">
             <div class="auth-brand">
-                <div class="auth-logo">
-                    <svg viewBox="0 0 48 48" aria-hidden="true">
+                <div class="auth-logo" aria-hidden="true">
+                    <svg viewBox="0 0 48 48">
                         <path d="M24 4 40 10v11.5c0 10.1-6.7 18.4-16 22.5C14.7 39.9 8 31.6 8 21.5V10L24 4Z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
                         <path d="M16 25.5 21.2 30 32.5 17" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </div>
-                <h1>Amanah ID</h1>
-                <p data-i18n="subtitle">Face Recognition System</p>
+                <h1 id="authTitle">Amanah ID</h1>
+                <p data-i18n="subtitle">Sistem Presensi Wajah</p>
             </div>
 
-            <div class="auth-tabs">
-                <button class="auth-tab active" data-tab="login" data-i18n="login">Log in</button>
-                <button class="auth-tab" data-tab="signup" data-i18n="signup">Sign up</button>
+            <div class="auth-tabs" role="tablist" aria-label="Autentikasi">
+                <button class="auth-tab active" type="button" data-tab="login" data-i18n="login">Masuk</button>
+                <button class="auth-tab" type="button" data-tab="signup" data-i18n="signup">Buat akun</button>
             </div>
 
-            <div class="language-switcher">
-                <button class="lang-opt" data-lang="id">Indonesia</button>
-                <button class="lang-opt active" data-lang="en">English</button>
-                <button class="lang-opt" data-lang="ar">العربية</button>
+            <div class="language-switcher" aria-label="Pilihan bahasa">
+                <button class="lang-opt active" type="button" data-lang="id">Indonesia</button>
+                <button class="lang-opt" type="button" data-lang="en">English</button>
+                <button class="lang-opt" type="button" data-lang="ar">العربية</button>
             </div>
 
-            <!-- Login Form -->
             <form class="auth-form active" id="loginForm">
                 <div class="auth-group">
-                    <label data-i18n="email">Email</label>
-                    <input type="email" id="loginEmail" placeholder="admin@amanahid.sch.id" value="admin@amanahid.sch.id">
+                    <label for="loginEmail" data-i18n="email">Email</label>
+                    <input type="email" id="loginEmail" autocomplete="email" placeholder="admin@amanahid.sch.id" value="admin@amanahid.sch.id" required>
                 </div>
                 <div class="auth-group">
-                    <label data-i18n="password">Password</label>
-                    <input type="password" id="loginPassword" placeholder="••••••••" value="admin123">
+                    <label for="loginPassword" data-i18n="password">Kata Sandi</label>
+                    <input type="password" id="loginPassword" autocomplete="current-password" placeholder="Masukkan kata sandi" value="admin123" required>
                 </div>
-
                 <div class="auth-checkbox-group">
                     <label class="checkbox-container">
                         <input type="checkbox" id="loginAgree" checked>
                         <span class="checkmark"></span>
-                        <span class="checkbox-text"><span data-i18n="loginAgree">I agree to the Terms & Conditions</span></span>
+                        <span class="checkbox-text" data-i18n="loginAgree">Saya menyetujui Syarat & Ketentuan</span>
                     </label>
                 </div>
-
-                <button type="submit" class="auth-button" id="loginButton" data-i18n="login">Log in</button>
-                <p class="auth-hint" data-i18n="defaultCredentials">Default: admin@amanahid.sch.id / admin123</p>
+                <button type="submit" class="auth-button" id="loginButton" data-i18n="login">Masuk</button>
+                <p class="auth-hint" data-i18n="defaultCredentials">Demo: admin@amanahid.sch.id / admin123</p>
             </form>
 
-            <!-- Signup Form -->
             <form class="auth-form" id="signupForm">
                 <div class="auth-group">
-                    <label data-i18n="fullName">Full Name</label>
-                    <input type="text" id="signupName" data-i18n-placeholder="enterFullName" placeholder="Enter full name">
+                    <label for="signupName" data-i18n="fullName">Nama Lengkap</label>
+                    <input type="text" id="signupName" autocomplete="name" data-i18n-placeholder="enterFullName" placeholder="Masukkan nama lengkap" required>
                 </div>
                 <div class="auth-group">
-                    <label data-i18n="email">Email</label>
-                    <input type="email" id="signupEmail" data-i18n-placeholder="yourEmail" placeholder="your@email.com">
+                    <label for="signupEmail" data-i18n="email">Email</label>
+                    <input type="email" id="signupEmail" autocomplete="email" data-i18n-placeholder="yourEmail" placeholder="nama@email.com" required>
                 </div>
                 <div class="auth-group">
-                    <label data-i18n="password">Password</label>
-                    <input type="password" id="signupPassword" data-i18n-placeholder="minPassword" placeholder="Minimum 6 characters">
+                    <label for="signupPassword" data-i18n="password">Kata Sandi</label>
+                    <input type="password" id="signupPassword" autocomplete="new-password" data-i18n-placeholder="minPassword" placeholder="Minimal 6 karakter" required>
                 </div>
                 <div class="auth-group">
-                    <label data-i18n="confirmPassword">Confirm Password</label>
-                    <input type="password" id="signupConfirm" data-i18n-placeholder="repeatPassword" placeholder="Repeat password">
+                    <label for="signupConfirm" data-i18n="confirmPassword">Konfirmasi Kata Sandi</label>
+                    <input type="password" id="signupConfirm" autocomplete="new-password" data-i18n-placeholder="repeatPassword" placeholder="Ulangi kata sandi" required>
                 </div>
-
                 <div class="auth-checkbox-group">
                     <label class="checkbox-container">
                         <input type="checkbox" id="signupAgree">
                         <span class="checkmark"></span>
-                        <span class="checkbox-text"><span data-i18n="agree">I agree to the</span> <a href="#" id="termsLink" data-i18n="terms">Terms & Conditions</a></span>
+                        <span class="checkbox-text"><span data-i18n="agree">Saya menyetujui</span> <a href="#" id="termsLink" data-i18n="terms">Syarat & Ketentuan</a></span>
                     </label>
                 </div>
-
-                <button type="submit" class="auth-button" id="signupButton" disabled data-i18n="signup">Sign up</button>
+                <button type="submit" class="auth-button" id="signupButton" disabled data-i18n="signup">Buat akun</button>
             </form>
-        </div>
-    </div>
-
-    <!-- MAIN APP -->
-    <div class="main-app" id="mainApp" style="display:none;">
-
-        <!-- HEADER -->
-        <header class="topbar">
-            <div class="brand">
-                <div class="brand-logo">
-                    <svg viewBox="0 0 48 48" aria-hidden="true">
-                        <path d="M24 4 40 10v11.5c0 10.1-6.7 18.4-16 22.5C14.7 39.9 8 31.6 8 21.5V10L24 4Z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
-                        <path d="M16 25.5 21.2 30 32.5 17" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </div>
-                <div class="brand-text">Amanah ID</div>
-            </div>
-
-            <nav class="navigation">
-                <button class="nav-item active" data-page="attendancePage"><span data-i18n="attendance">Attendance</span></button>
-                <button class="nav-item" data-page="databasePage"><span data-i18n="database">Database</span></button>
-                <button class="nav-item" data-page="formPage"><span data-i18n="form">Form</span></button>
-                <button class="nav-item profile-nav" id="profileButton"><img id="navAvatar" class="nav-avatar" alt=""> <span data-i18n="profile">Profile</span></button>
-            </nav>
-        </header>
-
-        <!-- MAIN CONTENT -->
-        <main>
-
-            <!-- ATTENDANCE -->
-            <section id="attendancePage" class="page active">
-                <div class="attendance-stage">
-                    <video id="attendanceVideo" autoplay muted playsinline></video>
-                    <div id="attendanceOverlay" class="face-overlay"></div>
-                    <div id="attendanceStatus" class="camera-status" data-i18n="cameraOff">Camera is off</div>
-                    <div class="camera-controls">
-                        <button id="attendanceCameraButton" class="camera-button" title="Activate camera">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                                <circle cx="12" cy="13" r="4"/>
-                            </svg>
-                        </button>
-                        <button id="fullscreenButton" class="camera-button" title="Fullscreen">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
-                                <path d="M16 3h3a2 2 0 0 1 2 2v3"/>
-                                <path d="M8 21H5a2 2 0 0 1-2-2v-3"/>
-                                <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div id="welcomeMessage" class="welcome-message">Welcome!</div>
-                    <div id="attendanceError" class="camera-error">
-                        <div class="error-icon">!</div>
-                        <h2 data-i18n="cameraErrorTitle">Camera unavailable</h2>
-                        <p data-i18n="cameraErrorDesc">Allow camera permission and use HTTPS or localhost.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- DATABASE -->
-            <section id="databasePage" class="page">
-                <div class="page-container">
-                    <div class="db-header">
-                        <div>
-                            <div class="eyebrow" data-i18n="reportData">REPORTS & DATA</div>
-                            <h1 data-i18n="databaseTitle">Attendance Database</h1>
-                            <p data-i18n="databaseDesc">Manage attendance history, filter dates, & export reports.</p>
-                        </div>
-                    </div>
-
-                    <div class="db-stats-grid">
-                        <div class="db-stat-card">
-                            <span data-i18n="totalStudents">TOTAL STUDENTS</span>
-                            <strong id="totalStudents">0</strong>
-                        </div>
-                        <div class="db-stat-card">
-                            <span data-i18n="presentToday">PRESENT TODAY</span>
-                            <strong id="totalPresent">0</strong>
-                        </div>
-                        <div class="db-stat-card">
-                            <span data-i18n="percentage">PERCENTAGE</span>
-                            <strong id="attendancePercentage">0%</strong>
-                        </div>
-                        <div class="db-stat-card">
-                            <span data-i18n="totalHistory">TOTAL HISTORY</span>
-                            <strong id="totalHistory">0</strong>
-                        </div>
-                    </div>
-
-                    <div class="db-toolbar">
-                        <div class="db-search">
-                            <input type="text" id="dbSearch" data-i18n-placeholder="search" placeholder="Search name, NISN, or class..." />
-                        </div>
-                        <div class="db-filters">
-                            <div class="db-date-group">
-                                <input type="date" id="dbDateStart" />
-                                <span>→</span>
-                                <input type="date" id="dbDateEnd" />
-                            </div>
-                            <button id="dbExportBtn" class="db-export-btn" data-i18n="export">Export</button>
-                            <button id="dbDeleteAllBtn" class="db-delete-all-btn" data-i18n="deleteAll">Delete All</button>
-                        </div>
-                    </div>
-
-                    <div class="db-card">
-                        <div class="db-table-scroll">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>NISN</th>
-                                        <th data-i18n="name">Name</th>
-                                        <th data-i18n="class">Class</th>
-                                        <th data-i18n="status">Status</th>
-                                        <th data-i18n="date">Date</th>
-                                        <th data-i18n="time">Time</th>
-                                        <th data-i18n="method">Method</th>
-                                        <th data-i18n="confidence">Confidence</th>
-                                        <th data-i18n="action">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="attendanceTableBody"></tbody>
-                            </table>
-                        </div>
-                        <div id="emptyDatabase" class="db-empty">
-                            <strong data-i18n="emptyTitle">No attendance data yet</strong>
-                            <span data-i18n="emptyDesc">Data will appear after students verify their face.</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- FORM -->
-            <section id="formPage" class="page">
-                <div class="page-container">
-                    <div class="section-heading">
-                        <div>
-                            <div class="eyebrow" data-i18n="registration">REGISTRATION</div>
-                            <h1 data-i18n="formTitle">Student Form</h1>
-                            <p data-i18n="formDesc">Register student identity and face for attendance.</p>
-                        </div>
-                    </div>
-
-                    <div class="form-layout">
-                        <div class="card form-card">
-                            <h2 data-i18n="studentIdentity">Student Identity</h2>
-                            <div class="form-group">
-                                <label for="nisn">NISN</label>
-                                <input id="nisn" type="text" inputmode="numeric" maxlength="20" placeholder="Enter NISN">
-                            </div>
-                            <div class="form-group">
-                                <label for="studentName" data-i18n="fullName">Full Name</label>
-                                <input id="studentName" type="text" maxlength="100" placeholder="Enter full name">
-                            </div>
-                            <div class="form-group">
-                                <label for="studentClass" data-i18n="class">Class</label>
-                                <input id="studentClass" type="text" maxlength="30" placeholder="Example: XI IPA 1">
-                            </div>
-                            <button id="saveStudentButton" class="primary-button" disabled data-i18n="saveStudent">Save Student Data</button>
-                        </div>
-
-                        <div class="card media-card">
-                            <div class="media-heading">
-                                <h2 data-i18n="faceVerification">Face Verification</h2>
-                                <p data-i18n="faceVerificationDesc">Capture front, left, right, up, and down angles for reliable attendance.</p>
-                            </div>
-
-                            <div id="enrollmentPreview" class="enrollment-preview">
-                                <video id="enrollmentVideo" autoplay muted playsinline></video>
-                                <img id="enrollmentImage" alt="Face preview">
-                                <div id="previewPlaceholder" class="preview-placeholder">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                                        <rect x="3" y="3" width="18" height="18" rx="3"/>
-                                        <circle cx="9" cy="10" r="2"/>
-                                        <path d="M21 15l-4-4L5 21"/>
-                                    </svg>
-                                    <span data-i18n="noPhoto">No face photo yet</span>
-                                </div>
-                            </div>
-
-                            <div class="ai-progress-box">
-                                <div class="ai-progress-header">
-                                    <strong data-i18n="aiAnalysis">AI Analysis</strong>
-                                    <span id="aiPercent">0%</span>
-                                </div>
-                                <div class="progress-track">
-                                    <div id="aiProgress" class="progress-fill"></div>
-                                </div>
-                            </div>
-
-                            <div id="faceValidation" class="validation-message" aria-live="polite"></div>
-
-                            <div class="media-actions">
-                                <button id="uploadButton" class="secondary-button" type="button" data-i18n="uploadPhoto">Upload Photo</button>
-                                <button id="cameraEnrollmentButton" class="dark-button" type="button" data-i18n="useCamera">Use Camera</button>
-                            </div>
-                            <input id="photoInput" type="file" accept="image/*" hidden>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-        </main>
-
-        <footer class="app-footer">
-            <div class="footer-content">
-                <span>2026 Tim Azhar, Asa, Rezky APSI</span>
-                <span class="footer-divider">•</span>
-                <span>Amanah ID v3.0</span>
-            </div>
-        </footer>
-
-    </div>
+        </section>
+    </main>
 </div>
 
-<!-- PROFILE MODAL - JENDELA -->
-<div id="profileModal" class="profile-modal">
-    <div class="profile-card">
-        <div class="profile-header">
-            <div>
-                <span class="eyebrow">AMANAH ID</span>
-                <h2 id="profileTitle" data-i18n="profile">Profile</h2>
-            </div>
-            <button class="profile-close" id="profileClose">✕</button>
-        </div>
-        <div class="profile-avatar-wrap">
-            <img id="profileAvatar" class="profile-avatar" alt="Profile photo">
-            <label class="profile-photo-button" for="profilePhotoInput" data-i18n="changePhoto">Change photo</label>
-            <input id="profilePhotoInput" type="file" accept="image/*" hidden>
-        </div>
-        <div class="profile-fields">
-            <label><span data-i18n="fullName">Full Name</span><input id="profileName" type="text"></label>
-            <label><span data-i18n="email">Email</span><input id="profileEmail" type="email"></label>
-            <label><span data-i18n="password">Password</span><input id="profilePassword" type="password"></label>
-        </div>
-        <div class="profile-language">
-            <label data-i18n="language">Language</label>
-            <div class="language-switcher">
-                <button class="lang-opt" data-lang="id">Indonesia</button>
-                <button class="lang-opt active" data-lang="en">English</button>
-                <button class="lang-opt" data-lang="ar">العربية</button>
-            </div>
-        </div>
-        <div class="profile-actions">
-            <button id="profileSaveButton" class="primary-button" data-i18n="saveProfile">Save Profile</button>
-            <button id="logoutButton" class="profile-logout" data-i18n="logout">Log out</button>
-        </div>
-    </div>
-</div>
-
-<!-- TOAST -->
 <div id="toast" class="toast" aria-live="polite"></div>
-
-<!-- TERMS MODAL -->
 <div id="termsModal" class="terms-modal" style="display:none;">
-    <div class="terms-modal-content">
+    <div class="terms-modal-content" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
         <div class="terms-modal-header">
-            <h2 data-i18n="termsTitle">Terms & Conditions</h2>
-            <button class="terms-modal-close" id="termsModalClose">✕</button>
+            <h2 id="termsTitle" data-i18n="termsTitle">Syarat & Ketentuan</h2>
+            <button class="terms-modal-close" id="termsModalClose" type="button" aria-label="Tutup">✕</button>
         </div>
         <div class="terms-modal-body">
-            <h3 data-i18n="terms1Title">1. Service Usage</h3>
-            <p data-i18n="terms1Desc">By using Amanah ID, you agree to use the face recognition system in accordance with applicable regulations.</p>
-            <h3 data-i18n="terms2Title">2. Data Privacy</h3>
-            <p data-i18n="terms2Desc">Your face and identity data will be stored securely and only used for attendance purposes within the school environment.</p>
-            <h3 data-i18n="terms3Title">3. Security</h3>
-            <p data-i18n="terms3Desc">You are responsible for the security of your account. Do not share your login credentials with others.</p>
-            <h3 data-i18n="terms4Title">4. Prohibitions</h3>
-            <p data-i18n="terms4Desc">It is prohibited to use this system for unlawful purposes or to misuse the available features.</p>
-            <h3 data-i18n="terms5Title">5. Changes to Terms</h3>
-            <p data-i18n="terms5Desc">We reserve the right to change these terms and conditions at any time with prior notice.</p>
+            <h3 data-i18n="terms1Title">1. Penggunaan Layanan</h3>
+            <p data-i18n="terms1Desc">Gunakan Amanah ID hanya untuk kebutuhan presensi yang sah di lingkungan sekolah.</p>
+            <h3 data-i18n="terms2Title">2. Privasi Data</h3>
+            <p data-i18n="terms2Desc">Data identitas dan wajah disimpan di perangkat demo ini untuk kebutuhan presensi.</p>
+            <h3 data-i18n="terms3Title">3. Keamanan Akun</h3>
+            <p data-i18n="terms3Desc">Jaga kerahasiaan kredensial akun dan jangan membagikannya kepada orang lain.</p>
+            <h3 data-i18n="terms4Title">4. Penggunaan yang Dilarang</h3>
+            <p data-i18n="terms4Desc">Jangan gunakan sistem untuk tujuan ilegal atau penyalahgunaan layanan.</p>
+            <h3 data-i18n="terms5Title">5. Perubahan Ketentuan</h3>
+            <p data-i18n="terms5Desc">Ketentuan dapat diperbarui sesuai kebutuhan pengembangan sistem.</p>
         </div>
         <div class="terms-modal-footer">
-            <button class="terms-modal-btn" id="termsModalAgree" data-i18n="agree">I Agree</button>
+            <button class="terms-modal-btn" id="termsModalAgree" type="button" data-i18n="agree">Saya menyetujui</button>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script src="app.js"></script>
-
 </body>
 </html>
