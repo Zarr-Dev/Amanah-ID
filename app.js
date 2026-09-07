@@ -107,8 +107,12 @@
     var enrollmentProgress = 0;
     var enrollmentReadyFrames = 0;
     var stabilityHistory = [];
+    var poseHistory = [];
+    var stageCaptureLocked = false;
     var enrollmentStage = 'front'; // front, right, left, up, down
     var enrollmentDescriptors = [];
+    var ENROLLMENT_REQUIRED_FRAMES = 12;
+    var ENROLLMENT_STABILITY_FRAMES = 8;
 
     var attendanceMatchStudentId = null;
     var attendanceMatchFrames = 0;
@@ -224,7 +228,7 @@
             emailRequired: 'Harap isi email dan password.',
             invalidCredentials: 'Email atau password salah.',
             emailTaken: 'Email sudah terdaftar.',
-            accountCreated: 'Akun berhasil dibuat! Silakan login.',
+            accountCreated: 'Akun berhasil dibuat. Anda langsung masuk ke dashboard.',
             logoutSuccess: 'Keluar berhasil.',
             agreeRequired: 'Harap setujui syarat & ketentuan.',
             fillAllFields: 'Harap isi semua field.',
@@ -245,7 +249,7 @@
             fullscreenUnavailable: 'Fullscreen tidak tersedia.',
             confirmDelete: 'Hapus',
             cancelDelete: 'Batal',
-            defaultCredentials: 'Default: admin@amanahid.sch.id / admin123',
+            defaultCredentials: 'Demo: admin@amanahid.sch.id / AmanahDemo!2026#ID',
             enterFullName: 'Masukkan nama lengkap',
             yourEmail: 'email@anda.com',
             minPassword: 'Minimal 6 karakter',
@@ -348,7 +352,7 @@
             emailRequired: 'Please fill in email and password.',
             invalidCredentials: 'Email or password is incorrect.',
             emailTaken: 'Email is already registered.',
-            accountCreated: 'Account created! Please log in.',
+            accountCreated: 'Account created. You are being signed in.',
             logoutSuccess: 'Logged out successfully.',
             agreeRequired: 'Please agree to the terms & conditions.',
             fillAllFields: 'Please fill in all fields.',
@@ -369,7 +373,7 @@
             fullscreenUnavailable: 'Fullscreen not available.',
             confirmDelete: 'Delete',
             cancelDelete: 'Cancel',
-            defaultCredentials: 'Default: admin@amanahid.sch.id / admin123',
+            defaultCredentials: 'Demo: admin@amanahid.sch.id / AmanahDemo!2026#ID',
             enterFullName: 'Enter full name',
             yourEmail: 'your@email.com',
             minPassword: 'Minimum 6 characters',
@@ -470,7 +474,7 @@
             emailRequired: 'يرجى ملء البريد الإلكتروني وكلمة المرور.',
             invalidCredentials: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
             emailTaken: 'البريد الإلكتروني مسجل بالفعل.',
-            accountCreated: 'تم إنشاء الحساب! يرجى تسجيل الدخول.',
+            accountCreated: 'تم إنشاء الحساب وسيتم تسجيل دخولك الآن.',
             logoutSuccess: 'تم تسجيل الخروج بنجاح.',
             agreeRequired: 'يرجى الموافقة على الشروط والأحكام.',
             fillAllFields: 'يرجى ملء جميع الحقول.',
@@ -491,7 +495,7 @@
             fullscreenUnavailable: 'وضع ملء الشاشة غير متاح.',
             confirmDelete: 'حذف',
             cancelDelete: 'إلغاء',
-            defaultCredentials: 'البيانات الافتراضية: admin@amanahid.sch.id / admin123',
+            defaultCredentials: 'بيانات تجريبية: admin@amanahid.sch.id / AmanahDemo!2026#ID',
             enterFullName: 'أدخل الاسم الكامل',
             yourEmail: 'بريدك@الإلكتروني.com',
             minPassword: '6 أحرف على الأقل',
@@ -634,6 +638,7 @@
 
     function initDefaultAdmin() {
         var users = getUsers();
+        var demoPassword = 'AmanahDemo!2026#ID';
         var exists = users.some(function(u) { 
             return u.email === 'admin@amanahid.sch.id'; 
         });
@@ -642,11 +647,19 @@
                 id: 'admin_' + Date.now(),
                 name: 'Admin',
                 email: 'admin@amanahid.sch.id',
-                password: 'admin123',
+                password: demoPassword,
                 role: 'admin',
                 createdAt: new Date().toISOString()
             });
             saveUsers(users);
+        } else {
+            var demoAdmin = users.find(function(user) {
+                return user.email === 'admin@amanahid.sch.id';
+            });
+            if (demoAdmin && demoAdmin.password === 'admin123') {
+                demoAdmin.password = demoPassword;
+                saveUsers(users);
+            }
         }
     }
 
@@ -1185,11 +1198,11 @@
 
     function isPoseSuitable(detection, stage) {
         var pose = getPose(detection);
-        if (stage === 'front') return Math.abs(pose.yaw) < 0.12 && Math.abs(pose.pitch) < 0.12;
-        if (stage === 'right') return pose.yaw < -0.08;
-        if (stage === 'left') return pose.yaw > 0.08;
-        if (stage === 'up') return pose.pitch < -0.06;
-        if (stage === 'down') return pose.pitch > 0.06;
+        if (stage === 'front') return Math.abs(pose.yaw) < 0.08 && Math.abs(pose.pitch) < 0.08;
+        if (stage === 'right') return pose.yaw < -0.16 && Math.abs(pose.pitch) < 0.18;
+        if (stage === 'left') return pose.yaw > 0.16 && Math.abs(pose.pitch) < 0.18;
+        if (stage === 'up') return pose.pitch < -0.12 && Math.abs(pose.yaw) < 0.20;
+        if (stage === 'down') return pose.pitch > 0.12 && Math.abs(pose.yaw) < 0.20;
         return true;
     }
 
@@ -1467,6 +1480,8 @@
         }
         enrollmentProcessing = false;
         stabilityHistory = [];
+        poseHistory = [];
+        stageCaptureLocked = false;
         enrollmentReadyFrames = 0;
         enrollmentStage = 'front';
     }
@@ -1530,6 +1545,13 @@
             }
 
             var detection = detections[0];
+            if (detection.detection.score < 0.65) {
+                enrollmentReadyFrames = 0;
+                poseHistory = [];
+                updateEnrollmentProgress(5);
+                setValidation('Wajah belum cukup jelas. Atur cahaya dan jarak.', false);
+                return;
+            }
             var box = detection.detection.box;
             var width = DOM.enrollmentVideo.videoWidth;
             var height = DOM.enrollmentVideo.videoHeight;
@@ -1564,7 +1586,7 @@
 
             stabilityHistory.push({ x: faceCenterX, y: faceCenterY, 
                                     width: box.width, height: box.height });
-            if (stabilityHistory.length > 3) stabilityHistory.shift();
+            if (stabilityHistory.length > ENROLLMENT_STABILITY_FRAMES) stabilityHistory.shift();
 
             var stabilityScore = 50;
             if (stabilityHistory.length >= 3) {
@@ -1576,6 +1598,13 @@
             }
 
             var poseScore = poseReady ? 100 : 35;
+            if (poseReady) {
+                poseHistory.push(true);
+                if (poseHistory.length > ENROLLMENT_REQUIRED_FRAMES) poseHistory.shift();
+            } else {
+                poseHistory = [];
+            }
+            var poseHeld = poseHistory.length >= ENROLLMENT_REQUIRED_FRAMES;
             var finalScore = (sizeScore * 0.25 + centerScore * 0.20 +
                               lightScore * 0.15 + stabilityScore * 0.15 + poseScore * 0.25);
 
@@ -1585,17 +1614,13 @@
                 enrollmentProgress = enrollmentProgress * 0.30 + finalScore * 0.70;
             }
 
-            if (finalScore >= 80 && sizeScore >= 70 && centerScore >= 75) {
-                enrollmentProgress = Math.min(100, enrollmentProgress + 25);
-            }
-
-            enrollmentProgress = clamp(enrollmentProgress, 0, 100);
+            enrollmentProgress = clamp(enrollmentProgress, 0, 99);
             updateEnrollmentProgress(enrollmentProgress);
 
             var ready = finalScore >= 75 && faceArea >= 0.025 && faceArea <= 0.75 &&
                         centerScore >= 65 && stabilityScore >= 55 && poseReady;
 
-            if (ready && enrollmentProgress >= 80) {
+            if (ready && enrollmentProgress >= 80 && poseHeld) {
                 enrollmentReadyFrames += 1;
             } else {
                 enrollmentReadyFrames = 0;
@@ -1616,7 +1641,8 @@
             else if (enrollmentProgress < 100) setValidation('Hampir selesai...', true);
             else setValidation(translate('faceCaptured'), true);
 
-            if (enrollmentProgress >= 100 && enrollmentReadyFrames >= 1) {
+            if (!stageCaptureLocked && enrollmentReadyFrames >= ENROLLMENT_REQUIRED_FRAMES) {
+                stageCaptureLocked = true;
                 await captureEnrollmentStage(detection);
             }
         } catch (error) {
@@ -1637,6 +1663,8 @@
             enrollmentProgress = 0;
             enrollmentReadyFrames = 0;
             stabilityHistory = [];
+            poseHistory = [];
+            stageCaptureLocked = false;
             setValidation(translate('rightFace'), true);
             updateEnrollmentProgress(0);
             showToast('Sisi kanan berhasil!');
@@ -1645,6 +1673,8 @@
             enrollmentProgress = 0;
             enrollmentReadyFrames = 0;
             stabilityHistory = [];
+            poseHistory = [];
+            stageCaptureLocked = false;
             setValidation(translate('leftFace'), true);
             updateEnrollmentProgress(0);
             showToast('Sisi kiri berhasil!');
@@ -1653,14 +1683,18 @@
             enrollmentProgress = 0;
             enrollmentReadyFrames = 0;
             stabilityHistory = [];
+            poseHistory = [];
+            stageCaptureLocked = false;
             setValidation(translate('upFace'), true);
             updateEnrollmentProgress(0);
-            showToast('Sudut kiri berhasil!');
+            showToast('Sisi kiri berhasil!');
         } else if (enrollmentStage === 'up') {
             enrollmentStage = 'down';
             enrollmentProgress = 0;
             enrollmentReadyFrames = 0;
             stabilityHistory = [];
+            poseHistory = [];
+            stageCaptureLocked = false;
             setValidation(translate('downFace'), true);
             updateEnrollmentProgress(0);
             showToast('Sudut atas berhasil!');
@@ -1741,6 +1775,8 @@
         enrollmentProgress = 0;
         enrollmentReadyFrames = 0;
         stabilityHistory = [];
+        poseHistory = [];
+        stageCaptureLocked = false;
         detectionCounter = 0;
         enrollmentStage = 'front';
         currentEnrollmentDescriptor = null;
@@ -1820,6 +1856,11 @@
                 }
 
                 var detection = detections[0];
+                if (detection.detection.score < 0.65) {
+                    setValidation('Foto ditolak: kualitas wajah belum cukup jelas.', false);
+                    clearEnrollmentImage();
+                    return;
+                }
                 var box = detection.detection.box;
                 var areaRatio = (box.width * box.height) / (image.width * image.height);
 
