@@ -1,0 +1,10 @@
+{
+  "name": "Amanah ID",
+  "short_name": "Amanah ID",
+  "description": "Sistem presensi wajah untuk lingkungan sekolah.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#eef3f7",
+  "theme_color": "#ffffff",
+  "icons": []
+}
