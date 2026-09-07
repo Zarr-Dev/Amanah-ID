@@ -900,6 +900,28 @@ main {
     font-weight: 500;
 }
 
+.camera-quality-notice {
+    position: absolute;
+    left: 50%;
+    top: 22%;
+    z-index: 4;
+    transform: translateX(-50%);
+    display: none;
+    max-width: calc(100% - 32px);
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(211, 47, 47, 0.92);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.camera-quality-notice.show {
+    display: block;
+}
+
 .camera-controls {
     position: absolute;
     right: 20px;

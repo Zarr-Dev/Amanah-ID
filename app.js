@@ -55,6 +55,7 @@
         attendanceVideo: getEl('attendanceVideo'),
         attendanceOverlay: getEl('attendanceOverlay'),
         attendanceStatus: getEl('attendanceStatus'),
+        attendanceQualityNotice: getEl('attendanceQualityNotice'),
         attendanceError: getEl('attendanceError'),
         attendanceCameraButton: getEl('attendanceCameraButton'),
         fullscreenButton: getEl('fullscreenButton'),
@@ -105,6 +106,12 @@
     var enrollmentStartPending = false;
     var attendanceProcessing = false;
     var enrollmentProcessing = false;
+    var attendanceBlinkState = { closed: false, blinked: false, lastBlinkAt: 0 };
+    var attendanceChallenge = null;
+    var attendanceChallengeStartedAt = 0;
+    var attendanceChallengePassed = false;
+    var attendanceLowConfidenceFrames = 0;
+    var inferenceState = { inputSize: 320, frames: 0, startedAt: 0, lastAdjustment: 0 };
 
     var currentEnrollmentDescriptor = null;
     var currentEnrollmentImage = null;
@@ -129,6 +136,11 @@
         SESSION: 'amanah_session',
         LANGUAGE: 'amanah_language'
     };
+
+    var ATTENDANCE_MATCH_THRESHOLD = 0.45;
+    var ATTENDANCE_API_ENDPOINT = '/api/attendance';
+    var OFFLINE_DB_NAME = 'amanah_offline_v1';
+    var OFFLINE_STORE_NAME = 'attendance';
 
     // =========================================================
     // LANGUAGE - LENGKAP 100% (DEFAULT ENGLISH)
@@ -589,6 +601,84 @@
 
     function saveAttendance(attendance) {
         localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(attendance));
+    }
+
+    function openOfflineDatabase() {
+        return new Promise(function(resolve, reject) {
+            if (!window.indexedDB) {
+                reject(new Error('IndexedDB tidak didukung browser ini.'));
+                return;
+            }
+            var request = indexedDB.open(OFFLINE_DB_NAME, 1);
+            request.onupgradeneeded = function() {
+                if (!request.result.objectStoreNames.contains(OFFLINE_STORE_NAME)) {
+                    request.result.createObjectStore(OFFLINE_STORE_NAME, { keyPath: 'id' });
+                }
+            };
+            request.onsuccess = function() { resolve(request.result); };
+            request.onerror = function() { reject(request.error || new Error('Gagal membuka database offline.')); };
+        });
+    }
+
+    function queueOfflineAttendance(record) {
+        return openOfflineDatabase().then(function(db) {
+            return new Promise(function(resolve, reject) {
+                var transaction = db.transaction(OFFLINE_STORE_NAME, 'readwrite');
+                transaction.objectStore(OFFLINE_STORE_NAME).put(record);
+                transaction.oncomplete = function() { db.close(); resolve(); };
+                transaction.onerror = function() {
+                    db.close();
+                    reject(transaction.error || new Error('Gagal menyimpan presensi offline.'));
+                };
+            });
+        });
+    }
+
+    function getOfflineAttendance() {
+        return openOfflineDatabase().then(function(db) {
+            return new Promise(function(resolve, reject) {
+                var request = db.transaction(OFFLINE_STORE_NAME, 'readonly')
+                    .objectStore(OFFLINE_STORE_NAME).getAll();
+                request.onsuccess = function() { db.close(); resolve(request.result || []); };
+                request.onerror = function() {
+                    db.close();
+                    reject(request.error || new Error('Gagal membaca presensi offline.'));
+                };
+            });
+        });
+    }
+
+    function removeOfflineAttendance(id) {
+        return openOfflineDatabase().then(function(db) {
+            return new Promise(function(resolve, reject) {
+                var transaction = db.transaction(OFFLINE_STORE_NAME, 'readwrite');
+                transaction.objectStore(OFFLINE_STORE_NAME).delete(id);
+                transaction.oncomplete = function() { db.close(); resolve(); };
+                transaction.onerror = function() {
+                    db.close();
+                    reject(transaction.error || new Error('Gagal menghapus antrean offline.'));
+                };
+            });
+        });
+    }
+
+    async function syncOfflineAttendance() {
+        if (!navigator.onLine) return;
+        var queued = await getOfflineAttendance();
+        for (var i = 0; i < queued.length; i++) {
+            try {
+                var response = await fetch(ATTENDANCE_API_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(queued[i])
+                });
+                if (!response.ok) throw new Error('Backend menolak presensi (' + response.status + ').');
+                await removeOfflineAttendance(queued[i].id);
+            } catch (error) {
+                console.warn('[Offline Sync] Presensi ditahan untuk percobaan berikutnya:', error);
+                break;
+            }
+        }
     }
 
     function getLocalDate() {
@@ -1132,6 +1222,19 @@
         return navigator.mediaDevices.getUserMedia(constraints);
     }
 
+    async function ensureCameraPermission() {
+        if (!navigator.permissions || !navigator.permissions.query) return;
+        try {
+            var permission = await navigator.permissions.query({ name: 'camera' });
+            if (permission.state === 'denied') {
+                throw new DOMException('Izin kamera diblokir. Buka ikon gembok pada URL lalu izinkan kamera.', 'NotAllowedError');
+            }
+        } catch (error) {
+            if (error && error.name === 'NotAllowedError') throw error;
+            console.warn('[Camera Permission] Status kamera tidak dapat diperiksa:', error);
+        }
+    }
+
     function createEnhancedFrame(source) {
         var width = source.videoWidth || source.naturalWidth || source.width;
         var height = source.videoHeight || source.naturalHeight || source.height;
@@ -1164,7 +1267,7 @@
         var enhanced = createEnhancedFrame(source);
         var detections = await faceapi.detectAllFaces(
             enhanced,
-            new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.25 })
+            new faceapi.TinyFaceDetectorOptions({ inputSize: inferenceState.inputSize, scoreThreshold: 0.25 })
         ).withFaceLandmarks().withFaceDescriptors();
         if (detections.length === 0 && faceapi.nets.ssdMobilenetv1.isLoaded) {
             detections = await faceapi.detectAllFaces(
@@ -1173,6 +1276,80 @@
             ).withFaceLandmarks().withFaceDescriptors();
         }
         return detections;
+    }
+
+    function updateInferencePerformance(duration) {
+        var now = Date.now();
+        inferenceState.frames += 1;
+        if (!inferenceState.startedAt) inferenceState.startedAt = now;
+        if (now - inferenceState.lastAdjustment < 2500) return;
+        var elapsed = Math.max(1, now - inferenceState.startedAt);
+        var fps = inferenceState.frames * 1000 / elapsed;
+        if (fps < 10 && inferenceState.inputSize > 128) {
+            inferenceState.inputSize = inferenceState.inputSize === 320 ? 160 : 128;
+            inferenceState.lastAdjustment = now;
+            console.info('[Amanah ID] Menurunkan input AI ke', inferenceState.inputSize, 'karena FPS rendah:', fps.toFixed(1));
+        } else if (fps > 24 && duration < 100 && inferenceState.inputSize < 320) {
+            inferenceState.inputSize = inferenceState.inputSize === 128 ? 160 : 320;
+            inferenceState.lastAdjustment = now;
+        }
+    }
+
+    function getEyeAspectRatio(points) {
+        if (!points || points.length < 6) return 1;
+        var verticalOne = Math.hypot(points[1].x - points[5].x, points[1].y - points[5].y);
+        var verticalTwo = Math.hypot(points[2].x - points[4].x, points[2].y - points[4].y);
+        var horizontal = Math.max(1, Math.hypot(points[0].x - points[3].x, points[0].y - points[3].y));
+        return (verticalOne + verticalTwo) / (2 * horizontal);
+    }
+
+    function hasBlink(detection) {
+        var positions = detection.landmarks && detection.landmarks.positions;
+        if (!positions || positions.length < 48) return false;
+        var ear = (getEyeAspectRatio(positions.slice(36, 42)) +
+                   getEyeAspectRatio(positions.slice(42, 48))) / 2;
+        if (ear < 0.19) {
+            attendanceBlinkState.closed = true;
+        } else if (attendanceBlinkState.closed) {
+            attendanceBlinkState.closed = false;
+            attendanceBlinkState.blinked = true;
+            attendanceBlinkState.lastBlinkAt = Date.now();
+        }
+        return attendanceBlinkState.blinked;
+    }
+
+    function hasVisibleMouth(detection) {
+        var positions = detection.landmarks && detection.landmarks.positions;
+        if (!positions || positions.length < 68) return false;
+        var mouth = positions.slice(48, 68);
+        var width = Math.hypot(mouth[0].x - mouth[6].x, mouth[0].y - mouth[6].y);
+        var height = Math.hypot(mouth[3].x - mouth[9].x, mouth[3].y - mouth[9].y);
+        return width > 8 && height / Math.max(1, width) > 0.06;
+    }
+
+    function createAttendanceChallenge() {
+        var directions = [
+            { key: 'right', text: 'Tengok ke kanan', valid: function(pose) { return pose.yaw < -0.16; } },
+            { key: 'left', text: 'Tengok ke kiri', valid: function(pose) { return pose.yaw > 0.16; } }
+        ];
+        attendanceChallenge = directions[Math.floor(Math.random() * directions.length)];
+        attendanceChallengeStartedAt = Date.now();
+    }
+
+    function challengePassed(detection) {
+        if (attendanceChallengePassed) return true;
+        if (!attendanceChallenge) createAttendanceChallenge();
+        if (Date.now() - attendanceChallengeStartedAt > 3000) {
+            createAttendanceChallenge();
+        }
+        attendanceChallengePassed = attendanceChallenge.valid(getPose(detection));
+        return attendanceChallengePassed;
+    }
+
+    function setAttendanceQualityNotice(message) {
+        if (!DOM.attendanceQualityNotice) return;
+        DOM.attendanceQualityNotice.textContent = message || '';
+        DOM.attendanceQualityNotice.classList.toggle('show', Boolean(message));
     }
 
     function getPose(detection) {
@@ -1211,7 +1388,7 @@
     }
 
     function getCameraErrorMessage(error) {
-        if (error && error.name === 'NotAllowedError') return 'Izin kamera ditolak.';
+        if (error && error.name === 'NotAllowedError') return 'Izin kamera ditolak. Klik ikon gembok pada URL, izinkan kamera, lalu coba lagi.';
         if (error && error.name === 'NotFoundError') return 'Tidak ada kamera.';
         if (error && error.name === 'NotReadableError') return 'Kamera digunakan aplikasi lain.';
         if (error && error.name === 'SecurityError') return 'Butuh HTTPS atau localhost.';
@@ -1236,6 +1413,7 @@
         try {
             if (DOM.attendanceError) DOM.attendanceError.classList.remove('show');
             if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = 'Mengaktifkan kamera...';
+            await ensureCameraPermission();
             var stream = await requestCamera();
             if (requestId !== attendanceCameraRequestId) {
                 stream.getTracks().forEach(function(track) { track.stop(); });
@@ -1276,6 +1454,12 @@
         attendanceProcessing = false;
         attendanceMatchStudentId = null;
         attendanceMatchFrames = 0;
+        attendanceBlinkState = { closed: false, blinked: false, lastBlinkAt: 0 };
+        attendanceChallenge = null;
+        attendanceChallengeStartedAt = 0;
+        attendanceChallengePassed = false;
+        attendanceLowConfidenceFrames = 0;
+        setAttendanceQualityNotice('');
     }
 
     function startAttendanceLoop() {
@@ -1290,9 +1474,18 @@
             return;
         }
         attendanceProcessing = true;
+        var startedAt = performance.now();
 
         try {
+            var brightness = calculateBrightness(DOM.attendanceVideo);
+            if (brightness < 40 || brightness > 220) {
+                setAttendanceQualityNotice('Pencahayaan buruk, putar badan Anda.');
+                if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = 'Pencahayaan tidak sesuai';
+                return;
+            }
+            setAttendanceQualityNotice('');
             var detections = await detectFaceDescriptors(DOM.attendanceVideo);
+            updateInferencePerformance(performance.now() - startedAt);
 
             if (DOM.attendanceOverlay) DOM.attendanceOverlay.innerHTML = '';
 
@@ -1307,19 +1500,26 @@
             var students = getStudents();
             var faceResults = [];
             for (var i = 0; i < detections.length; i++) {
+                if (detections[i].detection.score < 0.55) {
+                    attendanceLowConfidenceFrames += 1;
+                }
                 var match = findBestMatch(detections[i].descriptor, students);
                 faceResults.push({ detection: detections[i], match: match });
+            }
+            if (attendanceLowConfidenceFrames >= 3) {
+                setAttendanceQualityNotice('Kamera kotor atau buram, bersihkan lensa!');
+                attendanceLowConfidenceFrames = 0;
             }
 
             for (var j = 0; j < faceResults.length; j++) {
                 var result = faceResults[j];
-                var recognized = result.match && result.match.distance <= 0.45;
+                var recognized = result.match && result.match.distance <= ATTENDANCE_MATCH_THRESHOLD;
                 createFaceOutline(result.detection.detection.box, recognized);
             }
 
             var recognizedFaces = [];
             for (var k = 0; k < faceResults.length; k++) {
-                if (faceResults[k].match && faceResults[k].match.distance <= 0.45) {
+                if (faceResults[k].match && faceResults[k].match.distance <= ATTENDANCE_MATCH_THRESHOLD) {
                     recognizedFaces.push(faceResults[k]);
                 }
             }
@@ -1339,6 +1539,22 @@
             recognizedFaces.sort(function(a, b) { return a.match.distance - b.match.distance; });
             var best = recognizedFaces[0];
             var student = best.match.student;
+
+            if (!hasVisibleMouth(best.detection)) {
+                if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = 'Masker menutupi area wajah';
+                return;
+            }
+            var blinkReady = hasBlink(best.detection);
+            var challengeReady = challengePassed(best.detection);
+            if (!blinkReady || !challengeReady) {
+                if (DOM.attendanceStatus) {
+                    DOM.attendanceStatus.textContent = !blinkReady ?
+                        'Kedipkan mata untuk verifikasi' :
+                        attendanceChallenge.text;
+                }
+                attendanceMatchFrames = 0;
+                return;
+            }
 
             if (attendanceMatchStudentId === student.id) {
                 attendanceMatchFrames += 1;
@@ -1412,7 +1628,7 @@
             }
         }
 
-        if (!bestStudent) return null;
+        if (!bestStudent || bestDistance > ATTENDANCE_MATCH_THRESHOLD) return null;
         return { student: bestStudent, distance: bestDistance };
     }
 
@@ -1447,6 +1663,12 @@
         attendance.unshift(record);
         saveAttendance(attendance);
         renderDatabase();
+        if (!navigator.onLine) {
+            queueOfflineAttendance(record).catch(function(error) {
+                console.error('[Offline Attendance]', error);
+                showToast('Presensi tersimpan lokal, tetapi antrean offline gagal dibuat.');
+            });
+        }
         showToast(student.name + ' ' + translate('presensi') + '!');
     }
 
@@ -1469,6 +1691,7 @@
             resetEnrollmentState();
             clearEnrollmentImage();
             enrollmentStage = 'front';
+            await ensureCameraPermission();
             var stream = await requestCamera();
             if (requestId !== enrollmentCameraRequestId) {
                 stream.getTracks().forEach(function(track) { track.stop(); });
@@ -1575,6 +1798,12 @@
             }
 
             var detection = detections[0];
+            var enrollmentBrightness = calculateBrightness(DOM.enrollmentVideo);
+            if (enrollmentBrightness < 40 || enrollmentBrightness > 220) {
+                enrollmentReadyFrames = 0;
+                setValidation('Pencahayaan buruk, putar badan Anda.', false);
+                return;
+            }
             if (detection.detection.score < 0.65) {
                 enrollmentReadyFrames = 0;
                 poseHistory = [];
@@ -2380,6 +2609,21 @@
 
     function init() {
         console.log('[Amanah ID] Initializing...');
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register(isDashboardPage() ? '../service-worker.js' : 'service-worker.js')
+                .catch(function(error) { console.warn('[PWA] Service worker gagal didaftarkan:', error); });
+        }
+        window.addEventListener('online', function() {
+            syncOfflineAttendance().catch(function(error) {
+                console.error('[Offline Sync]', error);
+            });
+        });
+        if (navigator.onLine) {
+            syncOfflineAttendance().catch(function(error) {
+                console.error('[Offline Sync]', error);
+            });
+        }
         
         // Set default dates
         if (DOM.dbDateStart) {
