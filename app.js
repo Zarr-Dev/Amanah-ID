@@ -99,6 +99,10 @@
     var enrollmentStream = null;
     var attendanceTimer = null;
     var enrollmentTimer = null;
+    var attendanceCameraRequestId = 0;
+    var enrollmentCameraRequestId = 0;
+    var attendanceStartPending = false;
+    var enrollmentStartPending = false;
     var attendanceProcessing = false;
     var enrollmentProcessing = false;
 
@@ -1225,11 +1229,19 @@
             return;
         }
         
+        stopAttendanceCamera();
+        var requestId = attendanceCameraRequestId;
+        attendanceStartPending = true;
+
         try {
-            stopAttendanceCamera();
             if (DOM.attendanceError) DOM.attendanceError.classList.remove('show');
             if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = 'Mengaktifkan kamera...';
-            attendanceStream = await requestCamera();
+            var stream = await requestCamera();
+            if (requestId !== attendanceCameraRequestId) {
+                stream.getTracks().forEach(function(track) { track.stop(); });
+                return;
+            }
+            attendanceStream = stream;
             if (DOM.attendanceVideo) {
                 DOM.attendanceVideo.srcObject = attendanceStream;
                 await DOM.attendanceVideo.play();
@@ -1238,14 +1250,19 @@
             if (DOM.attendanceCameraButton) DOM.attendanceCameraButton.title = 'Matikan kamera';
             startAttendanceLoop();
         } catch (error) {
+            if (requestId !== attendanceCameraRequestId) return;
             console.error('[Attendance Camera]', error);
             if (DOM.attendanceStatus) DOM.attendanceStatus.textContent = translate('cameraUnavailable');
             if (DOM.attendanceError) DOM.attendanceError.classList.add('show');
             showToast(translate('cameraFailed'));
+        } finally {
+            if (requestId === attendanceCameraRequestId) attendanceStartPending = false;
         }
     }
 
     function stopAttendanceCamera() {
+        attendanceCameraRequestId += 1;
+        attendanceStartPending = false;
         if (attendanceTimer) { clearInterval(attendanceTimer); attendanceTimer = null; }
         if (attendanceStream) {
             attendanceStream.getTracks().forEach(function(track) { track.stop(); });
@@ -1444,12 +1461,20 @@
             return;
         }
         
+        stopEnrollmentCamera();
+        var requestId = enrollmentCameraRequestId;
+        enrollmentStartPending = true;
+
         try {
-            stopEnrollmentCamera();
             resetEnrollmentState();
             clearEnrollmentImage();
             enrollmentStage = 'front';
-            enrollmentStream = await requestCamera();
+            var stream = await requestCamera();
+            if (requestId !== enrollmentCameraRequestId) {
+                stream.getTracks().forEach(function(track) { track.stop(); });
+                return;
+            }
+            enrollmentStream = stream;
             if (DOM.enrollmentVideo) {
                 DOM.enrollmentVideo.srcObject = enrollmentStream;
                 DOM.enrollmentVideo.classList.add('active');
@@ -1461,13 +1486,18 @@
             setValidation(translate('frontFace'), true);
             startEnrollmentLoop();
         } catch (error) {
+            if (requestId !== enrollmentCameraRequestId) return;
             console.error('[Enrollment Camera]', error);
             setValidation(getCameraErrorMessage(error), false);
             showToast(translate('cameraFailed'));
+        } finally {
+            if (requestId === enrollmentCameraRequestId) enrollmentStartPending = false;
         }
     }
 
     function stopEnrollmentCamera() {
+        enrollmentCameraRequestId += 1;
+        enrollmentStartPending = false;
         if (enrollmentTimer) { clearInterval(enrollmentTimer); enrollmentTimer = null; }
         if (enrollmentStream) {
             enrollmentStream.getTracks().forEach(function(track) { track.stop(); });
@@ -2274,11 +2304,23 @@
     // BUTTON EVENTS
     // =========================================================
 
+    // Stop camera work before any other button action runs.
+    document.addEventListener('click', function(event) {
+        var target = event.target;
+        var button = target && target.closest ? target.closest('button') : null;
+        if (!button || button === DOM.attendanceCameraButton || button === DOM.cameraEnrollmentButton) {
+            return;
+        }
+        stopAttendanceCamera();
+        stopEnrollmentCamera();
+    }, true);
+
     if (DOM.attendanceCameraButton) {
         DOM.attendanceCameraButton.addEventListener('click', function() {
-            if (attendanceStream) {
+            if (attendanceStream || attendanceTimer || attendanceStartPending) {
                 stopAttendanceCamera();
             } else {
+                stopEnrollmentCamera();
                 startAttendanceCamera();
             }
         });
@@ -2286,10 +2328,11 @@
 
     if (DOM.cameraEnrollmentButton) {
         DOM.cameraEnrollmentButton.addEventListener('click', function() {
-            if (enrollmentStream) {
+            if (enrollmentStream || enrollmentTimer || enrollmentStartPending) {
                 stopEnrollmentCamera();
                 setValidation('Kamera dimatikan.', true);
             } else {
+                stopAttendanceCamera();
                 startEnrollmentCamera();
             }
         });
