@@ -1,118 +1,177 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#ffffff">
-    <meta name="description" content="Amanah ID - Sistem presensi wajah untuk lingkungan sekolah.">
-    <link rel="manifest" href="manifest.json">
-    <title>Amanah ID | Masuk</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#eaf1ef" />
+    <meta name="description" content="Amanah ID - Database presensi siswa dan laporan kehadiran." />
+    <link rel="manifest" href="manifest.json" />
+    <title>Amanah ID</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-<div class="app" id="app">
-    <main class="auth-page" id="authPage">
-        <section class="auth-container" aria-labelledby="authTitle">
-            <div class="auth-brand">
-                <div class="auth-logo" aria-hidden="true">
-                    <svg viewBox="0 0 48 48">
-                        <path d="M24 4 40 10v11.5c0 10.1-6.7 18.4-16 22.5C14.7 39.9 8 31.6 8 21.5V10L24 4Z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
-                        <path d="M16 25.5 21.2 30 32.5 17" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <div class="app-shell">
+        <header class="topbar">
+            <div class="brand" aria-label="Amanah ID logo">
+                <div class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" role="img" aria-hidden="true">
+                        <path d="M24 4 40 10v11.5c0 10.1-6.7 18.4-16 22.5C14.7 39.9 8 31.6 8 21.5V10L24 4Z" fill="none"
+                            stroke="currentColor" stroke-width="2.8" stroke-linejoin="round" />
+                        <path d="M16 25.5 21.2 30 32.5 17" fill="none" stroke="currentColor" stroke-width="2.8"
+                            stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                 </div>
-                <h1 id="authTitle">Amanah ID</h1>
-                <p data-i18n="subtitle">Sistem Presensi Wajah</p>
-            </div>
-
-            <div class="auth-tabs" role="tablist" aria-label="Autentikasi">
-                <button class="auth-tab active" type="button" data-tab="login" data-i18n="login">Masuk</button>
-                <button class="auth-tab" type="button" data-tab="signup" data-i18n="signup">Buat akun</button>
-            </div>
-
-            <div class="language-switcher" aria-label="Pilihan bahasa">
-                <button class="lang-opt active" type="button" data-lang="id">Indonesia</button>
-                <button class="lang-opt" type="button" data-lang="en">English</button>
-                <button class="lang-opt" type="button" data-lang="ar">العربية</button>
-            </div>
-
-            <form class="auth-form active" id="loginForm">
-                <div class="auth-group">
-                    <label for="loginEmail" data-i18n="email">Email</label>
-                    <input type="email" id="loginEmail" autocomplete="off" placeholder="admin@amanahid.sch.id" required>
+                <div class="brand-copy">
+                    <h1>Amanah ID</h1>
+                    <small>Sistem Presensi Wajah</small>
                 </div>
-                <div class="auth-group">
-                    <label for="loginPassword" data-i18n="password">Kata Sandi</label>
-                    <input type="password" id="loginPassword" autocomplete="off" placeholder="Masukkan kata sandi" required>
+            </div>
+
+            <div class="topbar-actions">
+                <div class="status-pill">
+                    <span class="status-dot"></span>
+                    <span>Al Aktif â€¢ Rabu, 9 September 2026</span>
                 </div>
-                <div class="auth-checkbox-group">
-                    <label class="checkbox-container">
-                        <input type="checkbox" id="loginAgree" checked>
-                        <span class="checkmark"></span>
-                        <span class="checkbox-text" data-i18n="loginAgree">Saya menyetujui Syarat & Ketentuan</span>
+
+                <div class="admin-pill">
+                    <span>Administrator</span>
+                    <small>admin@amanahid.sch.id</small>
+                </div>
+
+                <button class="logout-button" type="button">Keluar</button>
+            </div>
+        </header>
+
+        <nav class="main-tabs" aria-label="Navigasi utama">
+            <button type="button" class="tab-item">
+                <span class="tab-icon camera-icon" aria-hidden="true"></span>
+                <span>Kamera Presensi</span>
+            </button>
+            <button type="button" class="tab-item active">
+                <span class="tab-icon database-icon" aria-hidden="true"></span>
+                <span>Database Presensi</span>
+            </button>
+            <button type="button" class="tab-item">
+                <span class="tab-icon register-icon" aria-hidden="true"></span>
+                <span>Registrasi Siswa</span>
+            </button>
+        </nav>
+
+        <main class="dashboard">
+            <section class="dashboard-header">
+                <div>
+                    <p class="section-kicker">Laporan &amp; Data</p>
+                    <h2>Database Presensi</h2>
+                    <p class="section-subtitle">Kelola riwayat presensi, filter tanggal, &amp; ekspor laporan.</p>
+                </div>
+
+                <button class="export-button" type="button">
+                    <span class="export-icon" aria-hidden="true"></span>
+                    <span>Ekspor Laporan</span>
+                </button>
+            </section>
+
+            <section class="stats-grid" aria-label="Statistik presensi">
+                <article class="stat-card">
+                    <div class="stat-icon soft-green">
+                        <span class="icon-users" aria-hidden="true"></span>
+                    </div>
+                    <div class="stat-copy">
+                        <span class="stat-label">Total Siswa</span>
+                        <strong id="totalStudents">0</strong>
+                    </div>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-icon soft-blue">
+                        <span class="icon-calendar" aria-hidden="true"></span>
+                    </div>
+                    <div class="stat-copy">
+                        <span class="stat-label">Hadir Hari Ini</span>
+                        <strong id="todayCount">0</strong>
+                    </div>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-icon soft-gold">
+                        <span class="icon-percent" aria-hidden="true"></span>
+                    </div>
+                    <div class="stat-copy">
+                        <span class="stat-label">Persentase Hari Ini</span>
+                        <strong id="attendanceRate">0%</strong>
+                    </div>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-icon soft-gray">
+                        <span class="icon-record" aria-hidden="true"></span>
+                    </div>
+                    <div class="stat-copy">
+                        <span class="stat-label">Total Riwayat</span>
+                        <strong id="totalHistory">1</strong>
+                    </div>
+                </article>
+            </section>
+
+            <section class="filter-panel" aria-label="Filter riwayat">
+                <div class="search-box">
+                    <span class="search-icon" aria-hidden="true"></span>
+                    <input id="searchInput" type="search" placeholder="Cari nama, NISN, atau kelas..."
+                        aria-label="Cari nama, NISN, atau kelas" />
+                </div>
+
+                <div class="date-pickers">
+                    <label class="date-field" aria-label="Tanggal mulai">
+                        <input id="startDate" type="date" value="" />
+                        <span class="field-icon" aria-hidden="true"></span>
+                    </label>
+
+                    <label class="date-field" aria-label="Tanggal selesai">
+                        <input id="endDate" type="date" value="" />
+                        <span class="field-icon" aria-hidden="true"></span>
                     </label>
                 </div>
-                <button type="submit" class="auth-button" id="loginButton" data-i18n="login">Masuk</button>
-                <p class="auth-hint" data-i18n="defaultCredentials">Demo: admin@amanahid.sch.id / AmanahDemo!2026#ID</p>
-            </form>
+            </section>
 
-            <form class="auth-form" id="signupForm">
-                <div class="auth-group">
-                    <label for="signupName" data-i18n="fullName">Nama Lengkap</label>
-                    <input type="text" id="signupName" autocomplete="name" data-i18n-placeholder="enterFullName" placeholder="Masukkan nama lengkap" required>
+            <section class="table-panel">
+                <div class="table-tabs" role="tablist" aria-label="Jenis data">
+                    <button type="button" class="table-tab active">Riwayat Presensi (1)</button>
+                    <button type="button" class="table-tab">Siswa Terdaftar (0)</button>
                 </div>
-                <div class="auth-group">
-                    <label for="signupEmail" data-i18n="email">Email</label>
-                    <input type="email" id="signupEmail" autocomplete="email" data-i18n-placeholder="yourEmail" placeholder="nama@email.com" required>
-                </div>
-                <div class="auth-group">
-                    <label for="signupPassword" data-i18n="password">Kata Sandi</label>
-                    <input type="password" id="signupPassword" autocomplete="new-password" data-i18n-placeholder="minPassword" placeholder="Minimal 6 karakter" required>
-                </div>
-                <div class="auth-group">
-                    <label for="signupConfirm" data-i18n="confirmPassword">Konfirmasi Kata Sandi</label>
-                    <input type="password" id="signupConfirm" autocomplete="new-password" data-i18n-placeholder="repeatPassword" placeholder="Ulangi kata sandi" required>
-                </div>
-                <div class="auth-checkbox-group">
-                    <label class="checkbox-container">
-                        <input type="checkbox" id="signupAgree">
-                        <span class="checkmark"></span>
-                        <span class="checkbox-text"><span data-i18n="agree">Saya menyetujui</span> <a href="#" id="termsLink" data-i18n="terms">Syarat & Ketentuan</a></span>
-                    </label>
-                </div>
-                <button type="submit" class="auth-button" id="signupButton" disabled data-i18n="signup">Buat akun</button>
-            </form>
-        </section>
-    </main>
-</div>
 
-<div id="toast" class="toast" aria-live="polite"></div>
-<div id="termsModal" class="terms-modal" style="display:none;">
-    <div class="terms-modal-content" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
-        <div class="terms-modal-header">
-            <h2 id="termsTitle" data-i18n="termsTitle">Syarat & Ketentuan</h2>
-            <button class="terms-modal-close" id="termsModalClose" type="button" aria-label="Tutup">✕</button>
-        </div>
-        <div class="terms-modal-body">
-            <h3 data-i18n="terms1Title">1. Penggunaan Layanan</h3>
-            <p data-i18n="terms1Desc">Gunakan Amanah ID hanya untuk kebutuhan presensi yang sah di lingkungan sekolah.</p>
-            <h3 data-i18n="terms2Title">2. Privasi Data</h3>
-            <p data-i18n="terms2Desc">Data identitas dan wajah disimpan di perangkat demo ini untuk kebutuhan presensi.</p>
-            <h3 data-i18n="terms3Title">3. Keamanan Akun</h3>
-            <p data-i18n="terms3Desc">Jaga kerahasiaan kredensial akun dan jangan membagikannya kepada orang lain.</p>
-            <h3 data-i18n="terms4Title">4. Penggunaan yang Dilarang</h3>
-            <p data-i18n="terms4Desc">Jangan gunakan sistem untuk tujuan ilegal atau penyalahgunaan layanan.</p>
-            <h3 data-i18n="terms5Title">5. Perubahan Ketentuan</h3>
-            <p data-i18n="terms5Desc">Ketentuan dapat diperbarui sesuai kebutuhan pengembangan sistem.</p>
-        </div>
-        <div class="terms-modal-footer">
-            <button class="terms-modal-btn" id="termsModalAgree" type="button" data-i18n="agree">Saya menyetujui</button>
-        </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>NISN</th>
+                                <th>Nama</th>
+                                <th>Kelas</th>
+                                <th>Tanggal</th>
+                                <th>Waktu</th>
+                                <th>Status</th>
+                                <th>Akurasi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody">
+                            <tr>
+                                <td>TEST-9990081</td>
+                                <td>Test Siswa</td>
+                                <td>IOA</td>
+                                <td>2026-09-03</td>
+                                <td>16.30.58</td>
+                                <td><span class="status-badge present">Hadir</span></td>
+                                <td>95.8%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
     </div>
-</div>
 
-<script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
+
 </html>
